@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${lift.name}">Workout</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f0f0f;
+            color: #fff;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Header ── */
+        header {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1rem 0.75rem;
+            border-bottom: 1px solid #1e1e1e;
+        }
+
+        header a {
+            color: #4f9eff;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        header a svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ── Main ── */
+        main {
+            flex: 1;
+            padding: 1.5rem 1rem 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* ── Lift header ── */
+        .lift-title {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .meta-row {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            margin-top: 0.4rem;
+        }
+
+        .week-badge {
+            background: #1a2a3a;
+            color: #4f9eff;
+            border-radius: 20px;
+            padding: 0.3rem 0.8rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+        }
+
+        .tm-badge {
+            color: #555;
+            font-size: 0.82rem;
+        }
+
+        /* ── Section label ── */
+        .section-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            color: #444;
+            text-transform: uppercase;
+        }
+
+        .sets-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        /* ── Set card ── */
+        .set-card {
+            background: #1a1a1a;
+            border-radius: 14px;
+            padding: 1.1rem 1.2rem;
+            display: grid;
+            grid-template-columns: 44px 1fr;
+            gap: 0 0.9rem;
+            align-items: start;
+        }
+
+        .set-card.amrap {
+            background: #0e1e33;
+            border: 1.5px solid #4f9eff55;
+        }
+
+        .set-pct {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #555;
+            padding-top: 0.35rem;
+            text-align: center;
+        }
+
+        .set-card.amrap .set-pct {
+            color: #4f9eff;
+        }
+
+        .set-body {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .set-weight-reps {
+            font-size: 1.45rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+
+        .set-weight-reps .reps {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #888;
+        }
+
+        .set-card.amrap .set-weight-reps .reps {
+            color: #4f9eff;
+            font-weight: 700;
+        }
+
+        .set-plates {
+            font-size: 0.88rem;
+            color: #666;
+            margin-top: 0.15rem;
+        }
+
+        .set-plates strong {
+            color: #999;
+            font-weight: 600;
+        }
+
+        /* ── AMRAP reps input ── */
+        .amrap-input-row {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-top: 0.75rem;
+        }
+
+        .amrap-input-row input {
+            flex: 1;
+            background: #0f0f0f;
+            border: 1.5px solid #2a3a4a;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 700;
+            padding: 0.65rem 0.9rem;
+            outline: none;
+            -moz-appearance: textfield;
+        }
+
+        .amrap-input-row input::-webkit-outer-spin-button,
+        .amrap-input-row input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+        }
+
+        .amrap-input-row input:focus {
+            border-color: #4f9eff;
+        }
+
+        .amrap-input-row label {
+            font-size: 0.82rem;
+            color: #555;
+            white-space: nowrap;
+        }
+
+        /* ── Complete button ── */
+        .btn-complete {
+            width: 100%;
+            padding: 1.05rem;
+            background: #4f9eff;
+            border: none;
+            border-radius: 14px;
+            color: #fff;
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 0.01em;
+        }
+
+        .btn-complete:active { opacity: 0.8; }
+
+        /* ── Setup card ── */
+        .setup-card {
+            background: #1a1a1a;
+            border-radius: 14px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .setup-card h2 { font-size: 1.15rem; font-weight: 700; }
+
+        .setup-card p { font-size: 0.88rem; color: #666; line-height: 1.55; }
+
+        .setup-input-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .setup-input-row input {
+            flex: 1;
+            background: #111;
+            border: 1px solid #2a2a2a;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            outline: none;
+        }
+
+        .setup-input-row input:focus { border-color: #4f9eff; }
+
+        .setup-input-row .unit { font-size: 0.88rem; color: #555; }
+
+        .btn-start {
+            width: 100%;
+            padding: 0.9rem;
+            background: #4f9eff;
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a th:href="@{/}">
+            <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+            Workouts
+        </a>
+    </header>
+
+    <main>
+
+        <!-- Lift title + meta -->
+        <div>
+            <div class="lift-title" th:text="${lift.name}">Bench Press</div>
+            <div class="meta-row" th:if="${!needsSetup}">
+                <span class="week-badge">
+                    WEEK <span th:text="${plan.week}">1</span>
+                    &nbsp;·&nbsp;
+                    <span th:text="${plan.weekLabel()}">5s Week</span>
+                </span>
+                <span class="tm-badge">TM: <strong th:text="${plan.trainingMax + ' lbs'}">237.5 lbs</strong></span>
+            </div>
+        </div>
+
+        <!-- ── Setup state ── -->
+        <div th:if="${needsSetup}" class="setup-card">
+            <h2>Set your training max</h2>
+            <p>
+                Enter the weight to base your percentages on.
+                For 5/3/1 this is typically 90% of your true 1-rep max.
+            </p>
+            <form th:action="@{/workout/{id}/setup(id=${lift.id})}" method="post"
+                  style="display:flex;flex-direction:column;gap:0.75rem;">
+                <div class="setup-input-row">
+                    <input type="number" name="trainingMax" min="45" step="2.5"
+                           placeholder="e.g. 237.5" required autofocus/>
+                    <span class="unit">lbs</span>
+                </div>
+                <button type="submit" class="btn-start">Start tracking</button>
+            </form>
+        </div>
+
+        <!-- ── Workout state ── -->
+        <form th:if="${!needsSetup}"
+              th:action="@{/workout/{id}/complete(id=${lift.id})}" method="post"
+              style="display:flex;flex-direction:column;gap:1.5rem;flex:1;">
+
+            <!-- Warm-up sets -->
+            <div style="display:flex;flex-direction:column;gap:0.6rem;">
+                <div class="section-label">Warm-up</div>
+                <div class="sets-group">
+                    <th:block th:each="s : ${plan.sets}">
+                        <div th:if="${s.warmup}" class="set-card">
+                            <div class="set-pct" th:text="${s.percentageLabel}">50%</div>
+                            <div class="set-body">
+                                <div class="set-weight-reps">
+                                    <span th:text="${#numbers.formatDecimal(s.weight, 0, 0) + ' lbs'}">120 lbs</span>
+                                    <span class="reps">&nbsp;× <span th:text="${s.reps}">5</span></span>
+                                </div>
+                                <div class="set-plates">
+                                    Each side: <strong th:text="${s.platesDisplay}">35, 2.5</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+
+            <!-- Working sets -->
+            <div style="display:flex;flex-direction:column;gap:0.6rem;">
+                <div class="section-label">Working sets</div>
+                <div class="sets-group">
+                    <th:block th:each="s : ${plan.sets}">
+                        <div th:if="${!s.warmup}" th:class="${s.amrap} ? 'set-card amrap' : 'set-card'">
+                            <div class="set-pct" th:text="${s.percentageLabel}">65%</div>
+                            <div class="set-body">
+                                <div class="set-weight-reps">
+                                    <span th:text="${#numbers.formatDecimal(s.weight, 0, 0) + ' lbs'}">155 lbs</span>
+                                    <span class="reps" th:if="${!s.amrap}">&nbsp;× <span th:text="${s.reps}">5</span></span>
+                                    <span class="reps" th:if="${s.amrap}">&nbsp;× AMRAP</span>
+                                </div>
+                                <div class="set-plates">
+                                    Each side: <strong th:text="${s.platesDisplay}">45, 10</strong>
+                                </div>
+                                <!-- Reps input on the AMRAP set -->
+                                <div th:if="${s.amrap}" class="amrap-input-row">
+                                    <input type="number" name="amrapReps"
+                                           placeholder="0" min="1" max="99" required/>
+                                    <label>reps completed</label>
+                                </div>
+                            </div>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-complete" style="margin-top:auto;">
+                Complete Workout
+            </button>
+
+        </form>
+
+        <!-- Update training max -->
+        <div th:if="${!needsSetup}"
+             style="background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:1.1rem;display:flex;flex-direction:column;gap:0.75rem;">
+            <div style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#444;">
+                Update Training Max
+            </div>
+            <form th:action="@{/workout/{id}/update-tm(id=${lift.id})}" method="post"
+                  style="display:flex;gap:0.5rem;">
+                <input type="number"
+                       th:placeholder="${plan.trainingMax + ' lbs (current)'}"
+                       name="trainingMax" min="45" step="2.5" required
+                       style="flex:1;background:#0f0f0f;border:1px solid #2a2a2a;border-radius:8px;
+                              color:#fff;font-size:0.95rem;padding:0.6rem 0.9rem;outline:none;"/>
+                <button type="submit"
+                        style="background:#1e2a3a;border:1px solid #2a3a4a;border-radius:8px;
+                               color:#4f9eff;font-size:0.85rem;font-weight:600;padding:0.6rem 0.9rem;cursor:pointer;">
+                    Update
+                </button>
+            </form>
+        </div>
+
+    </main>
+
+</body>
+</html>
