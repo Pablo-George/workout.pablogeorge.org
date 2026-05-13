@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: workout-app
+  name: workout
 
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: workout-app-data
-  namespace: workout-app
+  name: workout-data
+  namespace: workout
 spec:
   accessModes:
     - ReadWriteOnce
@@ -20,21 +20,21 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: workout-app
-  namespace: workout-app
+  name: workout
+  namespace: workout
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: workout-app
+      app: workout
   template:
     metadata:
       labels:
-        app: workout-app
+        app: workout
     spec:
       containers:
-        - name: workout-app
-          image: ghcr.io/pablo-george/workout-app:latest
+        - name: workout
+          image: ghcr.io/pablo-george/workout:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -48,27 +48,27 @@ spec:
             - name: GOOGLE_CLIENT_ID
               valueFrom:
                 secretKeyRef:
-                  name: workout-app-secrets
+                  name: workout-secrets
                   key: GOOGLE_CLIENT_ID
             - name: GOOGLE_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: workout-app-secrets
+                  name: workout-secrets
                   key: GOOGLE_CLIENT_SECRET
             - name: GOOGLE_CALLBACK_URL
               valueFrom:
                 secretKeyRef:
-                  name: workout-app-secrets
+                  name: workout-secrets
                   key: GOOGLE_CALLBACK_URL
             - name: SESSION_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: workout-app-secrets
+                  name: workout-secrets
                   key: SESSION_SECRET
             - name: GEMINI_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: workout-app-secrets
+                  name: workout-secrets
                   key: GEMINI_API_KEY
           volumeMounts:
             - name: data
@@ -76,17 +76,17 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: workout-app-data
+            claimName: workout-data
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: workout-app
-  namespace: workout-app
+  name: workout
+  namespace: workout
 spec:
   selector:
-    app: workout-app
+    app: workout
   ports:
     - port: 8080
       targetPort: 8080
