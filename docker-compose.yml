@@ -8,10 +8,6 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL:-http://localhost:8080/auth/google/callback}
       SESSION_SECRET: ${SESSION_SECRET}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
-      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
-      AWS_REGION: ${AWS_REGION:-us-east-1}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       DATABASE_URL: file:./data/workoutapp.db
     volumes:

@@ -19,7 +19,7 @@ Personal workout tracking app built with Node.js, Express, Prisma (SQLite), and 
 | Templates | EJS |
 | Auth | Google OAuth 2.0 (Passport.js) |
 | AI | Google Gemini 2.5 Flash via Genkit |
-| Image storage | Local filesystem (dev) / AWS S3 (prod) |
+| Image storage | Local filesystem (persisted on PVC) |
 | Container | Docker, published to GHCR |
 | Deployment | k3s (Kubernetes) |
 
@@ -43,10 +43,6 @@ Runs on `http://localhost:3000` by default. Set `PORT` to override.
 | `GOOGLE_CALLBACK_URL` | OAuth redirect URI (e.g. `http://localhost:3000/auth/google/callback`) |
 | `SESSION_SECRET` | Long random string for session signing |
 | `GEMINI_API_KEY` | Google AI Studio API key |
-| `AWS_ACCESS_KEY_ID` | S3 credentials (optional in dev, uploads saved locally) |
-| `AWS_SECRET_ACCESS_KEY` | S3 credentials |
-| `AWS_S3_BUCKET` | S3 bucket name |
-| `AWS_REGION` | AWS region (default: `us-east-1`) |
 | `DATABASE_URL` | Prisma DB URL (default: `file:./data/workoutapp.db`) |
 
 ## Deployment
