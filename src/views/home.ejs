@@ -547,6 +547,18 @@
             <button type="submit">Log</button>
         </form>
 
+        <form action="/profile/privacy" method="post">
+            <button type="submit"
+                    style="width:100%;display:flex;align-items:center;justify-content:space-between;
+                           padding:0.85rem 1rem;background:#1a1a1a;border:1px solid #2a2a2a;
+                           border-radius:12px;color:#fff;font-size:0.9rem;cursor:pointer;margin-bottom:0.5rem;">
+                <span>Hide weight from friends</span>
+                <span style="font-size:0.75rem;font-weight:700;color:<%= hideWeight ? '#4f9eff' : '#555' %>;">
+                    <%= hideWeight ? 'ON' : 'OFF' %>
+                </span>
+            </button>
+        </form>
+
         <div class="section-heading">My lifts</div>
 
         <% coreWorkouts.forEach(w => { %>
@@ -762,9 +774,15 @@
                     <div class="request-info">
                         <div class="request-name"><%= f.name %></div>
                     </div>
-                    <form action="/social/friends/remove/<%= f.friendshipId %>" method="post" style="margin:0;">
-                        <button type="submit" class="btn-decline">Remove</button>
-                    </form>
+                    <div style="display:flex;gap:0.4rem;flex-shrink:0;">
+                        <a href="/user/<%= f.userId %>"
+                           style="background:#1e2a3a;border:1px solid #2a3a4a;border-radius:8px;
+                                  color:#4f9eff;font-size:0.8rem;font-weight:600;padding:0.4rem 0.65rem;
+                                  text-decoration:none;white-space:nowrap;">View</a>
+                        <form action="/social/friends/remove/<%= f.friendshipId %>" method="post" style="margin:0;">
+                            <button type="submit" class="btn-decline">Remove</button>
+                        </form>
+                    </div>
                 </div>
                 <% }) %>
             </div>

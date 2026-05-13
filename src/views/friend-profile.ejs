@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= profile.displayName %></title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f0f0f;
+            color: #fff;
+            min-height: 100dvh;
+            padding: 1.5rem 1rem 2rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .card {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 14px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+        .section-heading {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin: 1.25rem 0 0.5rem;
+        }
+        .lift-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            margin-bottom: 0.5rem;
+        }
+        .lift-name { font-size: 0.95rem; font-weight: 600; }
+        .lift-meta { font-size: 0.8rem; color: #888; text-align: right; }
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: #4f9eff;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+            margin-bottom: 1.25rem;
+        }
+        .avatar {
+            width: 60px; height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .avatar-placeholder {
+            width: 60px; height: 60px;
+            border-radius: 50%;
+            background: #2a2a2a;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 1.4rem; color: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <a href="javascript:history.back()" class="back-btn">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#4f9eff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;">
+            <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Back
+    </a>
+
+    <div class="card" style="display:flex;align-items:center;gap:1rem;">
+        <% if (profile.pictureUrl) { %>
+            <img src="<%= profile.pictureUrl %>" class="avatar" alt="avatar"/>
+        <% } else { %>
+            <div class="avatar-placeholder"><%= profile.displayName.charAt(0).toUpperCase() %></div>
+        <% } %>
+        <div style="font-size:1.25rem;font-weight:800;"><%= profile.displayName %></div>
+    </div>
+
+    <% if (!hideWeight && currentWeight) { %>
+        <div class="section-heading">Body weight</div>
+        <div class="card" style="display:flex;align-items:baseline;gap:0.4rem;">
+            <span style="font-size:1.75rem;font-weight:800;letter-spacing:-1px;"><%= currentWeight %></span>
+            <span style="font-size:0.85rem;color:#555;">lbs</span>
+        </div>
+    <% } %>
+
+    <div class="section-heading">Lifts</div>
+
+    <% if (liftsWithConfig.length === 0) { %>
+        <div style="color:#555;font-size:0.9rem;padding:0.5rem 0;">No lifts configured yet.</div>
+    <% } %>
+
+    <% liftsWithConfig.forEach(w => { %>
+        <div class="lift-row">
+            <div class="lift-name"><%= w.name %></div>
+            <div class="lift-meta">
+                <% if (w.trainingMax) { %><div><%= w.trainingMax %> lbs TM</div><% } %>
+                <% if (w.currentWeek) { %><div>Week <%= w.currentWeek %></div><% } %>
+                <% if (!w.trainingMax) { %><div style="color:#444;">Not configured</div><% } %>
+            </div>
+        </div>
+    <% }) %>
+
+</body>
+</html>

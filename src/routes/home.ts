@@ -45,6 +45,8 @@ router.get("/", ensureAuth, async (req, res) => {
   const friends = await getFriends(userId);
   const inviteToken = await getOrCreateInviteToken(userId);
   const inviteLink = `${req.protocol}://${req.get("host")}/invite/${inviteToken}`;
+  const myProfile = await prisma.userProfile.findUnique({ where: { userId } });
+  const hideWeight = myProfile?.hideWeight ?? false;
 
   const today = new Date().toISOString().split("T")[0];
   const calEntries = await prisma.calorieEntry.findMany({
@@ -72,6 +74,7 @@ router.get("/", ensureAuth, async (req, res) => {
     chartDatasets,
     totalSessions,
     currentWeight: latestWeight?.weightLbs ?? null,
+    hideWeight,
     feedPosts,
     pendingRequests,
     friends,
@@ -106,6 +109,50 @@ router.post("/profile/weight", ensureAuth, async (req, res) => {
     },
   });
   res.redirect("/#tab-profile");
+});
+
+router.post("/profile/privacy", ensureAuth, async (req, res) => {
+  const user = req.user as any;
+  const current = await prisma.userProfile.findUnique({ where: { userId: user.userId } });
+  await prisma.userProfile.update({
+    where: { userId: user.userId },
+    data: { hideWeight: !current?.hideWeight },
+  });
+  res.redirect("/#tab-profile");
+});
+
+router.get("/user/:userId", ensureAuth, async (req, res) => {
+  const viewer = req.user as any;
+  const targetId = req.params.userId;
+
+  const friendIds = await getFriendIds(viewer.userId);
+  if (!friendIds.includes(targetId)) return res.redirect("/");
+
+  const profile = await prisma.userProfile.findUnique({ where: { userId: targetId } });
+  const lifts = await prisma.coreWorkout.findMany({ where: { userId: targetId } });
+  const configs = await prisma.userLiftConfig.findMany({ where: { userId: targetId } });
+  const configByLiftId = Object.fromEntries(configs.map((c) => [c.liftId, c]));
+  const liftsWithConfig = lifts.map((l) => ({
+    ...l,
+    trainingMax: configByLiftId[l.id]?.trainingMax ?? null,
+    currentWeek: configByLiftId[l.id]?.currentWeek ?? null,
+  }));
+
+  let currentWeight: number | null = null;
+  if (!profile?.hideWeight) {
+    const latest = await prisma.bodyWeightLog.findFirst({
+      where: { userId: targetId },
+      orderBy: { loggedOn: "desc" },
+    });
+    currentWeight = latest?.weightLbs ?? null;
+  }
+
+  res.render("friend-profile", {
+    profile: { displayName: profile?.displayName ?? targetId, pictureUrl: profile?.pictureUrl ?? null },
+    liftsWithConfig,
+    currentWeight,
+    hideWeight: profile?.hideWeight ?? false,
+  });
 });
 
 async function getFeed(userId: string) {
@@ -185,6 +232,7 @@ async function getFriends(userId: string) {
       const profile = await prisma.userProfile.findUnique({ where: { userId: friendId } });
       return {
         friendshipId,
+        userId: friendId,
         name: profile?.displayName ?? friendId,
         pictureUrl: profile?.pictureUrl ?? null,
       };
