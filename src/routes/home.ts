@@ -1,8 +1,10 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
 import { ensureAuth } from "../middleware/auth.js";
 import { prisma } from "../app.js";
 import { buildChartDatasets, getWeekLabels, countLogs } from "../services/workoutService.js";
 import crypto from "node:crypto";
+
+const isXHR = (req: Request) => req.headers["x-requested-with"] === "XMLHttpRequest";
 
 const router = Router();
 
@@ -87,37 +89,35 @@ router.get("/", ensureAuth, async (req, res) => {
 
 router.post("/profile/lifts", ensureAuth, async (req, res) => {
   const user = req.user as any;
-  await prisma.coreWorkout.create({
-    data: { name: (req.body.name as string).trim(), userId: user.userId },
-  });
+  const name = (req.body.name as string).trim();
+  const lift = await prisma.coreWorkout.create({ data: { name, userId: user.userId } });
+  if (isXHR(req)) return res.json({ id: lift.id, name: lift.name });
   res.redirect("/#tab-profile");
 });
 
 router.post("/profile/lifts/delete", ensureAuth, async (req, res) => {
   const id = parseInt(req.body.id as string);
   await prisma.coreWorkout.delete({ where: { id } });
+  if (isXHR(req)) return res.json({ ok: true });
   res.redirect("/#tab-profile");
 });
 
 router.post("/profile/weight", ensureAuth, async (req, res) => {
   const user = req.user as any;
+  const weightLbs = parseFloat(req.body.weightLbs as string);
   await prisma.bodyWeightLog.create({
-    data: {
-      userId: user.userId,
-      weightLbs: parseFloat(req.body.weightLbs as string),
-      loggedOn: new Date().toISOString().split("T")[0],
-    },
+    data: { userId: user.userId, weightLbs, loggedOn: new Date().toISOString().split("T")[0] },
   });
+  if (isXHR(req)) return res.json({ weightLbs });
   res.redirect("/#tab-profile");
 });
 
 router.post("/profile/privacy", ensureAuth, async (req, res) => {
   const user = req.user as any;
   const current = await prisma.userProfile.findUnique({ where: { userId: user.userId } });
-  await prisma.userProfile.update({
-    where: { userId: user.userId },
-    data: { hideWeight: !current?.hideWeight },
-  });
+  const hideWeight = !current?.hideWeight;
+  await prisma.userProfile.update({ where: { userId: user.userId }, data: { hideWeight } });
+  if (isXHR(req)) return res.json({ hideWeight });
   res.redirect("/#tab-profile");
 });
 

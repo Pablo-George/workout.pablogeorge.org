@@ -1,4 +1,6 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
+
+const isXHR = (req: Request) => req.headers["x-requested-with"] === "XMLHttpRequest";
 import { ensureAuth } from "../middleware/auth.js";
 import { prisma } from "../app.js";
 import { buildPlan, createConfig, getConfig, updateTrainingMax, completeWorkout } from "../services/workoutService.js";
@@ -57,6 +59,7 @@ router.post("/workout/:liftId/set-week", ensureAuth, async (req, res) => {
     }
   }
 
+  if (isXHR(req)) return res.json({ week, liftId });
   res.redirect("/#tab-profile");
 });
 
@@ -75,6 +78,7 @@ router.post("/workout/:liftId/update-tm", ensureAuth, async (req, res) => {
     }
   }
 
+  if (isXHR(req)) return res.json({ trainingMax, liftId });
   res.redirect("/#tab-profile");
 });
 
