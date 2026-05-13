@@ -1,39 +1,39 @@
+# Node
+node_modules/
+dist/
+data/
+*.db
+
+# Environment
+.env
+
+# Spring Boot (legacy)
 HELP.md
 target/
+build/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+!**/src/main/**/build/
+!**/src/test/**/build/
 
-### STS ###
-.apt_generated
+# IDE
+.idea
+.vscode/
+*.iws
+*.iml
+*.ipr
 .classpath
 .factorypath
 .project
 .settings
 .springBeans
 .sts4-cache
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
+.apt_generated
+/.nb-gradle/
 /nbproject/private/
 /nbbuild/
-/dist/
 /nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
-### VS Code ###
-.vscode/
-
-# Environment variables
-.env
-
-# Windows Zone Identifier files
+# Windows
 *:Zone.Identifier

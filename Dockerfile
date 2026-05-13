@@ -1,18 +1,18 @@
-FROM maven:3.9-eclipse-temurin-21-alpine AS build
-WORKDIR /build
-
-# Cache dependencies before copying source
-COPY pom.xml .
-RUN mvn dependency:go-offline -B
-
-COPY src ./src
-RUN mvn package -DskipTests -B
-
-# ── Runtime image ──────────────────────────────────────────────────────────────
-FROM eclipse-temurin:21-jre-alpine
+FROM node:22-alpine AS build
 WORKDIR /app
+COPY package.json tsconfig.json ./
+RUN npm ci
+COPY prisma ./prisma
+RUN npx prisma generate
+COPY src ./src
+RUN npx tsc
 
-COPY --from=build /build/target/*.jar app.jar
-
+FROM node:22-alpine
+WORKDIR /app
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/prisma ./prisma
+COPY src/views ./dist/views
+ENV NODE_ENV=production
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+CMD ["node", "dist/index.js"]

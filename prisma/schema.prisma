@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model UserProfile {
+  userId      String  @id
+  displayName String
+  pictureUrl  String?
+  inviteToken String? @unique
+}
+
+model CoreWorkout {
+  id     Int             @id @default(autoincrement())
+  name   String
+  userId String
+
+  configs   UserLiftConfig[]
+  logs      WorkoutLog[]
+  tmLogs    TrainingMaxLog[]
+  auxLifts  AuxLift[]
+
+  @@unique([userId, name])
+}
+
+model UserLiftConfig {
+  id          Int         @id @default(autoincrement())
+  userId      String
+  liftId      Int
+  trainingMax Float
+  currentWeek Int         @default(1)
+  lift        CoreWorkout @relation(fields: [liftId], references: [id])
+
+  @@unique([userId, liftId])
+}
+
+model WorkoutLog {
+  id          Int         @id @default(autoincrement())
+  userId      String
+  liftId      Int
+  week        Int
+  amrapReps   Int
+  completedOn String
+  lift        CoreWorkout @relation(fields: [liftId], references: [id])
+}
+
+model TrainingMaxLog {
+  id          Int         @id @default(autoincrement())
+  userId      String
+  liftId      Int
+  trainingMax Float
+  loggedOn    String
+  lift        CoreWorkout @relation(fields: [liftId], references: [id])
+}
+
+model BodyWeightLog {
+  id        Int     @id @default(autoincrement())
+  userId    String
+  weightLbs Float
+  loggedOn  String
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  authorId  String
+  content   String?
+  imageUrl  String?
+  createdAt DateTime @default(now())
+}
+
+model AuxLift {
+  id               Int          @id @default(autoincrement())
+  userId           String
+  liftId           Int
+  name             String
+  description      String
+  setsReps         String
+  youtubeSearchUrl String
+  displayOrder     Int          @default(0)
+  lift             CoreWorkout  @relation(fields: [liftId], references: [id])
+  logs             AuxLiftLog[]
+}
+
+model AuxLiftLog {
+  id          Int     @id @default(autoincrement())
+  userId      String
+  auxLiftId   Int
+  weightLbs   Float?
+  completedOn String
+  auxLift     AuxLift @relation(fields: [auxLiftId], references: [id])
+}
+
+model CalorieEntry {
+  id          Int      @id @default(autoincrement())
+  userId      String
+  description String
+  calories    Int
+  imageUrl    String?
+  loggedOn    String
+  createdAt   DateTime @default(now())
+}
+
+model Friendship {
+  id            Int              @id @default(autoincrement())
+  requesterId   String
+  addresseeId   String
+  status        String           @default("PENDING")
+  createdAt     DateTime         @default(now())
+
+  @@unique([requesterId, addresseeId])
+}
+
+

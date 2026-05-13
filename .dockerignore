@@ -1,5 +1,7 @@
-target/
-data/
-.git/
-*.Zone.Identifier
-**/*.Zone.Identifier
+node_modules
+dist
+data
+.git
+*.md
+.gitignore
+.env

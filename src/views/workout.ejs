@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= lift.name %></title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f0f0f;
+            color: #fff;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1rem 0.75rem;
+            border-bottom: 1px solid #1e1e1e;
+        }
+
+        header a {
+            color: #4f9eff;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        header a svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        main {
+            flex: 1;
+            padding: 1.5rem 1rem 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .lift-title {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .meta-row {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            margin-top: 0.4rem;
+        }
+
+        .week-badge {
+            background: #1a2a3a;
+            color: #4f9eff;
+            border-radius: 20px;
+            padding: 0.3rem 0.8rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+        }
+
+        .tm-badge {
+            color: #555;
+            font-size: 0.82rem;
+        }
+
+        .section-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            color: #444;
+            text-transform: uppercase;
+        }
+
+        .sets-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .set-card {
+            background: #1a1a1a;
+            border-radius: 14px;
+            padding: 1.1rem 1.2rem;
+            display: grid;
+            grid-template-columns: 44px 1fr;
+            gap: 0 0.9rem;
+            align-items: start;
+        }
+
+        .set-card.amrap {
+            background: #0e1e33;
+            border: 1.5px solid #4f9eff55;
+        }
+
+        .set-pct {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #555;
+            padding-top: 0.35rem;
+            text-align: center;
+        }
+
+        .set-card.amrap .set-pct {
+            color: #4f9eff;
+        }
+
+        .set-body {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .set-weight-reps {
+            font-size: 1.45rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+
+        .set-weight-reps .reps {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #888;
+        }
+
+        .set-card.amrap .set-weight-reps .reps {
+            color: #4f9eff;
+            font-weight: 700;
+        }
+
+        .set-plates {
+            font-size: 0.88rem;
+            color: #666;
+            margin-top: 0.15rem;
+        }
+
+        .set-plates strong {
+            color: #999;
+            font-weight: 600;
+        }
+
+        .amrap-input-row {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-top: 0.75rem;
+        }
+
+        .amrap-input-row input {
+            flex: 1;
+            background: #0f0f0f;
+            border: 1.5px solid #2a3a4a;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 700;
+            padding: 0.65rem 0.9rem;
+            outline: none;
+            -moz-appearance: textfield;
+        }
+
+        .amrap-input-row input::-webkit-outer-spin-button,
+        .amrap-input-row input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+        }
+
+        .amrap-input-row input:focus {
+            border-color: #4f9eff;
+        }
+
+        .amrap-input-row label {
+            font-size: 0.82rem;
+            color: #555;
+            white-space: nowrap;
+        }
+
+        .btn-complete {
+            width: 100%;
+            padding: 1.05rem;
+            background: #4f9eff;
+            border: none;
+            border-radius: 14px;
+            color: #fff;
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 0.01em;
+        }
+
+        .btn-complete:active { opacity: 0.8; }
+
+        .setup-card {
+            background: #1a1a1a;
+            border-radius: 14px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .setup-card h2 { font-size: 1.15rem; font-weight: 700; }
+
+        .setup-card p { font-size: 0.88rem; color: #666; line-height: 1.55; }
+
+        .setup-input-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .setup-input-row input {
+            flex: 1;
+            background: #111;
+            border: 1px solid #2a2a2a;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            outline: none;
+        }
+
+        .setup-input-row input:focus { border-color: #4f9eff; }
+
+        .setup-input-row .unit { font-size: 0.88rem; color: #555; }
+
+        .btn-start {
+            width: 100%;
+            padding: 0.9rem;
+            background: #4f9eff;
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="/">
+            <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+            Workouts
+        </a>
+    </header>
+
+    <main>
+        <div>
+            <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+                <div class="lift-title"><%= lift.name %></div>
+                <a href="https://www.youtube.com/results?search_query=<%= encodeURIComponent(lift.name + ' tutorial form') %>"
+                   target="_blank" rel="noopener"
+                   style="display:flex;align-items:center;gap:0.3rem;color:#ff4444;font-size:0.78rem;font-weight:600;text-decoration:none;">
+                    <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:#ff4444;flex-shrink:0;">
+                        <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.7 15.5V8.5l6.3 3.5-6.3 3.5z"/>
+                    </svg>
+                    How to do it
+                </a>
+            </div>
+            <% if (!needsSetup && plan) { %>
+                <div class="meta-row">
+                    <span class="week-badge">
+                        WEEK <%= plan.week %>
+                        &nbsp;·&nbsp;
+                        <%= plan.weekLabel %>
+                    </span>
+                    <span class="tm-badge">TM: <strong><%= plan.trainingMax %> lbs</strong></span>
+                </div>
+            <% } %>
+        </div>
+
+        <% if (needsSetup) { %>
+            <div class="setup-card">
+                <h2>Set your training max</h2>
+                <p>
+                    Enter the weight to base your percentages on.
+                    For 5/3/1 this is typically 90% of your true 1-rep max.
+                </p>
+                <form action="/workout/<%= lift.id %>/setup" method="post"
+                      style="display:flex;flex-direction:column;gap:0.75rem;">
+                    <div class="setup-input-row">
+                        <input type="number" name="trainingMax" min="45" step="2.5"
+                               placeholder="e.g. 237.5" required autofocus/>
+                        <span class="unit">lbs</span>
+                    </div>
+                    <button type="submit" class="btn-start">Start tracking</button>
+                </form>
+            </div>
+        <% } %>
+
+        <% if (!needsSetup && plan) { %>
+            <form action="/workout/<%= lift.id %>/complete" method="post"
+                  style="display:flex;flex-direction:column;gap:1.5rem;flex:1;">
+
+                <div style="display:flex;flex-direction:column;gap:0.6rem;">
+                    <div class="section-label">Warm-up</div>
+                    <div class="sets-group">
+                        <% plan.sets.filter(s => s.warmup).forEach(s => { %>
+                            <div class="set-card">
+                                <div class="set-pct"><%= s.percentageLabel %></div>
+                                <div class="set-body">
+                                    <div class="set-weight-reps">
+                                        <%= Math.round(s.weight) %> lbs
+                                        <span class="reps">&nbsp;× <%= s.reps %></span>
+                                    </div>
+                                    <div class="set-plates">
+                                        Each side: <strong><%= s.platesDisplay %></strong>
+                                    </div>
+                                </div>
+                            </div>
+                        <% }) %>
+                    </div>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:0.6rem;">
+                    <div class="section-label">Working sets</div>
+                    <div class="sets-group">
+                        <% plan.sets.filter(s => !s.warmup).forEach(s => { %>
+                            <div class="set-card<%= s.amrap ? ' amrap' : '' %>">
+                                <div class="set-pct"><%= s.percentageLabel %></div>
+                                <div class="set-body">
+                                    <div class="set-weight-reps">
+                                        <%= Math.round(s.weight) %> lbs
+                                        <% if (s.amrap) { %>
+                                            <span class="reps">&nbsp;× AMRAP</span>
+                                        <% } else { %>
+                                            <span class="reps">&nbsp;× <%= s.reps %></span>
+                                        <% } %>
+                                    </div>
+                                    <div class="set-plates">
+                                        Each side: <strong><%= s.platesDisplay %></strong>
+                                    </div>
+                                    <% if (s.amrap) { %>
+                                        <div class="amrap-input-row">
+                                            <input type="number" name="amrapReps"
+                                                   placeholder="0" min="1" max="99" required/>
+                                            <label>reps completed</label>
+                                        </div>
+                                    <% } %>
+                                </div>
+                            </div>
+                        <% }) %>
+                    </div>
+                </div>
+
+                <% if (auxLifts.length > 0) { %>
+                <div style="display:flex;flex-direction:column;gap:0.6rem;">
+                    <div class="section-label">Auxiliary Lifts</div>
+
+                    <% auxLifts.forEach(aux => { %>
+                    <div style="background:#1a1a1a;border-radius:14px;padding:1.2rem;display:flex;flex-direction:column;gap:0.75rem;">
+                        <div style="font-size:1rem;font-weight:700;"><%= aux.name %></div>
+                        <div style="font-size:0.85rem;color:#888;line-height:1.5;"><%= aux.description %></div>
+
+                        <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+                            <span style="background:#0e2a1e;color:#4ade80;border-radius:20px;padding:0.25rem 0.8rem;font-size:0.78rem;font-weight:700;">
+                                <%= aux.setsReps %>
+                            </span>
+                            <span style="background:#1a2a1a;color:#86efac;border-radius:20px;padding:0.25rem 0.8rem;font-size:0.78rem;font-weight:700;">
+                                <%= aux.weightRecommendation %>
+                            </span>
+                            <a href="<%= aux.youtubeSearchUrl %>" target="_blank" rel="noopener"
+                               style="display:flex;align-items:center;gap:0.3rem;color:#ff4444;font-size:0.78rem;font-weight:600;text-decoration:none;">
+                                <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:#ff4444;flex-shrink:0;">
+                                    <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.7 15.5V8.5l6.3 3.5-6.3 3.5z"/>
+                                </svg>
+                                How to do it
+                            </a>
+                        </div>
+                    </div>
+                    <% }) %>
+                </div>
+                <% } %>
+
+                <button type="submit" class="btn-complete" style="margin-top:auto;">
+                    Complete Workout
+                </button>
+            </form>
+        <% } %>
+
+    </main>
+
+</body>
+</html>
