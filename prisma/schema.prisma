@@ -13,7 +13,7 @@ model UserProfile {
   displayName String
   pictureUrl  String?
   inviteToken String? @unique
-  hideWeight  Boolean @default(false)
+  hideWeight  Boolean @default(true)
 }
 
 model CoreWorkout {
