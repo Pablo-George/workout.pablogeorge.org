@@ -14,10 +14,12 @@ router.get(
 
 router.get(
   "/auth/google/callback",
-  passport.authenticate("google", {
-    successRedirect: "/",
-    failureRedirect: "/login",
-  })
+  passport.authenticate("google", { failureRedirect: "/login" }),
+  (req, res) => {
+    const returnTo = (req.session as any).returnTo || "/";
+    delete (req.session as any).returnTo;
+    res.redirect(returnTo);
+  }
 );
 
 router.post("/logout", (req, res, next) => {
