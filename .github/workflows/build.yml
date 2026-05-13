@@ -6,7 +6,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE: ghcr.io/pablo-george/workout-app
+  IMAGE: ghcr.io/pablo-george/workout.pablogeorge.org
 
 jobs:
   build:

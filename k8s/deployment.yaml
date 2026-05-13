@@ -34,7 +34,7 @@ spec:
     spec:
       containers:
         - name: workout
-          image: ghcr.io/pablo-george/workout:latest
+          image: ghcr.io/pablo-george/workout.pablogeorge.org:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
