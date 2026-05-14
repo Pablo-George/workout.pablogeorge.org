@@ -77,7 +77,21 @@
     <a href="/" class="back">← Back</a>
 
     <h1>Admin</h1>
-    <div class="subtitle"><%= totalLogs %> TM log <%= totalLogs === 1 ? 'entry' : 'entries' %> across <%= users.length %> <%= users.length === 1 ? 'user' : 'users' %></div>
+    <div class="subtitle"><span id="visibleCount"><%= users.length %></span> of <%= users.length %> <%= users.length === 1 ? 'user' : 'users' %> &nbsp;·&nbsp; <%= totalLogs %> TM <%= totalLogs === 1 ? 'entry' : 'entries' %></div>
+
+    <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;">
+        <input type="text" id="userSearch" placeholder="Search users…" oninput="filterAdmin()"
+               style="flex:1;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;
+                      color:#fff;font-size:0.9rem;padding:0.55rem 0.75rem;outline:none;"/>
+        <select id="liftFilter" onchange="filterAdmin()"
+                style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;
+                       color:#fff;font-size:0.9rem;padding:0.55rem 0.75rem;outline:none;">
+            <option value="">All lifts</option>
+            <% [...new Set(users.flatMap(u => u.lifts.map(l => l.liftName)))].sort().forEach(lift => { %>
+                <option value="<%= lift %>"><%= lift %></option>
+            <% }) %>
+        </select>
+    </div>
 
     <% if (users.length === 0) { %>
         <div class="empty">No TM log entries.</div>
@@ -115,7 +129,41 @@
         <hr class="divider">
     </div>
     <% }) %>
-    <script>document.addEventListener('touchmove', function(e) { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });</script>
+    <script>
+        document.addEventListener('touchmove', function(e) { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+
+        function filterAdmin() {
+            const search = document.getElementById('userSearch').value.toLowerCase();
+            const lift = document.getElementById('liftFilter').value;
+            let visible = 0;
+
+            document.querySelectorAll('.user-block').forEach(block => {
+                const name = block.querySelector('.user-name').textContent.toLowerCase();
+                const id = block.querySelector('.user-id').textContent.toLowerCase();
+                if (search && !name.includes(search) && !id.includes(search)) {
+                    block.style.display = 'none';
+                    return;
+                }
+
+                let hasVisible = true;
+                if (lift) {
+                    hasVisible = false;
+                    block.querySelectorAll('.lift-block').forEach(lb => {
+                        const match = lb.querySelector('.lift-name').textContent === lift;
+                        lb.style.display = match ? '' : 'none';
+                        if (match) hasVisible = true;
+                    });
+                } else {
+                    block.querySelectorAll('.lift-block').forEach(lb => lb.style.display = '');
+                }
+
+                block.style.display = hasVisible ? '' : 'none';
+                if (hasVisible) visible++;
+            });
+
+            document.getElementById('visibleCount').textContent = visible;
+        }
+    </script>
 
 </body>
 </html>
