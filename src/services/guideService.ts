@@ -10,7 +10,7 @@ const UPLOADS_DIR = join(__dirname, "../../data/uploads");
 export async function generateGuideImage(liftName: string): Promise<string> {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
   const model = genAI.getGenerativeModel({
-    model: "gemini-2.0-flash-exp-image-generation",
+    model: "gemini-2.5-flash-image",
     generationConfig: {
       responseModalities: ["IMAGE", "TEXT"],
     } as any,
