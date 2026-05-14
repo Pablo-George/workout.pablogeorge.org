@@ -5,8 +5,8 @@ import { prisma } from "../app.js";
 const router = Router();
 
 function isAdmin(req: any) {
-  const adminId = process.env.ADMIN_USER_ID;
-  return adminId && req.user?.userId === adminId;
+  const adminEmail = process.env.ADMIN_EMAIL;
+  return adminEmail && req.user?.userId === adminEmail;
 }
 
 router.get("/admin", ensureAuth, async (req, res) => {
