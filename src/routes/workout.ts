@@ -100,6 +100,8 @@ router.post("/workout/:liftId/update-tm", ensureAuth, async (req, res) => {
   const liftId = parseInt(req.params.liftId);
   const trainingMax = parseFloat(req.body.trainingMax as string);
 
+  if (isNaN(trainingMax) || trainingMax < 45) return res.redirect("/#tab-profile");
+
   const lift = await prisma.coreWorkout.findUnique({ where: { id: liftId } });
   if (lift) {
     const config = await getConfig(user.userId, liftId);
