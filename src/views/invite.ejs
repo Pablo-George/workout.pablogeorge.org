@@ -10,14 +10,15 @@
     <meta property="og:url" content="<%= inviteUrl %>">
     <meta property="og:title" content="<%= inviterName %> wants to be your workout buddy! 🏋️">
     <meta property="og:description" content="Tap to add them as a friend and track your workouts together.">
-    <% if (inviterPicture) { %>
-    <meta property="og:image" content="<%= inviterPicture %>">
-    <% } %>
+    <meta property="og:image" content="<%= inviterPicture || (baseUrl + '/og/invite') %>">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
 
     <!-- Twitter/iMessage fallbacks -->
-    <meta name="twitter:card" content="summary">
+    <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="<%= inviterName %> wants to be your workout buddy! 🏋️">
     <meta name="twitter:description" content="Tap to add them as a friend and track your workouts together.">
+    <meta name="twitter:image" content="<%= inviterPicture || (baseUrl + '/og/invite') %>">
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
