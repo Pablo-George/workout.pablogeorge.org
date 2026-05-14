@@ -562,7 +562,7 @@
               hx-post="/profile/weight" hx-target="#weight-display-wrap" hx-swap="innerHTML"
               hx-on::after-request="this.reset()">
             <input type="number" name="weightLbs" step="0.1" min="50" max="999"
-                   placeholder="<%= currentWeight ? 'Update weight (lbs)' : 'Log your weight (lbs)' %>"
+                   placeholder="<%= currentWeight ? 'Overwrites today\'s entry (lbs)' : 'Log your weight (lbs)' %>"
                    required/>
             <button type="submit">Log</button>
         </form>
@@ -1189,6 +1189,7 @@
         <img id="lightboxImg" src="" alt=""
              style="max-width:95vw;max-height:95vh;object-fit:contain;border-radius:6px;"/>
     </div>
+    <script>document.addEventListener('touchmove', function(e) { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });</script>
 
 </body>
 </html>

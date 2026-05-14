@@ -8,7 +8,9 @@
             <% if (w.trainingMax) { %>
                 <span style="font-size:0.72rem;color:#888;"><%= w.trainingMax %> lbs</span>
             <% } %>
-            <form hx-post="/profile/lifts/delete" hx-target="#lift-card-<%= w.id %>" hx-swap="delete" style="margin:0;">
+            <form hx-post="/profile/lifts/delete" hx-target="#lift-card-<%= w.id %>" hx-swap="delete"
+                  hx-confirm="Remove <%= w.name %>? This will delete all logs for this lift."
+                  style="margin:0;">
                 <input type="hidden" name="id" value="<%= w.id %>"/>
                 <button type="submit" class="btn-remove">Remove</button>
             </form>

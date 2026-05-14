@@ -19,10 +19,37 @@ router.get("/workout/:liftId", ensureAuth, async (req, res) => {
 
   let auxLifts: Awaited<ReturnType<typeof getAuxLifts>> = [];
   if (config) {
-    try {
-      auxLifts = await getAuxLifts(lift, config.trainingMax);
-    } catch (err) {
-      console.error("Failed to load aux lifts:", err);
+    const saved = await prisma.auxLift.findMany({
+      where: { userId: user.userId, liftId },
+      orderBy: { displayOrder: "asc" },
+    });
+    if (saved.length > 0) {
+      auxLifts = saved.map((a) => ({
+        name: a.name,
+        description: a.description,
+        setsReps: a.setsReps,
+        weightRecommendation: a.weightRecommendation,
+        youtubeSearchUrl: a.youtubeSearchUrl,
+        displayOrder: a.displayOrder,
+      }));
+    } else {
+      try {
+        auxLifts = await getAuxLifts(lift, config.trainingMax);
+        await prisma.auxLift.createMany({
+          data: auxLifts.map((a) => ({
+            userId: user.userId,
+            liftId,
+            name: a.name,
+            description: a.description,
+            setsReps: a.setsReps,
+            weightRecommendation: a.weightRecommendation,
+            youtubeSearchUrl: a.youtubeSearchUrl,
+            displayOrder: a.displayOrder,
+          })),
+        });
+      } catch (err) {
+        console.error("Failed to load aux lifts:", err);
+      }
     }
   }
 
@@ -44,6 +71,7 @@ router.post("/workout/:liftId/setup", ensureAuth, async (req, res) => {
   if (!lift) return res.redirect("/");
 
   await createConfig(user.userId, lift, trainingMax);
+  await prisma.auxLift.deleteMany({ where: { userId: user.userId, liftId } });
   res.redirect(`/workout/${liftId}`);
 });
 
@@ -80,6 +108,7 @@ router.post("/workout/:liftId/update-tm", ensureAuth, async (req, res) => {
     } else {
       await createConfig(user.userId, lift, trainingMax);
     }
+    await prisma.auxLift.deleteMany({ where: { userId: user.userId, liftId } });
   }
 
   if (isHTMX(req)) {
@@ -96,6 +125,8 @@ router.post("/workout/:liftId/complete", ensureAuth, async (req, res) => {
 
   const config = await getConfig(user.userId, liftId);
   if (config) await completeWorkout(config, amrapReps);
+
+  await prisma.auxLift.deleteMany({ where: { userId: user.userId, liftId } });
 
   res.redirect("/");
 });

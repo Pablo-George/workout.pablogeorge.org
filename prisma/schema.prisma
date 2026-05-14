@@ -64,6 +64,8 @@ model BodyWeightLog {
   userId    String
   weightLbs Float
   loggedOn  String
+
+  @@unique([userId, loggedOn])
 }
 
 model Post {
@@ -75,16 +77,17 @@ model Post {
 }
 
 model AuxLift {
-  id               Int          @id @default(autoincrement())
-  userId           String
-  liftId           Int
-  name             String
-  description      String
-  setsReps         String
-  youtubeSearchUrl String
-  displayOrder     Int          @default(0)
-  lift             CoreWorkout  @relation(fields: [liftId], references: [id])
-  logs             AuxLiftLog[]
+  id                   Int          @id @default(autoincrement())
+  userId               String
+  liftId               Int
+  name                 String
+  description          String
+  setsReps             String
+  weightRecommendation String       @default("")
+  youtubeSearchUrl     String
+  displayOrder         Int          @default(0)
+  lift                 CoreWorkout  @relation(fields: [liftId], references: [id])
+  logs                 AuxLiftLog[]
 }
 
 model AuxLiftLog {

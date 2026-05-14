@@ -106,6 +106,13 @@ router.post("/profile/lifts", ensureAuth, async (req, res) => {
 
 router.post("/profile/lifts/delete", ensureAuth, async (req, res) => {
   const id = parseInt(req.body.id as string);
+  const auxLifts = await prisma.auxLift.findMany({ where: { liftId: id }, select: { id: true } });
+  const auxIds = auxLifts.map((a) => a.id);
+  if (auxIds.length) await prisma.auxLiftLog.deleteMany({ where: { auxLiftId: { in: auxIds } } });
+  await prisma.auxLift.deleteMany({ where: { liftId: id } });
+  await prisma.userLiftConfig.deleteMany({ where: { liftId: id } });
+  await prisma.workoutLog.deleteMany({ where: { liftId: id } });
+  await prisma.trainingMaxLog.deleteMany({ where: { liftId: id } });
   await prisma.coreWorkout.delete({ where: { id } });
   if (isHTMX(req)) return res.send("");
   res.redirect("/#tab-profile");
@@ -114,8 +121,11 @@ router.post("/profile/lifts/delete", ensureAuth, async (req, res) => {
 router.post("/profile/weight", ensureAuth, async (req, res) => {
   const user = req.user as any;
   const weightLbs = parseFloat(req.body.weightLbs as string);
-  await prisma.bodyWeightLog.create({
-    data: { userId: user.userId, weightLbs, loggedOn: new Date().toISOString().split("T")[0] },
+  const today = new Date().toISOString().split("T")[0];
+  await prisma.bodyWeightLog.upsert({
+    where: { userId_loggedOn: { userId: user.userId, loggedOn: today } },
+    update: { weightLbs },
+    create: { userId: user.userId, weightLbs, loggedOn: today },
   });
   if (isHTMX(req)) return res.send(`
     <div class="card" style="display:flex;align-items:baseline;gap:0.4rem;">
