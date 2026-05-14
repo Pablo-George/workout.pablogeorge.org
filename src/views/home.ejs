@@ -478,6 +478,20 @@
                 </div>
             <% } %>
         </div>
+
+        <div class="chart-card">
+            <div class="chart-title">Body Weight (90 days)</div>
+            <% if (weightChartData.length > 0) { %>
+                <div class="chart-wrap">
+                    <canvas id="weightChart"></canvas>
+                </div>
+            <% } else { %>
+                <div class="empty-chart">
+                    <svg viewBox="0 0 24 24"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>
+                    <p>Log your weight to track it over time</p>
+                </div>
+            <% } %>
+        </div>
     </section>
 
     <section class="tab-content" id="tab-workouts">
@@ -984,6 +998,69 @@
         }
 
         const calData = <%- JSON.stringify(calChartData) %>;
+        const weightData = <%- JSON.stringify(weightChartData) %>;
+
+        if (weightData.length > 0) {
+            const wCtx = document.getElementById('weightChart').getContext('2d');
+            new Chart(wCtx, {
+                type: 'line',
+                data: {
+                    labels: weightData.map(d => d.date),
+                    datasets: [{
+                        data: weightData.map(d => d.weight),
+                        borderColor: '#a78bfa',
+                        backgroundColor: '#a78bfa18',
+                        borderWidth: 2,
+                        pointRadius: weightData.length < 15 ? 4 : 2,
+                        pointBackgroundColor: '#a78bfa',
+                        tension: 0.3,
+                        fill: true,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1a1a1a',
+                            titleColor: '#888',
+                            bodyColor: '#fff',
+                            borderColor: '#2a2a2a',
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                title: items => {
+                                    const d = new Date(items[0].label + 'T12:00:00');
+                                    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                },
+                                label: item => ` ${item.parsed.y} lbs`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#1e1e1e' },
+                            ticks: {
+                                color: '#555',
+                                maxTicksLimit: 6,
+                                callback: (_, i) => {
+                                    const d = new Date(weightData[i].date + 'T12:00:00');
+                                    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                }
+                            },
+                            border: { color: '#2a2a2a' }
+                        },
+                        y: {
+                            grid: { color: '#1e1e1e' },
+                            ticks: { color: '#555' },
+                            border: { color: '#2a2a2a' },
+                            title: { display: true, text: 'lbs', color: '#444', font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+        }
 
         if (calData.length > 0) {
             const calCtx = document.getElementById('calChart').getContext('2d');

@@ -69,6 +69,14 @@ router.get("/", ensureAuth, async (req, res) => {
   }
   const calChartData = Object.entries(calByDay).map(([date, total]) => ({ date, total }));
 
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 89);
+  const weightHistory = await prisma.bodyWeightLog.findMany({
+    where: { userId, loggedOn: { gte: ninetyDaysAgo.toISOString().split("T")[0] } },
+    orderBy: { loggedOn: "asc" },
+  });
+  const weightChartData = weightHistory.map((w) => ({ date: w.loggedOn, weight: w.weightLbs }));
+
   res.render("home", {
     user,
     coreWorkouts: liftsWithConfig,
@@ -84,6 +92,7 @@ router.get("/", ensureAuth, async (req, res) => {
     calEntries,
     calTotal,
     calChartData,
+    weightChartData,
   });
 });
 
