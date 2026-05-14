@@ -847,9 +847,27 @@
         </div>
         <% } %>
 
-        <div class="card" style="display:flex;align-items:baseline;gap:0.5rem;">
-            <span style="font-size:2.5rem;font-weight:800;letter-spacing:-1px;"><%= calTotal %></span>
-            <span style="font-size:0.9rem;color:#555;">kcal today</span>
+        <div class="card">
+            <div style="display:flex;align-items:baseline;gap:0.5rem;margin-bottom:<%= (proteinTotal > 0 || carbsTotal > 0) ? '0.6rem' : '0' %>;">
+                <span style="font-size:2.5rem;font-weight:800;letter-spacing:-1px;"><%= calTotal %></span>
+                <span style="font-size:0.9rem;color:#555;">kcal today</span>
+            </div>
+            <% if (proteinTotal > 0 || carbsTotal > 0) { %>
+            <div style="display:flex;gap:1rem;">
+                <% if (proteinTotal > 0) { %>
+                <div style="display:flex;align-items:baseline;gap:0.3rem;">
+                    <span style="font-size:1.1rem;font-weight:700;color:#4f9eff;"><%= proteinTotal %></span>
+                    <span style="font-size:0.75rem;color:#555;">g protein</span>
+                </div>
+                <% } %>
+                <% if (carbsTotal > 0) { %>
+                <div style="display:flex;align-items:baseline;gap:0.3rem;">
+                    <span style="font-size:1.1rem;font-weight:700;color:#f59e0b;"><%= carbsTotal %></span>
+                    <span style="font-size:0.75rem;color:#555;">g carbs</span>
+                </div>
+                <% } %>
+            </div>
+            <% } %>
         </div>
 
         <div class="post-composer">
@@ -920,6 +938,8 @@
                         <%= entry.createdAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) %>
                         &nbsp;·&nbsp;
                         <span style="color:#4ade80;font-weight:700;"><%= entry.calories %></span> kcal
+                        <% if (entry.proteinG) { %>&nbsp;·&nbsp;<span style="color:#4f9eff;font-weight:700;"><%= entry.proteinG %>g</span> protein<% } %>
+                        <% if (entry.carbsG) { %>&nbsp;·&nbsp;<span style="color:#f59e0b;font-weight:700;"><%= entry.carbsG %>g</span> carbs<% } %>
                     </div>
                 </div>
                 <form action="/cals/delete/<%= entry.id %>" method="post" style="margin:0;flex-shrink:0;">

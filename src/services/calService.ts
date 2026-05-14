@@ -25,6 +25,8 @@ async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 3): Promise<T> {
 const CalEstimateSchema = z.object({
   description: z.string(),
   calories: z.number().int(),
+  proteinG: z.number().int(),
+  carbsG: z.number().int(),
   breakdown: z.array(
     z.object({
       item: z.string(),
@@ -32,6 +34,13 @@ const CalEstimateSchema = z.object({
     })
   ),
 });
+
+const NUTRITION_INSTRUCTIONS = `Return:
+- description: brief label for this meal (e.g. "Chicken breast with rice and broccoli")
+- calories: total estimated calories as a single integer
+- proteinG: total estimated protein in grams as a single integer
+- carbsG: total estimated carbohydrates in grams as a single integer
+- breakdown: each distinct food item with its individual calorie estimate`;
 
 export async function estimateCalories(buffer: Buffer, mimeType: string, context?: string) {
   const contextNote = context ? `\n\nAdditional context from the user: ${context}` : "";
@@ -45,12 +54,7 @@ export async function estimateCalories(buffer: Buffer, mimeType: string, context
         },
       },
       {
-        text: `You are a nutrition expert. Analyze this food image and estimate the total calories.${contextNote}
-
-Return:
-- description: brief label for what you see (e.g. "Chicken breast with rice and broccoli")
-- calories: total estimated calories as a single integer
-- breakdown: each distinct food item with its individual calorie estimate`,
+        text: `You are a nutrition expert. Analyze this food image and estimate the macros.${contextNote}\n\n${NUTRITION_INSTRUCTIONS}`,
       },
     ],
     output: { schema: CalEstimateSchema },
@@ -63,14 +67,7 @@ Return:
 export async function estimateCaloriesFromText(description: string) {
   const { output } = await withRetry(() => ai.generate({
     model: "googleai/gemini-2.5-flash",
-    prompt: `You are a nutrition expert. Estimate the total calories for the following meal description.
-
-Meal: ${description}
-
-Return:
-- description: a clean, brief label for this meal
-- calories: total estimated calories as a single integer
-- breakdown: each distinct food item with its individual calorie estimate`,
+    prompt: `You are a nutrition expert. Estimate the macros for the following meal.\n\nMeal: ${description}\n\n${NUTRITION_INSTRUCTIONS}`,
     output: { schema: CalEstimateSchema },
   }));
 

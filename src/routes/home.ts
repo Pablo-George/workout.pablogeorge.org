@@ -56,6 +56,8 @@ router.get("/", ensureAuth, async (req, res) => {
     orderBy: { createdAt: "asc" },
   });
   const calTotal = calEntries.reduce((sum, e) => sum + e.calories, 0);
+  const proteinTotal = calEntries.reduce((sum, e) => sum + (e.proteinG ?? 0), 0);
+  const carbsTotal = calEntries.reduce((sum, e) => sum + (e.carbsG ?? 0), 0);
 
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
@@ -91,6 +93,8 @@ router.get("/", ensureAuth, async (req, res) => {
     inviteLink,
     calEntries,
     calTotal,
+    proteinTotal,
+    carbsTotal,
     calChartData,
     weightChartData,
     calsError: req.query.cals_error === "1",

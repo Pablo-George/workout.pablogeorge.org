@@ -104,6 +104,8 @@ model CalorieEntry {
   userId      String
   description String
   calories    Int
+  proteinG    Int?
+  carbsG      Int?
   imageUrl    String?
   loggedOn    String
   createdAt   DateTime @default(now())

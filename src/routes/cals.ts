@@ -29,6 +29,9 @@ router.post("/cals/log", ensureAuth, upload.single("image"), async (req, res) =>
       imageUrl = await uploadImage(file);
     }
 
+    let proteinG: number | null = null;
+    let carbsG: number | null = null;
+
     if (hasManualCals) {
       description = context ?? "Food entry";
       calories = manualCals;
@@ -36,10 +39,14 @@ router.post("/cals/log", ensureAuth, upload.single("image"), async (req, res) =>
       const estimate = await estimateCalories(file.buffer, file.mimetype, context);
       description = estimate.description;
       calories = estimate.calories;
+      proteinG = estimate.proteinG;
+      carbsG = estimate.carbsG;
     } else {
       const estimate = await estimateCaloriesFromText(context!);
       description = estimate.description;
       calories = estimate.calories;
+      proteinG = estimate.proteinG;
+      carbsG = estimate.carbsG;
     }
 
     await prisma.calorieEntry.create({
@@ -47,6 +54,8 @@ router.post("/cals/log", ensureAuth, upload.single("image"), async (req, res) =>
         userId: user.userId,
         description,
         calories,
+        proteinG,
+        carbsG,
         imageUrl: imageUrl ?? null,
         loggedOn: new Date().toISOString().split("T")[0],
       },
