@@ -5,6 +5,23 @@ const ai = genkit({
   plugins: [googleAI({ apiKey: process.env.GEMINI_API_KEY })],
 });
 
+async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 3): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      lastErr = err;
+      const status = err?.status ?? err?.cause?.status;
+      if (status !== 503 && status !== 429) throw err;
+      if (attempt < maxAttempts - 1) {
+        await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt)));
+      }
+    }
+  }
+  throw lastErr;
+}
+
 const CalEstimateSchema = z.object({
   description: z.string(),
   calories: z.number().int(),
@@ -16,8 +33,9 @@ const CalEstimateSchema = z.object({
   ),
 });
 
-export async function estimateCalories(buffer: Buffer, mimeType: string) {
-  const { output } = await ai.generate({
+export async function estimateCalories(buffer: Buffer, mimeType: string, context?: string) {
+  const contextNote = context ? `\n\nAdditional context from the user: ${context}` : "";
+  const { output } = await withRetry(() => ai.generate({
     model: "googleai/gemini-2.5-flash",
     prompt: [
       {
@@ -27,7 +45,7 @@ export async function estimateCalories(buffer: Buffer, mimeType: string) {
         },
       },
       {
-        text: `You are a nutrition expert. Analyze this food image and estimate the total calories.
+        text: `You are a nutrition expert. Analyze this food image and estimate the total calories.${contextNote}
 
 Return:
 - description: brief label for what you see (e.g. "Chicken breast with rice and broccoli")
@@ -36,7 +54,25 @@ Return:
       },
     ],
     output: { schema: CalEstimateSchema },
-  });
+  }));
+
+  if (!output) throw new Error("No output from Gemini");
+  return output;
+}
+
+export async function estimateCaloriesFromText(description: string) {
+  const { output } = await withRetry(() => ai.generate({
+    model: "googleai/gemini-2.5-flash",
+    prompt: `You are a nutrition expert. Estimate the total calories for the following meal description.
+
+Meal: ${description}
+
+Return:
+- description: a clean, brief label for this meal
+- calories: total estimated calories as a single integer
+- breakdown: each distinct food item with its individual calorie estimate`,
+    output: { schema: CalEstimateSchema },
+  }));
 
   if (!output) throw new Error("No output from Gemini");
   return output;

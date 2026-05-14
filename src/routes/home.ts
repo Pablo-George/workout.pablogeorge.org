@@ -53,7 +53,7 @@ router.get("/", ensureAuth, async (req, res) => {
   const today = new Date().toISOString().split("T")[0];
   const calEntries = await prisma.calorieEntry.findMany({
     where: { userId, loggedOn: today },
-    orderBy: { createdAt: "desc" },
+    orderBy: { createdAt: "asc" },
   });
   const calTotal = calEntries.reduce((sum, e) => sum + e.calories, 0);
 
@@ -93,6 +93,7 @@ router.get("/", ensureAuth, async (req, res) => {
     calTotal,
     calChartData,
     weightChartData,
+    calsError: req.query.cals_error === "1",
   });
 });
 

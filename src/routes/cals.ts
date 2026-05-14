@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { ensureAuth } from "../middleware/auth.js";
 import { prisma } from "../app.js";
-import { estimateCalories } from "../services/calService.js";
+import { estimateCalories, estimateCaloriesFromText } from "../services/calService.js";
 import { uploadImage } from "../services/imageStorageService.js";
 import multer from "multer";
 
@@ -14,43 +14,46 @@ const upload = multer({
 router.post("/cals/log", ensureAuth, upload.single("image"), async (req, res) => {
   const user = req.user as any;
   const file = req.file;
+  const context = (req.body.context as string)?.trim() || undefined;
+  const manualCals = parseInt(req.body.calories as string);
+  const hasManualCals = !isNaN(manualCals) && manualCals > 0;
 
-  if (!file) return res.redirect("/#tab-cals");
+  if (!file && !context) return res.redirect("/#tab-cals");
 
   try {
-    const estimate = await estimateCalories(file.buffer, file.mimetype);
-    const imageUrl = await uploadImage(file);
+    let description: string;
+    let calories: number;
+    let imageUrl: string | undefined;
 
-    await prisma.calorieEntry.create({
-      data: {
-        userId: user.userId,
-        description: estimate.description,
-        calories: estimate.calories,
-        imageUrl,
-        loggedOn: new Date().toISOString().split("T")[0],
-      },
-    });
-  } catch (err) {
-    console.error("Failed to estimate calories:", err);
-  }
+    if (file) {
+      imageUrl = await uploadImage(file);
+    }
 
-  res.redirect("/#tab-cals");
-});
+    if (hasManualCals) {
+      description = context ?? "Food entry";
+      calories = manualCals;
+    } else if (file) {
+      const estimate = await estimateCalories(file.buffer, file.mimetype, context);
+      description = estimate.description;
+      calories = estimate.calories;
+    } else {
+      const estimate = await estimateCaloriesFromText(context!);
+      description = estimate.description;
+      calories = estimate.calories;
+    }
 
-router.post("/cals/manual", ensureAuth, async (req, res) => {
-  const user = req.user as any;
-  const description = (req.body.description as string)?.trim();
-  const calories = parseInt(req.body.calories as string);
-
-  if (description && calories > 0) {
     await prisma.calorieEntry.create({
       data: {
         userId: user.userId,
         description,
         calories,
+        imageUrl: imageUrl ?? null,
         loggedOn: new Date().toISOString().split("T")[0],
       },
     });
+  } catch (err) {
+    console.error("Failed to log calories:", err);
+    return res.redirect("/?cals_error=1#tab-cals");
   }
 
   res.redirect("/#tab-cals");
