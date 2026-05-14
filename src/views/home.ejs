@@ -206,15 +206,6 @@
             cursor: pointer;
         }
 
-        @keyframes liftSaved {
-            0%   { box-shadow: 0 0 0 2px rgba(74,222,128,1); }
-            60%  { box-shadow: 0 0 0 2px rgba(74,222,128,0.6); }
-            100% { box-shadow: 0 0 0 2px rgba(74,222,128,0); }
-        }
-
-        .lift-saved {
-            animation: liftSaved 2.5s ease-out forwards;
-        }
 
         #tab-social.active {
             overflow-y: hidden;
@@ -1292,12 +1283,13 @@
             const id = e.detail.target && e.detail.target.id;
             if (id && id.startsWith('lift-card-')) {
                 const newEl = document.getElementById(id);
-                if (newEl) {
-                    newEl.classList.remove('lift-saved');
-                    void newEl.offsetWidth; // force reflow so animation restarts
-                    newEl.classList.add('lift-saved');
-                    setTimeout(() => newEl.classList.remove('lift-saved'), 2500);
-                }
+                if (!newEl) return;
+                const badge = document.createElement('span');
+                badge.textContent = 'Updated';
+                badge.style.cssText = 'color:#4ade80;font-size:0.75rem;font-weight:600;margin-left:0.5rem;';
+                const nameEl = newEl.querySelector('span');
+                nameEl.after(badge);
+                setTimeout(() => badge.remove(), 1500);
             }
         });
 
