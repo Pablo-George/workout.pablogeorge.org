@@ -175,6 +175,7 @@ async function getFeed(userId: string) {
         where: { userId: post.authorId },
       });
       return {
+        authorId: post.authorId,
         authorName: profile?.displayName ?? post.authorId,
         authorPicture: profile?.pictureUrl ?? null,
         content: post.content,

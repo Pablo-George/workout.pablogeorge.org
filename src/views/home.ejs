@@ -617,10 +617,16 @@
 
                 <% feedPosts.forEach(post => { %>
                     <div class="post-card">
+                        <% if (post.authorId !== user.userId) { %>
+                            <a href="/user/<%= post.authorId %>" style="display:block;flex-shrink:0;">
+                        <% } %>
                         <% if (post.authorPicture) { %>
-                            <img src="<%= post.authorPicture %>" class="post-avatar" alt=""/>
+                            <img src="<%= post.authorPicture %>" class="post-avatar" alt="" style="<%= post.authorId !== user.userId ? 'cursor:pointer;' : '' %>"/>
                         <% } else { %>
-                            <div class="post-avatar-placeholder"><%= post.authorName.charAt(0).toUpperCase() %></div>
+                            <div class="post-avatar-placeholder" style="<%= post.authorId !== user.userId ? 'cursor:pointer;' : '' %>"><%= post.authorName.charAt(0).toUpperCase() %></div>
+                        <% } %>
+                        <% if (post.authorId !== user.userId) { %>
+                            </a>
                         <% } %>
                         <div class="post-body">
                             <div class="post-meta">
@@ -725,7 +731,8 @@
             <div>
                 <div class="section-heading">Friends (<%= friends.length %>)</div>
                 <% friends.forEach(f => { %>
-                <div class="request-card">
+                <div class="request-card" style="cursor:pointer;"
+                     onclick="location.href='/user/<%= f.userId %>'">
                     <% if (f.pictureUrl) { %>
                         <img src="<%= f.pictureUrl %>" class="post-avatar" alt=""/>
                     <% } else { %>
@@ -734,15 +741,11 @@
                     <div class="request-info">
                         <div class="request-name"><%= f.name %></div>
                     </div>
-                    <div style="display:flex;gap:0.4rem;flex-shrink:0;">
-                        <a href="/user/<%= f.userId %>"
-                           style="background:#1e2a3a;border:1px solid #2a3a4a;border-radius:8px;
-                                  color:#4f9eff;font-size:0.8rem;font-weight:600;padding:0.4rem 0.65rem;
-                                  text-decoration:none;white-space:nowrap;">View</a>
-                        <form action="/social/friends/remove/<%= f.friendshipId %>" method="post" style="margin:0;">
-                            <button type="submit" class="btn-decline">Remove</button>
-                        </form>
-                    </div>
+                    <form action="/social/friends/remove/<%= f.friendshipId %>" method="post" style="margin:0;"
+                          onclick="event.stopPropagation()">
+                        <button type="submit" class="btn-decline"
+                                onclick="return confirm('Remove <%= f.name %> as a friend?')">Remove</button>
+                    </form>
                 </div>
                 <% }) %>
             </div>
