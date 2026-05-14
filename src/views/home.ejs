@@ -911,11 +911,12 @@
             document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
             document.getElementById('tab-' + name).classList.add('active');
             btn.classList.add('active');
+            history.replaceState(null, '', '#tab-' + name);
         }
 
         const hash = window.location.hash;
         const hashTab = hash.replace('#tab-', '');
-        if (['profile', 'social', 'workouts', 'cals'].includes(hashTab)) {
+        if (['home', 'profile', 'social', 'workouts', 'cals'].includes(hashTab)) {
             const btn = document.querySelector(`nav button[aria-label="${hashTab.charAt(0).toUpperCase() + hashTab.slice(1)}"]`);
             if (btn) switchTab(hashTab, btn);
         } else if (hash === '#social-friends') {
