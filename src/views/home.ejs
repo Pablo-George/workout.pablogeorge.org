@@ -1269,8 +1269,13 @@
             const hasCals = !isNaN(calsVal) && calsVal > 0;
             const hasContent = hasText || hasImage;
             const btn = document.getElementById('calsSubmitBtn');
-            btn.disabled = !hasContent;
-            btn.textContent = (hasContent && hasCals) ? 'Log' : 'Estimate';
+            if (hasCals) {
+                btn.disabled = false;
+                btn.textContent = 'Log';
+            } else {
+                btn.disabled = !hasContent;
+                btn.textContent = 'Estimate';
+            }
         }
 
         function openLightbox(src) {
