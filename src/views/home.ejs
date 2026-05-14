@@ -207,12 +207,13 @@
         }
 
         @keyframes liftSaved {
-            0%   { box-shadow: 0 0 0 2px rgba(74,222,128,0.8); }
+            0%   { box-shadow: 0 0 0 2px rgba(74,222,128,0.9); }
+            60%  { box-shadow: 0 0 0 2px rgba(74,222,128,0.5); }
             100% { box-shadow: 0 0 0 2px rgba(74,222,128,0); }
         }
 
-        .lift-card.htmx-settling {
-            animation: liftSaved 0.7s ease-out forwards;
+        .lift-card.htmx-added {
+            animation: liftSaved 1.4s ease-out forwards;
         }
 
         #tab-social.active {
