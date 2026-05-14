@@ -207,13 +207,13 @@
         }
 
         @keyframes liftSaved {
-            0%   { box-shadow: 0 0 0 2px rgba(74,222,128,0.9); }
-            60%  { box-shadow: 0 0 0 2px rgba(74,222,128,0.5); }
+            0%   { box-shadow: 0 0 0 2px rgba(74,222,128,1); }
+            60%  { box-shadow: 0 0 0 2px rgba(74,222,128,0.6); }
             100% { box-shadow: 0 0 0 2px rgba(74,222,128,0); }
         }
 
-        .lift-card.htmx-added {
-            animation: liftSaved 1.4s ease-out forwards;
+        .lift-saved {
+            animation: liftSaved 2.5s ease-out forwards;
         }
 
         #tab-social.active {
@@ -1287,6 +1287,19 @@
                 btn.textContent = 'Estimate';
             }
         }
+
+        document.body.addEventListener('htmx:afterSwap', function(e) {
+            const id = e.detail.target && e.detail.target.id;
+            if (id && id.startsWith('lift-card-')) {
+                const newEl = document.getElementById(id);
+                if (newEl) {
+                    newEl.classList.remove('lift-saved');
+                    void newEl.offsetWidth; // force reflow so animation restarts
+                    newEl.classList.add('lift-saved');
+                    setTimeout(() => newEl.classList.remove('lift-saved'), 2500);
+                }
+            }
+        });
 
         function openLightbox(src) {
             const lb = document.getElementById('lightbox');
