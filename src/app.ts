@@ -4,7 +4,7 @@ import passport from "passport";
 import { PrismaClient } from "@prisma/client";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import { mkdirSync } from "fs";
+import { mkdirSync, readFileSync } from "fs";
 import ConnectSqlite3 from "connect-sqlite3";
 import "./config/passport.js";
 import authRoutes from "./routes/auth.js";
@@ -17,6 +17,8 @@ import adminRoutes from "./routes/admin.js";
 export const prisma = new PrismaClient();
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(readFileSync(join(__dirname, "../package.json"), "utf8"));
+
 const SQLiteStore = ConnectSqlite3(session);
 
 mkdirSync("./data/uploads", { recursive: true });
@@ -25,6 +27,7 @@ const app = express();
 
 app.set("view engine", "ejs");
 app.set("views", join(__dirname, "views"));
+app.locals.appVersion = pkg.version;
 
 app.use("/uploads", express.static(join("./data/uploads")));
 app.use(express.urlencoded({ extended: true }));
