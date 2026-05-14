@@ -36,12 +36,26 @@ router.post("/social/post", ensureAuth, upload.single("image"), async (req, res)
   res.redirect("/#tab-social");
 });
 
-router.get("/invite/:token", ensureAuth, async (req, res) => {
+router.get("/invite/:token", async (req, res) => {
+  const token = req.params.token;
+  const inviter = await prisma.userProfile.findUnique({ where: { inviteToken: token } });
+  if (!inviter) return res.redirect("/");
+
+  const inviteUrl = `${req.protocol}://${req.get("host")}/invite/${token}`;
+  res.render("invite", {
+    token,
+    inviterName: inviter.displayName ?? inviter.userId,
+    inviterPicture: inviter.pictureUrl ?? null,
+    inviteUrl,
+  });
+});
+
+router.get("/invite/:token/accept", ensureAuth, async (req, res) => {
   const user = req.user as any;
   const token = req.params.token;
 
   const inviter = await prisma.userProfile.findUnique({ where: { inviteToken: token } });
-  if (!inviter || inviter.userId === user.userId) return res.redirect("/#social-friends");
+  if (!inviter || inviter.userId === user.userId) return res.redirect("/#tab-social");
 
   const existing = await prisma.friendship.findFirst({
     where: {
@@ -60,7 +74,7 @@ router.get("/invite/:token", ensureAuth, async (req, res) => {
     await prisma.friendship.update({ where: { id: existing.id }, data: { status: "ACCEPTED" } });
   }
 
-  res.redirect("/#social-friends");
+  res.redirect("/#tab-social");
 });
 
 router.post("/social/friends/remove/:id", ensureAuth, async (req, res) => {
