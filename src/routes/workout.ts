@@ -5,6 +5,7 @@ import { ensureAuth } from "../middleware/auth.js";
 import { prisma } from "../app.js";
 import { buildPlan, createConfig, getConfig, updateTrainingMax, completeWorkout } from "../services/workoutService.js";
 import { getAuxLifts } from "../services/auxLiftService.js";
+import { generateGuideImage } from "../services/guideService.js";
 
 const router = Router();
 
@@ -131,6 +132,23 @@ router.post("/workout/:liftId/complete", ensureAuth, async (req, res) => {
   await prisma.auxLift.deleteMany({ where: { userId: user.userId, liftId } });
 
   res.redirect("/");
+});
+
+router.get("/workout/guide/:liftName", ensureAuth, async (req, res) => {
+  const liftName = req.params.liftName.trim();
+  const cacheKey = liftName.toLowerCase();
+
+  const existing = await prisma.exerciseGuide.findUnique({ where: { liftName: cacheKey } });
+  if (existing) return res.json({ imageUrl: existing.imageUrl });
+
+  try {
+    const imageUrl = await generateGuideImage(liftName);
+    await prisma.exerciseGuide.create({ data: { liftName: cacheKey, imageUrl } });
+    res.json({ imageUrl });
+  } catch (err) {
+    console.error("Guide generation failed:", err);
+    res.status(500).json({ error: "Failed to generate guide" });
+  }
 });
 
 export default router;

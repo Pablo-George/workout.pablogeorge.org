@@ -112,6 +112,13 @@ model CalorieEntry {
   createdAt   DateTime @default(now())
 }
 
+model ExerciseGuide {
+  id        Int      @id @default(autoincrement())
+  liftName  String   @unique
+  imageUrl  String
+  createdAt DateTime @default(now())
+}
+
 model Friendship {
   id            Int              @id @default(autoincrement())
   requesterId   String
