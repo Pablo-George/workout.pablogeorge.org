@@ -17,10 +17,26 @@ export async function generateGuideImage(liftName: string): Promise<string> {
   });
 
   const result = await model.generateContent(
-    `Create a clear exercise form guide infographic for the gym exercise: ${liftName}.
-Show 3-4 numbered steps illustrating the full movement (start, mid, end positions).
-Include brief coaching cues as short labels (e.g. "brace core", "chest up", "controlled descent").
-Style: dark background, clean modern fitness aesthetic, white text, blue accents. Portrait layout.`
+    `Create a detailed, high-quality exercise form guide infographic for: ${liftName}.
+
+Layout (portrait, dark background #0f0f0f):
+
+1. TITLE at the top: "${liftName}" in large bold white text.
+
+2. STEP-BY-STEP FORM section: 4-5 clearly numbered illustrations showing the full movement arc —
+   starting position, descent/approach, key midpoint, lockout/finish, and return.
+   Each step has a short bold label and 1-2 bullet cues (e.g. "feet shoulder-width", "knees track toes").
+
+3. KEY COACHING CUES section: 5-6 concise technique reminders in a bulleted list
+   (e.g. "Keep chest tall", "Drive through heels", "Bar over mid-foot", "Neutral spine throughout").
+
+4. COMMON MISTAKES section: 3-4 red-highlighted mistakes to avoid
+   (e.g. "❌ Rounding lower back", "❌ Knees caving in", "❌ Rising hips before chest").
+
+5. MUSCLES WORKED at the bottom: small labeled diagram or list showing primary and secondary muscles.
+
+Style: dark background, white primary text, blue (#4f9eff) accents for section headers,
+red (#ef4444) for mistakes. Clean modern fitness app aesthetic. Dense but readable — pack in real detail.`
   );
 
   const parts = (result.response.candidates?.[0]?.content?.parts ?? []) as any[];
