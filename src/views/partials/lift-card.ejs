@@ -1,4 +1,4 @@
-<div id="lift-card-<%= w.id %>" style="background:#1a1a1a;border-radius:12px;padding:1rem;display:flex;flex-direction:column;gap:0.75rem;margin-bottom:0.5rem;">
+<div id="lift-card-<%= w.id %>" class="lift-card" style="background:#1a1a1a;border-radius:12px;padding:1rem;display:flex;flex-direction:column;gap:0.75rem;margin-bottom:0.5rem;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
         <span style="font-size:0.95rem;font-weight:600;"><%= w.name %></span>
         <div style="display:flex;align-items:center;gap:0.4rem;flex-shrink:0;">
@@ -18,7 +18,7 @@
     </div>
 
     <form hx-post="/workout/<%= w.id %>/update-tm"
-          hx-target="#lift-card-<%= w.id %>" hx-swap="outerHTML"
+          hx-target="#lift-card-<%= w.id %>" hx-swap="outerHTML settle:700ms"
           hx-trigger="change from:input[name='trainingMax']">
         <input type="number" name="trainingMax"
                value="<%= w.trainingMax || '' %>"
@@ -30,7 +30,7 @@
 
     <% if (w.trainingMax !== null) { %>
     <form hx-post="/workout/<%= w.id %>/set-week"
-          hx-target="#lift-card-<%= w.id %>" hx-swap="outerHTML"
+          hx-target="#lift-card-<%= w.id %>" hx-swap="outerHTML settle:700ms"
           hx-trigger="change from:select[name='week']">
         <select name="week"
                 style="width:100%;background:#111;border:1px solid #2a2a2a;border-radius:8px;

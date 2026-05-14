@@ -206,6 +206,15 @@
             cursor: pointer;
         }
 
+        @keyframes liftSaved {
+            0%   { box-shadow: 0 0 0 2px rgba(74,222,128,0.8); }
+            100% { box-shadow: 0 0 0 2px rgba(74,222,128,0); }
+        }
+
+        .lift-card.htmx-settling {
+            animation: liftSaved 0.7s ease-out forwards;
+        }
+
         #tab-social.active {
             overflow-y: hidden;
             padding-bottom: 0;
