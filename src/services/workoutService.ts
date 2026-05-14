@@ -93,20 +93,9 @@ export async function getConfig(userId: string, liftId: number) {
 }
 
 export async function createConfig(userId: string, lift: { id: number; name: string }, trainingMax: number) {
-  const config = await prisma.userLiftConfig.create({
+  return prisma.userLiftConfig.create({
     data: { userId, liftId: lift.id, trainingMax, currentWeek: 1 },
   });
-
-  await prisma.trainingMaxLog.create({
-    data: {
-      userId,
-      liftId: lift.id,
-      trainingMax,
-      loggedOn: new Date().toISOString().split("T")[0],
-    },
-  });
-
-  return config;
 }
 
 export async function updateTrainingMax(
@@ -117,18 +106,6 @@ export async function updateTrainingMax(
     where: { id: config.id },
     data: { trainingMax: newMax },
   });
-
-  const lift = await prisma.coreWorkout.findUnique({ where: { id: config.liftId } });
-  if (lift) {
-    await prisma.trainingMaxLog.create({
-      data: {
-        userId: config.userId,
-        liftId: config.liftId,
-        trainingMax: newMax,
-        loggedOn: new Date().toISOString().split("T")[0],
-      },
-    });
-  }
 }
 
 export async function getWeekLabels(userId: string) {
