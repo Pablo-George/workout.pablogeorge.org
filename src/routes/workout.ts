@@ -1,6 +1,6 @@
 import { Router, type Request } from "express";
 
-const isXHR = (req: Request) => req.headers["x-requested-with"] === "XMLHttpRequest";
+const isHTMX = (req: Request) => req.headers["hx-request"] === "true";
 import { ensureAuth } from "../middleware/auth.js";
 import { prisma } from "../app.js";
 import { buildPlan, createConfig, getConfig, updateTrainingMax, completeWorkout } from "../services/workoutService.js";
@@ -59,7 +59,11 @@ router.post("/workout/:liftId/set-week", ensureAuth, async (req, res) => {
     }
   }
 
-  if (isXHR(req)) return res.json({ week, liftId });
+  if (isHTMX(req)) {
+    const lift = await prisma.coreWorkout.findUnique({ where: { id: liftId } });
+    const config = await getConfig(user.userId, liftId);
+    return res.render("partials/lift-card", { w: { id: liftId, name: lift?.name ?? "", trainingMax: config?.trainingMax ?? null, currentWeek: week } });
+  }
   res.redirect("/#tab-profile");
 });
 
@@ -78,7 +82,10 @@ router.post("/workout/:liftId/update-tm", ensureAuth, async (req, res) => {
     }
   }
 
-  if (isXHR(req)) return res.json({ trainingMax, liftId });
+  if (isHTMX(req)) {
+    const config = await getConfig(user.userId, liftId);
+    return res.render("partials/lift-card", { w: { id: liftId, name: lift?.name ?? "", trainingMax, currentWeek: config?.currentWeek ?? 1 } });
+  }
   res.redirect("/#tab-profile");
 });
 

@@ -1,0 +1,52 @@
+<div id="lift-card-<%= w.id %>" style="background:#1a1a1a;border-radius:12px;padding:1rem;display:flex;flex-direction:column;gap:0.75rem;margin-bottom:0.5rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
+        <span style="font-size:0.95rem;font-weight:600;"><%= w.name %></span>
+        <div style="display:flex;align-items:center;gap:0.4rem;flex-shrink:0;">
+            <% if (w.currentWeek) { %>
+                <span style="font-size:0.72rem;color:#888;">Wk <%= w.currentWeek %></span>
+            <% } %>
+            <% if (w.trainingMax) { %>
+                <span style="font-size:0.72rem;color:#888;"><%= w.trainingMax %> lbs</span>
+            <% } %>
+            <form hx-post="/profile/lifts/delete" hx-target="#lift-card-<%= w.id %>" hx-swap="delete" style="margin:0;">
+                <input type="hidden" name="id" value="<%= w.id %>"/>
+                <button type="submit" class="btn-remove">Remove</button>
+            </form>
+        </div>
+    </div>
+
+    <form hx-post="/workout/<%= w.id %>/update-tm"
+          hx-target="#lift-card-<%= w.id %>" hx-swap="outerHTML"
+          style="display:flex;gap:0.4rem;">
+        <input type="number" name="trainingMax"
+               placeholder="<%= w.trainingMax ? w.trainingMax + ' lbs (current)' : 'Set training max (lbs)' %>"
+               min="45" step="2.5" required
+               style="flex:1;background:#111;border:1px solid #2a2a2a;border-radius:8px;
+                      color:#fff;font-size:0.85rem;padding:0.5rem 0.75rem;outline:none;"/>
+        <button type="submit"
+                style="background:#1e2a3a;border:1px solid #2a3a4a;border-radius:8px;
+                       color:#4f9eff;font-size:0.8rem;font-weight:600;padding:0.5rem 0.75rem;cursor:pointer;white-space:nowrap;">
+            <%= w.trainingMax ? 'Update TM' : 'Set TM' %>
+        </button>
+    </form>
+
+    <% if (w.trainingMax !== null) { %>
+    <form hx-post="/workout/<%= w.id %>/set-week"
+          hx-target="#lift-card-<%= w.id %>" hx-swap="outerHTML"
+          style="display:flex;gap:0.4rem;">
+        <select name="week"
+                style="flex:1;background:#111;border:1px solid #2a2a2a;border-radius:8px;
+                       color:#fff;font-size:0.85rem;padding:0.5rem 0.75rem;outline:none;appearance:none;">
+            <option value="1" <%= w.currentWeek === 1 ? 'selected' : '' %>>Week 1 — 5s</option>
+            <option value="2" <%= w.currentWeek === 2 ? 'selected' : '' %>>Week 2 — 3s</option>
+            <option value="3" <%= w.currentWeek === 3 ? 'selected' : '' %>>Week 3 — 5/3/1</option>
+            <option value="4" <%= w.currentWeek === 4 ? 'selected' : '' %>>Week 4 — Deload</option>
+        </select>
+        <button type="submit"
+                style="background:#1e2a3a;border:1px solid #2a3a4a;border-radius:8px;
+                       color:#4f9eff;font-size:0.8rem;font-weight:600;padding:0.5rem 0.75rem;cursor:pointer;white-space:nowrap;">
+            Set Week
+        </button>
+    </form>
+    <% } %>
+</div>

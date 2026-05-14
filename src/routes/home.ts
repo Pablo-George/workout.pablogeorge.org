@@ -4,7 +4,7 @@ import { prisma } from "../app.js";
 import { buildChartDatasets, getWeekLabels, countLogs } from "../services/workoutService.js";
 import crypto from "node:crypto";
 
-const isXHR = (req: Request) => req.headers["x-requested-with"] === "XMLHttpRequest";
+const isHTMX = (req: Request) => req.headers["hx-request"] === "true";
 
 const router = Router();
 
@@ -91,14 +91,14 @@ router.post("/profile/lifts", ensureAuth, async (req, res) => {
   const user = req.user as any;
   const name = (req.body.name as string).trim();
   const lift = await prisma.coreWorkout.create({ data: { name, userId: user.userId } });
-  if (isXHR(req)) return res.json({ id: lift.id, name: lift.name });
+  if (isHTMX(req)) return res.render("partials/lift-card", { w: { id: lift.id, name: lift.name, trainingMax: null, currentWeek: null } });
   res.redirect("/#tab-profile");
 });
 
 router.post("/profile/lifts/delete", ensureAuth, async (req, res) => {
   const id = parseInt(req.body.id as string);
   await prisma.coreWorkout.delete({ where: { id } });
-  if (isXHR(req)) return res.json({ ok: true });
+  if (isHTMX(req)) return res.send("");
   res.redirect("/#tab-profile");
 });
 
@@ -108,7 +108,11 @@ router.post("/profile/weight", ensureAuth, async (req, res) => {
   await prisma.bodyWeightLog.create({
     data: { userId: user.userId, weightLbs, loggedOn: new Date().toISOString().split("T")[0] },
   });
-  if (isXHR(req)) return res.json({ weightLbs });
+  if (isHTMX(req)) return res.send(`
+    <div class="card" style="display:flex;align-items:baseline;gap:0.4rem;">
+      <span style="font-size:1.75rem;font-weight:800;letter-spacing:-1px;">${weightLbs}</span>
+      <span style="font-size:0.85rem;color:#555;">lbs &nbsp;·&nbsp; last logged</span>
+    </div>`);
   res.redirect("/#tab-profile");
 });
 
@@ -117,7 +121,7 @@ router.post("/profile/privacy", ensureAuth, async (req, res) => {
   const current = await prisma.userProfile.findUnique({ where: { userId: user.userId } });
   const hideWeight = !current?.hideWeight;
   await prisma.userProfile.update({ where: { userId: user.userId }, data: { hideWeight } });
-  if (isXHR(req)) return res.json({ hideWeight });
+  if (isHTMX(req)) return res.send(`<span id="privacy-status" style="font-size:0.75rem;font-weight:700;color:${hideWeight ? "#555" : "#4f9eff"};">${hideWeight ? "OFF" : "ON"}</span>`);
   res.redirect("/#tab-profile");
 });
 

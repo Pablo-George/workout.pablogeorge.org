@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Workout App</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.3/dist/htmx.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -533,19 +534,25 @@
 
         <div class="section-heading">Body weight</div>
 
-        <div id="weight-card" class="card" style="display:<%= currentWeight ? 'flex' : 'none' %>;align-items:baseline;gap:0.4rem;">
-            <span id="weight-value" style="font-size:1.75rem;font-weight:800;letter-spacing:-1px;"><%= currentWeight ?? '' %></span>
-            <span style="font-size:0.85rem;color:#555;">lbs &nbsp;·&nbsp; last logged</span>
+        <div id="weight-display-wrap">
+        <% if (currentWeight) { %>
+            <div class="card" style="display:flex;align-items:baseline;gap:0.4rem;">
+                <span style="font-size:1.75rem;font-weight:800;letter-spacing:-1px;"><%= currentWeight %></span>
+                <span style="font-size:0.85rem;color:#555;">lbs &nbsp;·&nbsp; last logged</span>
+            </div>
+        <% } %>
         </div>
 
-        <form class="add-form" action="/profile/weight" method="post" id="weight-form" data-ajax>
+        <form class="add-form"
+              hx-post="/profile/weight" hx-target="#weight-display-wrap" hx-swap="innerHTML"
+              hx-on::after-request="this.reset()">
             <input type="number" name="weightLbs" step="0.1" min="50" max="999"
                    placeholder="<%= currentWeight ? 'Update weight (lbs)' : 'Log your weight (lbs)' %>"
                    required/>
             <button type="submit">Log</button>
         </form>
 
-        <form action="/profile/privacy" method="post" id="privacy-form" data-ajax>
+        <form hx-post="/profile/privacy" hx-target="#privacy-status" hx-swap="outerHTML">
             <button type="submit"
                     style="width:100%;display:flex;align-items:center;justify-content:space-between;
                            padding:0.85rem 1rem;background:#1a1a1a;border:1px solid #2a2a2a;
@@ -561,57 +568,14 @@
 
         <div id="lifts-list">
         <% coreWorkouts.forEach(w => { %>
-            <div id="lift-card-<%= w.id %>" style="background:#1a1a1a;border-radius:12px;padding:1rem;display:flex;flex-direction:column;gap:0.75rem;margin-bottom:0.5rem;">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
-                    <span style="font-size:0.95rem;font-weight:600;"><%= w.name %></span>
-                    <div style="display:flex;align-items:center;gap:0.4rem;flex-shrink:0;">
-                        <span id="lift-week-badge-<%= w.id %>" style="font-size:0.72rem;color:#888;<%= w.currentWeek ? '' : 'display:none' %>">Wk <%= w.currentWeek ?? '' %></span>
-                        <span id="lift-tm-badge-<%= w.id %>" style="font-size:0.72rem;color:#888;<%= w.trainingMax ? '' : 'display:none' %>"><%= w.trainingMax ?? '' %> lbs</span>
-                        <form action="/profile/lifts/delete" method="post" style="margin:0;" data-ajax>
-                            <input type="hidden" name="id" value="<%= w.id %>"/>
-                            <button type="submit" class="btn-remove">Remove</button>
-                        </form>
-                    </div>
-                </div>
-
-                <form action="/workout/<%= w.id %>/update-tm" method="post"
-                      style="display:flex;gap:0.4rem;" data-ajax>
-                    <input id="lift-tm-input-<%= w.id %>" type="number" name="trainingMax"
-                           placeholder="<%= w.trainingMax ? w.trainingMax + ' lbs (current)' : 'Set training max (lbs)' %>"
-                           min="45" step="2.5" required
-                           style="flex:1;background:#111;border:1px solid #2a2a2a;border-radius:8px;
-                                  color:#fff;font-size:0.85rem;padding:0.5rem 0.75rem;outline:none;"/>
-                    <button id="lift-tm-btn-<%= w.id %>" type="submit"
-                            style="background:#1e2a3a;border:1px solid #2a3a4a;border-radius:8px;
-                                   color:#4f9eff;font-size:0.8rem;font-weight:600;padding:0.5rem 0.75rem;cursor:pointer;white-space:nowrap;">
-                        <%= w.trainingMax ? 'Update TM' : 'Set TM' %>
-                    </button>
-                </form>
-
-                <div id="lift-week-form-<%= w.id %>" style="<%= w.trainingMax !== null ? '' : 'display:none' %>">
-                <form action="/workout/<%= w.id %>/set-week" method="post"
-                      style="display:flex;gap:0.4rem;" data-ajax>
-                    <select id="lift-week-select-<%= w.id %>" name="week"
-                            style="flex:1;background:#111;border:1px solid #2a2a2a;border-radius:8px;
-                                   color:#fff;font-size:0.85rem;padding:0.5rem 0.75rem;outline:none;appearance:none;">
-                        <option value="1" <%= w.currentWeek === 1 ? 'selected' : '' %>>Week 1 — 5s</option>
-                        <option value="2" <%= w.currentWeek === 2 ? 'selected' : '' %>>Week 2 — 3s</option>
-                        <option value="3" <%= w.currentWeek === 3 ? 'selected' : '' %>>Week 3 — 5/3/1</option>
-                        <option value="4" <%= w.currentWeek === 4 ? 'selected' : '' %>>Week 4 — Deload</option>
-                    </select>
-                    <button type="submit"
-                            style="background:#1e2a3a;border:1px solid #2a3a4a;border-radius:8px;
-                                   color:#4f9eff;font-size:0.8rem;font-weight:600;padding:0.5rem 0.75rem;cursor:pointer;white-space:nowrap;">
-                        Set Week
-                    </button>
-                </form>
-                </div>
-            </div>
+            <%- include('partials/lift-card', { w }) %>
         <% }) %>
         </div>
 
-        <form class="add-form" action="/profile/lifts" method="post" id="add-lift-form" data-ajax>
-            <input type="text" name="name" placeholder="Add a lift" required maxlength="60" id="add-lift-input"/>
+        <form class="add-form"
+              hx-post="/profile/lifts" hx-target="#lifts-list" hx-swap="beforeend"
+              hx-on::after-request="this.reset()">
+            <input type="text" name="name" placeholder="Add a lift" required maxlength="60"/>
             <button type="submit">Add</button>
         </form>
 
@@ -1102,116 +1066,6 @@
             };
             img.src = url;
         }
-
-        // Profile tab: intercept only forms marked data-ajax
-        document.addEventListener('submit', async function(e) {
-            const form = e.target;
-            if (!('ajax' in form.dataset)) return; // let non-ajax forms (logout etc.) proceed normally
-            e.preventDefault();
-
-            // Send as urlencoded so Express body parser can read req.body
-            const body = new URLSearchParams([...new FormData(form)].filter(([,v]) => typeof v === 'string'));
-            let json;
-            try {
-                const res = await fetch(form.action, {
-                    method: 'POST',
-                    body,
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-                if (!res.ok) return;
-                json = await res.json();
-            } catch { return; }
-
-            if (form.id === 'weight-form') {
-                document.getElementById('weight-value').textContent = json.weightLbs;
-                document.getElementById('weight-card').style.display = 'flex';
-                form.reset();
-                return;
-            }
-
-            if (form.id === 'privacy-form') {
-                const status = document.getElementById('privacy-status');
-                status.textContent = json.hideWeight ? 'OFF' : 'ON';
-                status.style.color = json.hideWeight ? '#555' : '#4f9eff';
-                return;
-            }
-
-            if (form.id === 'add-lift-form') {
-                const { id, name } = json;
-                const card = document.createElement('div');
-                card.id = `lift-card-${id}`;
-                card.style.cssText = 'background:#1a1a1a;border-radius:12px;padding:1rem;display:flex;flex-direction:column;gap:0.75rem;margin-bottom:0.5rem;';
-                card.innerHTML = `
-                  <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
-                    <span style="font-size:0.95rem;font-weight:600;">${name}</span>
-                    <div style="display:flex;align-items:center;gap:0.4rem;flex-shrink:0;">
-                      <span id="lift-week-badge-${id}" style="font-size:0.72rem;color:#888;display:none"></span>
-                      <span id="lift-tm-badge-${id}" style="font-size:0.72rem;color:#888;display:none"></span>
-                      <form action="/profile/lifts/delete" method="post" style="margin:0;" data-ajax>
-                        <input type="hidden" name="id" value="${id}"/>
-                        <button type="submit" class="btn-remove">Remove</button>
-                      </form>
-                    </div>
-                  </div>
-                  <form action="/workout/${id}/update-tm" method="post" style="display:flex;gap:0.4rem;" data-ajax>
-                    <input id="lift-tm-input-${id}" type="number" name="trainingMax" placeholder="Set training max (lbs)"
-                           min="45" step="2.5" required
-                           style="flex:1;background:#111;border:1px solid #2a2a2a;border-radius:8px;color:#fff;font-size:0.85rem;padding:0.5rem 0.75rem;outline:none;"/>
-                    <button id="lift-tm-btn-${id}" type="submit"
-                            style="background:#1e2a3a;border:1px solid #2a3a4a;border-radius:8px;color:#4f9eff;font-size:0.8rem;font-weight:600;padding:0.5rem 0.75rem;cursor:pointer;white-space:nowrap;">
-                      Set TM
-                    </button>
-                  </form>
-                  <div id="lift-week-form-${id}" style="display:none">
-                    <form action="/workout/${id}/set-week" method="post" style="display:flex;gap:0.4rem;" data-ajax>
-                      <select id="lift-week-select-${id}" name="week"
-                              style="flex:1;background:#111;border:1px solid #2a2a2a;border-radius:8px;color:#fff;font-size:0.85rem;padding:0.5rem 0.75rem;outline:none;appearance:none;">
-                        <option value="1">Week 1 — 5s</option>
-                        <option value="2">Week 2 — 3s</option>
-                        <option value="3">Week 3 — 5/3/1</option>
-                        <option value="4">Week 4 — Deload</option>
-                      </select>
-                      <button type="submit"
-                              style="background:#1e2a3a;border:1px solid #2a3a4a;border-radius:8px;color:#4f9eff;font-size:0.8rem;font-weight:600;padding:0.5rem 0.75rem;cursor:pointer;white-space:nowrap;">
-                        Set Week
-                      </button>
-                    </form>
-                  </div>`;
-                document.getElementById('lifts-list').appendChild(card);
-                document.getElementById('add-lift-input').value = '';
-                return;
-            }
-
-            if (form.action.includes('/profile/lifts/delete')) {
-                const id = body.get('id');
-                document.getElementById(`lift-card-${id}`)?.remove();
-                return;
-            }
-
-            if (form.action.includes('/update-tm')) {
-                const { trainingMax, liftId } = json;
-                const badge = document.getElementById(`lift-tm-badge-${liftId}`);
-                badge.textContent = `${trainingMax} lbs`;
-                badge.style.display = '';
-                const input = document.getElementById(`lift-tm-input-${liftId}`);
-                input.placeholder = `${trainingMax} lbs (current)`;
-                input.value = '';
-                document.getElementById(`lift-tm-btn-${liftId}`).textContent = 'Update TM';
-                document.getElementById(`lift-week-form-${liftId}`).style.display = '';
-                return;
-            }
-
-            if (form.action.includes('/set-week')) {
-                const { week, liftId } = json;
-                const badge = document.getElementById(`lift-week-badge-${liftId}`);
-                badge.textContent = `Wk ${week}`;
-                badge.style.display = '';
-                return;
-            }
-        });
 
         function clearImage() {
             document.getElementById('imageInput').value = '';
