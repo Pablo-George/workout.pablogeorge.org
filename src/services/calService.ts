@@ -31,6 +31,8 @@ const CalEstimateSchema = z.object({
     z.object({
       item: z.string(),
       calories: z.number().int(),
+      proteinG: z.number().int(),
+      carbsG: z.number().int(),
     })
   ),
 });
@@ -40,7 +42,7 @@ const NUTRITION_INSTRUCTIONS = `Return:
 - calories: total estimated calories as a single integer
 - proteinG: total estimated protein in grams as a single integer
 - carbsG: total estimated carbohydrates in grams as a single integer
-- breakdown: each distinct food item with its individual calorie estimate`;
+- breakdown: each distinct food item with its individual calories, proteinG, and carbsG estimates`;
 
 export async function estimateCalories(buffer: Buffer, mimeType: string, context?: string) {
   const contextNote = context ? `\n\nAdditional context from the user: ${context}` : "";

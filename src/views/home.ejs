@@ -925,12 +925,15 @@
         </div>
         <div style="background:#1a1a1a;border-radius:12px;overflow:hidden;">
         <% calEntries.forEach((entry, i) => { %>
+            <% const breakdown = entry.breakdown ? JSON.parse(entry.breakdown) : null; %>
             <% if (i > 0) { %>
             <div style="height:1px;background:#222;margin:0 0.85rem;"></div>
             <% } %>
-            <div style="padding:0.75rem 0.85rem;display:flex;align-items:center;gap:0.65rem;">
+            <!-- summary row -->
+            <div onclick="toggleCalEntry(<%= entry.id %>)"
+                 style="padding:0.75rem 0.85rem;display:flex;align-items:center;gap:0.65rem;cursor:pointer;">
                 <% if (entry.imageUrl) { %>
-                <button onclick="openLightbox('<%= entry.imageUrl %>')"
+                <button onclick="event.stopPropagation();openLightbox('<%= entry.imageUrl %>')"
                         style="background:#222;border:1px solid #333;border-radius:8px;
                                padding:0.4rem;cursor:pointer;display:flex;align-items:center;
                                justify-content:center;flex-shrink:0;">
@@ -941,27 +944,81 @@
                 </button>
                 <% } %>
                 <div style="flex:1;min-width:0;">
+                    <div style="font-size:0.72rem;color:#555;">
+                        <%= entry.createdAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) %>
+                    </div>
                     <div style="font-size:0.9rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
                         <%= entry.description %>
                     </div>
-                    <div style="font-size:0.75rem;color:#555;margin-top:0.15rem;">
-                        <%= entry.createdAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) %>
-                    </div>
-                    <div style="font-size:0.78rem;margin-top:0.15rem;display:flex;gap:0.6rem;flex-wrap:wrap;">
+                    <div style="font-size:0.78rem;margin-top:0.1rem;display:flex;gap:0.6rem;flex-wrap:wrap;">
                         <span><span style="color:#4ade80;font-weight:700;"><%= entry.calories %></span> <span style="color:#555;">kcal</span></span>
                         <% if (entry.proteinG) { %><span><span style="color:#4f9eff;font-weight:700;"><%= entry.proteinG %>g</span> <span style="color:#555;">protein</span></span><% } %>
                         <% if (entry.carbsG) { %><span><span style="color:#f59e0b;font-weight:700;"><%= entry.carbsG %>g</span> <span style="color:#555;">carbs</span></span><% } %>
                     </div>
                 </div>
-                <form action="/cals/delete/<%= entry.id %>" method="post" style="margin:0;flex-shrink:0;">
-                    <button type="submit"
-                            onclick="return confirm('Delete this entry?')"
-                            style="background:#2a1a1a;border:1px solid #3a2a2a;border-radius:8px;
-                                   color:#f87171;font-size:0.75rem;font-weight:600;
-                                   padding:0.4rem 0.6rem;cursor:pointer;">
-                        Delete
-                    </button>
-                </form>
+                <svg id="cal-chevron-<%= entry.id %>" viewBox="0 0 24 24"
+                     style="width:14px;height:14px;stroke:#444;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;transition:transform 0.2s;">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+
+            <!-- expanded detail + edit -->
+            <div id="cal-detail-<%= entry.id %>" style="display:none;padding:0 0.85rem 0.85rem;">
+                <% if (breakdown && breakdown.length > 0) { %>
+                <div style="background:#111;border-radius:8px;padding:0.6rem 0.75rem;margin-bottom:0.6rem;">
+                    <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#444;margin-bottom:0.4rem;">Breakdown</div>
+                    <% breakdown.forEach(item => { %>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:0.25rem 0;border-bottom:1px solid #1a1a1a;">
+                        <span style="font-size:0.82rem;color:#ccc;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:0.5rem;"><%= item.item %></span>
+                        <div style="display:flex;gap:0.6rem;font-size:0.75rem;flex-shrink:0;">
+                            <span style="color:#4ade80;"><%= item.calories %> kcal</span>
+                            <% if (item.proteinG != null) { %><span style="color:#4f9eff;"><%= item.proteinG %>g P</span><% } %>
+                            <% if (item.carbsG != null) { %><span style="color:#f59e0b;"><%= item.carbsG %>g C</span><% } %>
+                        </div>
+                    </div>
+                    <% }) %>
+                </div>
+                <% } %>
+                <div style="background:#111;border-radius:8px;padding:0.6rem 0.75rem;">
+                    <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#444;margin-bottom:0.5rem;">Edit</div>
+                    <input type="text" id="cal-desc-<%= entry.id %>" value="<%= entry.description %>"
+                           style="width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;
+                                  color:#fff;font-size:0.85rem;padding:0.4rem 0.6rem;outline:none;margin-bottom:0.5rem;box-sizing:border-box;"/>
+                    <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
+                        <div style="flex:1;">
+                            <div style="font-size:0.68rem;color:#555;margin-bottom:0.2rem;">kcal</div>
+                            <input type="number" id="cal-kcal-<%= entry.id %>" value="<%= entry.calories %>"
+                                   style="width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;
+                                          color:#4ade80;font-size:0.85rem;padding:0.4rem 0.5rem;outline:none;"/>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-size:0.68rem;color:#555;margin-bottom:0.2rem;">protein (g)</div>
+                            <input type="number" id="cal-protein-<%= entry.id %>" value="<%= entry.proteinG ?? '' %>"
+                                   style="width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;
+                                          color:#4f9eff;font-size:0.85rem;padding:0.4rem 0.5rem;outline:none;"/>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-size:0.68rem;color:#555;margin-bottom:0.2rem;">carbs (g)</div>
+                            <input type="number" id="cal-carbs-<%= entry.id %>" value="<%= entry.carbsG ?? '' %>"
+                                   style="width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;
+                                          color:#f59e0b;font-size:0.85rem;padding:0.4rem 0.5rem;outline:none;"/>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:0.5rem;">
+                        <button onclick="saveCalEntry(<%= entry.id %>)"
+                                style="flex:1;background:#1a2a1a;border:1px solid #2a4a2a;border-radius:8px;
+                                       color:#4ade80;font-size:0.82rem;font-weight:700;padding:0.5rem;cursor:pointer;">
+                            Save
+                        </button>
+                        <form action="/cals/delete/<%= entry.id %>" method="post" style="margin:0;flex:1;" onclick="event.stopPropagation()">
+                            <button type="submit" onclick="return confirm('Delete this entry?')"
+                                    style="width:100%;background:#2a1a1a;border:1px solid #3a2a2a;border-radius:8px;
+                                           color:#f87171;font-size:0.82rem;font-weight:600;padding:0.5rem;cursor:pointer;">
+                                Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
         <% }) %>
         </div>
@@ -1300,6 +1357,37 @@
             document.getElementById('calsGalleryInput').value = '';
             document.getElementById('calsCameraInput').value = '';
             updateCalsButton();
+        }
+
+        function toggleCalEntry(id) {
+            const detail = document.getElementById('cal-detail-' + id);
+            const chevron = document.getElementById('cal-chevron-' + id);
+            const open = detail.style.display === 'none';
+            detail.style.display = open ? 'block' : 'none';
+            chevron.style.transform = open ? 'rotate(180deg)' : '';
+        }
+
+        async function saveCalEntry(id) {
+            const description = document.getElementById('cal-desc-' + id).value.trim();
+            const calories = document.getElementById('cal-kcal-' + id).value;
+            const proteinG = document.getElementById('cal-protein-' + id).value;
+            const carbsG = document.getElementById('cal-carbs-' + id).value;
+            const btn = event.currentTarget;
+            try {
+                const res = await fetch('/cals/update/' + id, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ description, calories, proteinG, carbsG }),
+                });
+                if (res.ok) {
+                    btn.textContent = 'Saved!';
+                    btn.style.color = '#4ade80';
+                    setTimeout(() => { btn.textContent = 'Save'; btn.style.color = ''; }, 1500);
+                }
+            } catch(e) {
+                btn.textContent = 'Error';
+                setTimeout(() => { btn.textContent = 'Save'; }, 1500);
+            }
         }
 
         function updateCalsButton() {

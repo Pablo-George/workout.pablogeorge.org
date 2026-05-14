@@ -106,6 +106,7 @@ model CalorieEntry {
   calories    Int
   proteinG    Int?
   carbsG      Int?
+  breakdown   String?
   imageUrl    String?
   loggedOn    String
   createdAt   DateTime @default(now())

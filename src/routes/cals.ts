@@ -31,6 +31,7 @@ router.post("/cals/log", ensureAuth, upload.single("image"), async (req, res) =>
 
     let proteinG: number | null = null;
     let carbsG: number | null = null;
+    let breakdown: string | null = null;
 
     if (hasManualCals) {
       description = context ?? "Food entry";
@@ -41,12 +42,14 @@ router.post("/cals/log", ensureAuth, upload.single("image"), async (req, res) =>
       calories = estimate.calories;
       proteinG = estimate.proteinG;
       carbsG = estimate.carbsG;
+      breakdown = JSON.stringify(estimate.breakdown);
     } else {
       const estimate = await estimateCaloriesFromText(context!);
       description = estimate.description;
       calories = estimate.calories;
       proteinG = estimate.proteinG;
       carbsG = estimate.carbsG;
+      breakdown = JSON.stringify(estimate.breakdown);
     }
 
     await prisma.calorieEntry.create({
@@ -56,6 +59,7 @@ router.post("/cals/log", ensureAuth, upload.single("image"), async (req, res) =>
         calories,
         proteinG,
         carbsG,
+        breakdown,
         imageUrl: imageUrl ?? null,
         loggedOn: new Date().toISOString().split("T")[0],
       },
@@ -66,6 +70,30 @@ router.post("/cals/log", ensureAuth, upload.single("image"), async (req, res) =>
   }
 
   res.redirect("/#tab-cals");
+});
+
+router.post("/cals/update/:id", ensureAuth, async (req, res) => {
+  const user = req.user as any;
+  const id = parseInt(req.params.id);
+  const description = (req.body.description as string)?.trim();
+  const calories = parseInt(req.body.calories as string);
+  const proteinG = parseInt(req.body.proteinG as string);
+  const carbsG = parseInt(req.body.carbsG as string);
+
+  const entry = await prisma.calorieEntry.findFirst({ where: { id, userId: user.userId } });
+  if (!entry) return res.status(404).json({ error: "Not found" });
+
+  await prisma.calorieEntry.update({
+    where: { id },
+    data: {
+      description: description || entry.description,
+      calories: isNaN(calories) ? entry.calories : calories,
+      proteinG: isNaN(proteinG) ? null : proteinG,
+      carbsG: isNaN(carbsG) ? null : carbsG,
+    },
+  });
+
+  res.json({ ok: true });
 });
 
 router.post("/cals/delete/:id", ensureAuth, async (req, res) => {
