@@ -94,6 +94,7 @@ router.get("/", ensureAuth, async (req, res) => {
     calChartData,
     weightChartData,
     calsError: req.query.cals_error === "1",
+    isAdmin: process.env.ADMIN_EMAIL && user.userId === process.env.ADMIN_EMAIL,
   });
 });
 

@@ -641,6 +641,15 @@
             <button type="submit">Add</button>
         </form>
 
+        <% if (isAdmin) { %>
+        <a href="/admin"
+           style="display:block;width:100%;padding:0.85rem;background:#1a1a2a;border:1px solid #2a2a4a;
+                  color:#4f9eff;border-radius:12px;font-size:0.95rem;font-weight:600;cursor:pointer;
+                  text-align:center;text-decoration:none;">
+            Admin
+        </a>
+        <% } %>
+
         <form action="/logout" method="post" style="margin-top:0.5rem;">
             <button type="submit"
                     style="width:100%;padding:0.85rem;background:#1a1a1a;border:1px solid #2a2a2a;
