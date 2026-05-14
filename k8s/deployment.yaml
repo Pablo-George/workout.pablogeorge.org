@@ -70,11 +70,11 @@ spec:
                 secretKeyRef:
                   name: workout-secrets
                   key: GEMINI_API_KEY
-            - name: ADMIN_USER_ID
+            - name: ADMIN_EMAIL
               valueFrom:
                 secretKeyRef:
                   name: workout-secrets
-                  key: ADMIN_USER_ID
+                  key: ADMIN_EMAIL
           volumeMounts:
             - name: data
               mountPath: /app/data
