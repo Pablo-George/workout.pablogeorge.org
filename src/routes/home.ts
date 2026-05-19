@@ -72,6 +72,23 @@ router.get("/", ensureAuth, async (req, res) => {
   }
   const calChartData = Object.entries(calByDay).map(([date, total]) => ({ date, total }));
 
+  const histGroups: Record<string, typeof calHistory> = {};
+  for (const entry of calHistory) {
+    if (entry.loggedOn === today) continue;
+    if (!histGroups[entry.loggedOn]) histGroups[entry.loggedOn] = [];
+    histGroups[entry.loggedOn].push(entry);
+  }
+  const calHistoryDays = Object.entries(histGroups)
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([date, entries]) => ({
+      date,
+      displayDate: formatCalDate(date, today),
+      total: entries.reduce((sum, e) => sum + e.calories, 0),
+      proteinTotal: entries.reduce((sum, e) => sum + (e.proteinG ?? 0), 0),
+      carbsTotal: entries.reduce((sum, e) => sum + (e.carbsG ?? 0), 0),
+      entries,
+    }));
+
   const ninetyDaysAgo = new Date();
   ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 89);
   const weightHistory = await prisma.bodyWeightLog.findMany({
@@ -97,6 +114,7 @@ router.get("/", ensureAuth, async (req, res) => {
     proteinTotal,
     carbsTotal,
     calChartData,
+    calHistoryDays,
     weightChartData,
     calsError: req.query.cals_error === "1",
     isAdmin: process.env.ADMIN_EMAIL && user.userId === process.env.ADMIN_EMAIL,
@@ -291,6 +309,14 @@ async function getOrCreateInviteToken(userId: string) {
   const token = crypto.randomBytes(16).toString("hex");
   await prisma.userProfile.update({ where: { userId }, data: { inviteToken: token } });
   return token;
+}
+
+function formatCalDate(dateStr: string, today: string): string {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (dateStr === yesterday.toISOString().split("T")[0]) return "Yesterday";
+  const date = new Date(dateStr + "T12:00:00");
+  return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 
 function timeAgo(dt: Date) {

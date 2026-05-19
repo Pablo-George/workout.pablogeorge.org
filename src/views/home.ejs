@@ -895,6 +895,22 @@
     <section class="tab-content" id="tab-cals">
         <div style="font-size:1.75rem;font-weight:800;letter-spacing:-0.5px;">Calories</div>
 
+        <!-- sub-tab switcher -->
+        <div style="display:flex;gap:0.4rem;background:#111;border-radius:12px;padding:0.3rem;">
+            <button id="cals-tab-today" onclick="switchCalsTab('today')"
+                    style="flex:1;padding:0.45rem 0;border:none;border-radius:9px;font-size:0.82rem;
+                           font-weight:700;cursor:pointer;background:#1e1e1e;color:#fff;transition:background 0.15s;">
+                Today
+            </button>
+            <button id="cals-tab-history" onclick="switchCalsTab('history')"
+                    style="flex:1;padding:0.45rem 0;border:none;border-radius:9px;font-size:0.82rem;
+                           font-weight:700;cursor:pointer;background:transparent;color:#555;transition:background 0.15s;">
+                History
+            </button>
+        </div>
+
+        <div id="cals-today">
+
         <% if (calsError) { %>
         <div id="cals-error-banner"
              style="background:#2a1a1a;border:1px solid #5a2a2a;border-radius:12px;
@@ -1076,6 +1092,59 @@
         <% }) %>
         </div>
         <% } %>
+
+        </div><!-- /#cals-today -->
+
+        <!-- History sub-tab -->
+        <div id="cals-history" style="display:none;">
+            <% if (calHistoryDays.length === 0) { %>
+            <div style="text-align:center;color:#444;font-size:0.9rem;padding:3rem 0;">
+                No history yet. Start logging to see past days here.
+            </div>
+            <% } else { %>
+            <% calHistoryDays.forEach(day => { %>
+            <div style="background:#1a1a1a;border-radius:12px;overflow:hidden;margin-bottom:0.5rem;">
+                <!-- day header -->
+                <div onclick="toggleHistoryDay('<%= day.date %>')"
+                     style="padding:0.85rem;display:flex;align-items:center;gap:0.65rem;cursor:pointer;">
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:0.88rem;font-weight:700;"><%= day.displayDate %></div>
+                        <div style="font-size:0.78rem;margin-top:0.15rem;display:flex;gap:0.6rem;flex-wrap:wrap;">
+                            <span><span style="color:#4ade80;font-weight:700;"><%= day.total %></span> <span style="color:#555;">kcal</span></span>
+                            <% if (day.proteinTotal > 0) { %><span><span style="color:#4f9eff;font-weight:700;"><%= day.proteinTotal %>g</span> <span style="color:#555;">protein</span></span><% } %>
+                            <% if (day.carbsTotal > 0) { %><span><span style="color:#f59e0b;font-weight:700;"><%= day.carbsTotal %>g</span> <span style="color:#555;">carbs</span></span><% } %>
+                        </div>
+                    </div>
+                    <svg id="hist-chevron-<%= day.date %>" viewBox="0 0 24 24"
+                         style="width:14px;height:14px;stroke:#444;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;transition:transform 0.2s;">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                </div>
+                <!-- individual entries -->
+                <div id="hist-day-<%= day.date %>" style="display:none;">
+                    <% day.entries.forEach((entry, i) => { %>
+                    <div style="border-top:1px solid #222;padding:0.6rem 0.85rem;display:flex;align-items:center;gap:0.6rem;">
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-size:0.7rem;color:#555;">
+                                <%= entry.createdAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) %>
+                            </div>
+                            <div style="font-size:0.88rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                <%= entry.description %>
+                            </div>
+                            <div style="font-size:0.75rem;margin-top:0.1rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+                                <span><span style="color:#4ade80;font-weight:700;"><%= entry.calories %></span> <span style="color:#555;">kcal</span></span>
+                                <% if (entry.proteinG) { %><span><span style="color:#4f9eff;font-weight:700;"><%= entry.proteinG %>g</span> <span style="color:#555;">protein</span></span><% } %>
+                                <% if (entry.carbsG) { %><span><span style="color:#f59e0b;font-weight:700;"><%= entry.carbsG %>g</span> <span style="color:#555;">carbs</span></span><% } %>
+                            </div>
+                        </div>
+                    </div>
+                    <% }) %>
+                </div>
+            </div>
+            <% }) %>
+            <% } %>
+        </div><!-- /#cals-history -->
+
     </section>
 
     <nav>
@@ -1484,6 +1553,24 @@
         function closeLightbox() {
             document.getElementById('lightbox').style.display = 'none';
             document.body.style.overflow = '';
+        }
+
+        function switchCalsTab(tab) {
+            const isToday = tab === 'today';
+            document.getElementById('cals-today').style.display = isToday ? 'block' : 'none';
+            document.getElementById('cals-history').style.display = isToday ? 'none' : 'block';
+            document.getElementById('cals-tab-today').style.background = isToday ? '#1e1e1e' : 'transparent';
+            document.getElementById('cals-tab-today').style.color = isToday ? '#fff' : '#555';
+            document.getElementById('cals-tab-history').style.background = isToday ? 'transparent' : '#1e1e1e';
+            document.getElementById('cals-tab-history').style.color = isToday ? '#555' : '#fff';
+        }
+
+        function toggleHistoryDay(date) {
+            const detail = document.getElementById('hist-day-' + date);
+            const chevron = document.getElementById('hist-chevron-' + date);
+            const open = detail.style.display === 'none';
+            detail.style.display = open ? 'block' : 'none';
+            chevron.style.transform = open ? 'rotate(180deg)' : '';
         }
 
         function toggleHostTM(liftId) {
