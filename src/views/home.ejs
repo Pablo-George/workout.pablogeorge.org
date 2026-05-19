@@ -1123,7 +1123,18 @@
                 <!-- individual entries -->
                 <div id="hist-day-<%= day.date %>" style="display:none;">
                     <% day.entries.forEach((entry, i) => { %>
-                    <div style="border-top:1px solid #222;padding:0.6rem 0.85rem;display:flex;align-items:center;gap:0.6rem;">
+                    <div style="border-top:1px solid #222;padding:0.6rem 0.85rem;display:flex;align-items:center;gap:0.65rem;">
+                        <% if (entry.imageUrl) { %>
+                        <button onclick="event.stopPropagation();openLightbox('<%= entry.imageUrl %>')"
+                                style="background:#222;border:1px solid #333;border-radius:8px;
+                                       padding:0.4rem;cursor:pointer;display:flex;align-items:center;
+                                       justify-content:center;flex-shrink:0;">
+                            <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:#777;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                                <circle cx="12" cy="13" r="4"/>
+                            </svg>
+                        </button>
+                        <% } %>
                         <div style="flex:1;min-width:0;">
                             <div style="font-size:0.7rem;color:#555;">
                                 <%= entry.createdAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) %>
