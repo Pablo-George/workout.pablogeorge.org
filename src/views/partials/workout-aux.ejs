@@ -1,0 +1,38 @@
+<%
+/* Variables:
+   auxLifts – AuxLift[]
+*/
+%>
+<% if (auxLifts && auxLifts.length > 0) { %>
+<div style="display:flex;flex-direction:column;gap:0.6rem;">
+    <div class="section-label">Auxiliary Lifts</div>
+    <% auxLifts.forEach(aux => { %>
+    <div style="background:#1a1a1a;border-radius:14px;padding:1.2rem;display:flex;flex-direction:column;gap:0.75rem;">
+        <div style="font-size:1rem;font-weight:700;"><%= aux.name %></div>
+        <div style="font-size:0.85rem;color:#888;line-height:1.5;"><%= aux.description %></div>
+        <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+            <span style="background:#0e2a1e;color:#4ade80;border-radius:20px;padding:0.25rem 0.8rem;font-size:0.78rem;font-weight:700;">
+                <%= aux.setsReps %>
+            </span>
+            <span style="background:#1a2a1a;color:#86efac;border-radius:20px;padding:0.25rem 0.8rem;font-size:0.78rem;font-weight:700;">
+                <%= aux.weightRecommendation %>
+            </span>
+            <button type="button" onclick="showGuide('<%= aux.name.replace(/'/g, "\\'") %>')"
+                    style="display:flex;align-items:center;gap:0.3rem;background:none;border:none;
+                           color:#4f9eff;font-size:0.78rem;font-weight:600;cursor:pointer;padding:0;">
+                <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#4f9eff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+                </svg>
+                How to do it
+            </button>
+            <a href="<%= aux.youtubeSearchUrl %>" target="_blank" rel="noopener"
+               style="display:flex;align-items:center;color:#ff4444;flex-shrink:0;">
+                <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#ff4444;">
+                    <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.7 15.5V8.5l6.3 3.5-6.3 3.5z"/>
+                </svg>
+            </a>
+        </div>
+    </div>
+    <% }) %>
+</div>
+<% } %>

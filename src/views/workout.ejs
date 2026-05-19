@@ -328,11 +328,11 @@
 
                 <%- include('partials/workout-sets', {
                     plan,
-                    auxLifts,
                     interactive: true,
                     showAmrapInput: true,
                     dataUser: null
                 }) %>
+                <%- include('partials/workout-aux', { auxLifts }) %>
 
                 <button type="submit" class="btn-complete" style="margin-top:auto;">
                     Complete Workout

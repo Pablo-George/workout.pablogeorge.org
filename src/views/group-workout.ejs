@@ -102,8 +102,8 @@
         .amrap-input-row input:focus { border-color: #4f9eff; }
         .amrap-input-row label { font-size: 0.82rem; color: #555; white-space: nowrap; }
         .btn-complete {
-            width: 100%; padding: 1.05rem; background: #4ade80; border: none; border-radius: 14px;
-            color: #000; font-size: 1.05rem; font-weight: 700; cursor: pointer;
+            width: 100%; padding: 1.05rem; background: #4f9eff; border: none; border-radius: 14px;
+            color: #fff; font-size: 1.05rem; font-weight: 700; cursor: pointer;
         }
         .btn-complete:active { opacity: 0.8; }
         .my-done-badge { text-align: center; padding: 1.5rem; color: #4ade80; font-size: 1rem; font-weight: 700; }
@@ -137,13 +137,8 @@
 <body>
 
     <div class="header">
-        <a href="/" class="back-link">← Back</a>
+        <a href="/#tab-workouts" class="back-link">← Back</a>
         <div class="header-title">Group Workout</div>
-        <% if (isMember && session.status === 'ACTIVE') { %>
-        <div class="code-chip" onclick="copyCode()">
-            <%= session.code %><span id="copy-feedback" class="copy-feedback">✓</span>
-        </div>
-        <% } %>
     </div>
 
     <% if (!isMember) { %>
@@ -215,34 +210,31 @@
                 </div>
             </div>
 
-            <!-- Sets + Aux (shared partial) -->
+            <% if (m.userId === myUserId && m.status === 'ACTIVE') { %>
+            <!-- My active tab: wrap in form, AMRAP inline, Complete button at bottom -->
+            <form action="/group/<%= session.id %>/complete" method="post"
+                  style="display:flex;flex-direction:column;gap:1.5rem;">
+                <%- include('partials/workout-sets', {
+                    plan: m.plan, interactive: true, showAmrapInput: true, dataUser: m.userId
+                }) %>
+                <%- include('partials/workout-aux', { auxLifts: m.auxLifts }) %>
+                <button type="submit" class="btn-complete">Complete Workout</button>
+            </form>
+            <% } else { %>
+            <!-- Other members or myself after completing -->
             <%- include('partials/workout-sets', {
                 plan: m.plan,
-                auxLifts: m.auxLifts,
                 interactive: m.userId === myUserId,
                 showAmrapInput: false,
                 dataUser: m.userId
             }) %>
-
-            <!-- Complete / status (my tab only) -->
             <% if (m.userId === myUserId) { %>
-                <% if (m.status === 'ACTIVE') { %>
-                <div class="complete-section">
-                    <div style="font-size:0.82rem;color:#555;">AMRAP reps on last set</div>
-                    <form action="/group/<%= session.id %>/complete" method="post">
-                        <div class="amrap-input-row">
-                            <input type="number" name="amrapReps" placeholder="0" min="1" max="99" required/>
-                            <label>reps completed</label>
-                        </div>
-                        <button type="submit" class="btn-complete">Complete Workout</button>
-                    </form>
-                </div>
-                <% } else { %>
                 <div class="my-done-badge">✓ Workout Complete</div>
-                <% } %>
             <% } else { %>
                 <div id="done-badge-<%= i %>" class="other-done-badge"
                      style="display:<%= m.status === 'COMPLETED' ? 'block' : 'none' %>">✓ Completed</div>
+            <% } %>
+            <%- include('partials/workout-aux', { auxLifts: m.auxLifts }) %>
             <% } %>
 
             <% } else { %>

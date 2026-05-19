@@ -87,6 +87,15 @@ router.post("/group/create", ensureAuth, async (req, res) => {
   const lift = await prisma.coreWorkout.findUnique({ where: { id: liftId } });
   if (!lift) return res.redirect("/");
 
+  // Resume existing solo session for this user+lift if one is active
+  const existingMember = await prisma.groupSessionMember.findFirst({
+    where: { userId, liftId, session: { status: "ACTIVE" } },
+    include: { session: { include: { members: true } } },
+  });
+  if (existingMember && existingMember.session.members.length === 1) {
+    return res.redirect(`/group/${existingMember.sessionId}`);
+  }
+
   let config = await getConfig(userId, liftId);
   if (!config) {
     const tm = parseFloat(req.body.trainingMax);

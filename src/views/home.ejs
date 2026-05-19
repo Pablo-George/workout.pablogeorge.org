@@ -542,126 +542,69 @@
     </section>
 
     <section class="tab-content" id="tab-workouts">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
-            <div style="font-size:1.75rem;font-weight:800;letter-spacing:-0.5px;">Workouts</div>
-            <div style="display:flex;background:#1a1a1a;border-radius:8px;padding:2px;gap:2px;">
-                <button id="btn-solo" type="button" onclick="setWorkoutMode('solo')"
-                        style="background:#fff;color:#000;border:none;border-radius:6px;padding:0.3rem 0.75rem;font-size:0.82rem;font-weight:700;cursor:pointer;">
-                    Solo
-                </button>
-                <button id="btn-group" type="button" onclick="setWorkoutMode('group')"
-                        style="background:transparent;color:#555;border:none;border-radius:6px;padding:0.3rem 0.75rem;font-size:0.82rem;font-weight:700;cursor:pointer;">
-                    Group
-                </button>
-            </div>
-        </div>
+        <div style="font-size:1.75rem;font-weight:800;letter-spacing:-0.5px;margin-bottom:1rem;">Workouts</div>
+        <div style="color:#888;font-size:0.9rem;margin-bottom:0.75rem;">Select a lift to start your workout.</div>
 
-        <!-- Solo mode -->
-        <div id="solo-mode">
-            <div style="color:#888;font-size:0.9rem;margin-bottom:0.75rem;">Select a lift to log a set.</div>
-            <% coreWorkouts.forEach(w => { %>
-                <a href="/workout/<%= w.id %>"
-                   class="workout-row"
-                   style="text-decoration:none;color:inherit;"
-                   onclick="showWorkoutLoader()">
-                    <div style="display:flex;flex-direction:column;gap:2px;">
-                        <span style="font-size:0.95rem;font-weight:500;"><%= w.name %></span>
-                        <% if (weekLabels[w.id]) { %>
-                            <span style="font-size:0.75rem;color:#4f9eff;font-weight:600;"><%= weekLabels[w.id] %></span>
-                        <% } else { %>
-                            <span style="font-size:0.75rem;color:#444;">Not started</span>
-                        <% } %>
-                    </div>
-                    <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#555;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;">
-                        <path d="M9 18l6-6-6-6"/>
-                    </svg>
-                </a>
-            <% }) %>
-            <% if (coreWorkouts.length === 0) { %>
-                <p style="text-align:center;margin-top:2rem;color:#555;font-size:0.9rem;">Add your first lift in the Profile tab.</p>
-            <% } %>
-        </div>
-
-        <!-- Group mode -->
-        <div id="group-mode" style="display:none;">
-
-            <!-- Choice view -->
-            <div id="group-choice">
-                <button type="button" onclick="showGroupHost()"
-                        style="display:flex;align-items:center;gap:1rem;width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:14px;padding:1.1rem 1rem;margin-bottom:0.75rem;cursor:pointer;text-align:left;color:inherit;">
-                    <div style="width:42px;height:42px;border-radius:10px;background:#1e2e1e;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">🏠</div>
-                    <div>
-                        <div style="font-size:0.95rem;font-weight:700;">Host a Session</div>
-                        <div style="font-size:0.78rem;color:#555;margin-top:2px;">Start a room — your friends can join</div>
-                    </div>
-                </button>
-                <a href="/group/rooms" style="text-decoration:none;color:inherit;">
-                    <div style="display:flex;align-items:center;gap:1rem;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:14px;padding:1.1rem 1rem;cursor:pointer;">
-                        <div style="width:42px;height:42px;border-radius:10px;background:#1a1e2e;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">👥</div>
-                        <div>
-                            <div style="font-size:0.95rem;font-weight:700;">Join a Friend's Room</div>
-                            <div style="font-size:0.78rem;color:#555;margin-top:2px;">See who's hosting right now</div>
-                        </div>
-                    </div>
-                </a>
-            </div>
-
-            <!-- Host lift picker (shown after tapping Host) -->
-            <div id="group-host-picker" style="display:none;">
-                <button type="button" onclick="showGroupChoice()"
-                        style="background:none;border:none;color:#4f9eff;font-size:0.9rem;font-weight:600;cursor:pointer;padding:0;margin-bottom:1rem;">
-                    ← Back
-                </button>
-                <div style="color:#888;font-size:0.85rem;margin-bottom:0.75rem;">Choose your lift to open a room:</div>
-                <% coreWorkouts.forEach(w => { %>
-                <% if (weekLabels[w.id]) { %>
-                <!-- Configured lift: submit immediately -->
-                <form action="/group/create" method="post" style="margin-bottom:0.3rem;">
-                    <input type="hidden" name="liftId" value="<%= w.id %>">
-                    <button type="submit" class="workout-row"
-                            style="width:100%;background:none;border:none;text-align:left;cursor:pointer;color:inherit;">
-                        <div style="display:flex;flex-direction:column;gap:2px;">
-                            <span style="font-size:0.95rem;font-weight:500;"><%= w.name %></span>
-                            <span style="font-size:0.75rem;color:#4f9eff;font-weight:600;"><%= weekLabels[w.id] %></span>
-                        </div>
-                        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#555;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;">
-                            <path d="M9 18l6-6-6-6"/>
-                        </svg>
-                    </button>
-                </form>
-                <% } else { %>
-                <!-- Unconfigured lift: tap to expand TM input -->
-                <div style="margin-bottom:0.3rem;">
-                    <button type="button" onclick="toggleHostTM(<%= w.id %>)" class="workout-row"
-                            style="width:100%;background:none;border:none;text-align:left;cursor:pointer;color:inherit;">
-                        <div style="display:flex;flex-direction:column;gap:2px;">
-                            <span style="font-size:0.95rem;font-weight:500;"><%= w.name %></span>
-                            <span style="font-size:0.75rem;color:#444;">Not started</span>
-                        </div>
-                        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#555;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;">
-                            <path d="M9 18l6-6-6-6"/>
-                        </svg>
-                    </button>
-                    <form id="host-tm-<%= w.id %>" action="/group/create" method="post"
-                          style="display:none;background:#1a1a1a;border-radius:0 0 10px 10px;padding:0.75rem;margin-top:-2px;">
-                        <input type="hidden" name="liftId" value="<%= w.id %>">
-                        <div style="font-size:0.75rem;color:#555;margin-bottom:0.5rem;">Your training max for <%= w.name %>:</div>
-                        <div style="display:flex;gap:0.5rem;align-items:center;">
-                            <input type="number" name="trainingMax" placeholder="e.g. 185" step="2.5" min="45" required
-                                   style="background:#111;border:1px solid #2a2a2a;border-radius:8px;color:#fff;font-size:0.95rem;font-weight:700;padding:0.4rem 0.65rem;outline:none;width:130px;">
-                            <span style="font-size:0.8rem;color:#555;flex-shrink:0;">lbs</span>
-                            <button type="submit"
-                                    style="flex:1;background:#4ade80;border:none;border-radius:8px;color:#000;font-size:0.88rem;font-weight:700;padding:0.45rem;cursor:pointer;">
-                                Start →
-                            </button>
-                        </div>
-                    </form>
+        <% coreWorkouts.forEach(w => { %>
+        <% if (weekLabels[w.id]) { %>
+        <!-- Configured lift: POST directly to create/resume session -->
+        <form action="/group/create" method="post" style="margin-bottom:0.3rem;" onsubmit="showWorkoutLoader()">
+            <input type="hidden" name="liftId" value="<%= w.id %>">
+            <button type="submit" class="workout-row"
+                    style="width:100%;background:none;border:none;text-align:left;cursor:pointer;color:inherit;">
+                <div style="display:flex;flex-direction:column;gap:2px;">
+                    <span style="font-size:0.95rem;font-weight:500;"><%= w.name %></span>
+                    <span style="font-size:0.75rem;color:#4f9eff;font-weight:600;"><%= weekLabels[w.id] %></span>
                 </div>
-                <% } %>
-                <% }) %>
-            </div>
-
+                <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#555;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;">
+                    <path d="M9 18l6-6-6-6"/>
+                </svg>
+            </button>
+        </form>
+        <% } else { %>
+        <!-- Unconfigured lift: tap to expand TM input -->
+        <div style="margin-bottom:0.3rem;">
+            <button type="button" onclick="toggleHostTM(<%= w.id %>)" class="workout-row"
+                    style="width:100%;background:none;border:none;text-align:left;cursor:pointer;color:inherit;">
+                <div style="display:flex;flex-direction:column;gap:2px;">
+                    <span style="font-size:0.95rem;font-weight:500;"><%= w.name %></span>
+                    <span style="font-size:0.75rem;color:#444;">Not started</span>
+                </div>
+                <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#555;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;">
+                    <path d="M9 18l6-6-6-6"/>
+                </svg>
+            </button>
+            <form id="host-tm-<%= w.id %>" action="/group/create" method="post"
+                  style="display:none;background:#1a1a1a;border-radius:0 0 10px 10px;padding:0.75rem;margin-top:-2px;"
+                  onsubmit="showWorkoutLoader()">
+                <input type="hidden" name="liftId" value="<%= w.id %>">
+                <div style="font-size:0.75rem;color:#555;margin-bottom:0.5rem;">Training max for <%= w.name %>:</div>
+                <div style="display:flex;gap:0.5rem;align-items:center;">
+                    <input type="number" name="trainingMax" placeholder="e.g. 185" step="2.5" min="45" required
+                           style="background:#111;border:1px solid #2a2a2a;border-radius:8px;color:#fff;font-size:0.95rem;font-weight:700;padding:0.4rem 0.65rem;outline:none;width:130px;">
+                    <span style="font-size:0.8rem;color:#555;flex-shrink:0;">lbs</span>
+                    <button type="submit"
+                            style="flex:1;background:#4f9eff;border:none;border-radius:8px;color:#fff;font-size:0.88rem;font-weight:700;padding:0.45rem;cursor:pointer;">
+                        Start →
+                    </button>
+                </div>
+            </form>
         </div>
+        <% } %>
+        <% }) %>
+
+        <% if (coreWorkouts.length === 0) { %>
+            <p style="text-align:center;margin-top:2rem;color:#555;font-size:0.9rem;">Add your first lift in the Profile tab.</p>
+        <% } %>
+
+        <!-- Join a friend's room -->
+        <a href="/group/rooms" style="display:flex;align-items:center;gap:1rem;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:14px;padding:1.1rem 1rem;margin-top:1rem;text-decoration:none;color:inherit;">
+            <div style="width:42px;height:42px;border-radius:10px;background:#1a1e2e;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">👥</div>
+            <div>
+                <div style="font-size:0.95rem;font-weight:700;">Join a Friend's Room</div>
+                <div style="font-size:0.78rem;color:#555;margin-top:2px;">See who's hosting right now</div>
+            </div>
+        </a>
     </section>
 
     <section class="tab-content" id="tab-profile">
@@ -1524,27 +1467,6 @@
         function closeLightbox() {
             document.getElementById('lightbox').style.display = 'none';
             document.body.style.overflow = '';
-        }
-
-        function setWorkoutMode(mode) {
-            const solo = mode === 'solo';
-            document.getElementById('solo-mode').style.display = solo ? 'block' : 'none';
-            document.getElementById('group-mode').style.display = solo ? 'none' : 'block';
-            document.getElementById('btn-solo').style.background = solo ? '#fff' : 'transparent';
-            document.getElementById('btn-solo').style.color = solo ? '#000' : '#555';
-            document.getElementById('btn-group').style.background = solo ? 'transparent' : '#fff';
-            document.getElementById('btn-group').style.color = solo ? '#555' : '#000';
-            if (!solo) showGroupChoice();
-        }
-
-        function showGroupHost() {
-            document.getElementById('group-choice').style.display = 'none';
-            document.getElementById('group-host-picker').style.display = 'block';
-        }
-
-        function showGroupChoice() {
-            document.getElementById('group-host-picker').style.display = 'none';
-            document.getElementById('group-choice').style.display = 'block';
         }
 
         function toggleHostTM(liftId) {

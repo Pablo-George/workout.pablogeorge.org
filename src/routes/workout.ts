@@ -9,58 +9,8 @@ import { generateGuideImage } from "../services/guideService.js";
 
 const router = Router();
 
-router.get("/workout/:liftId", ensureAuth, async (req, res) => {
-  const user = req.user as any;
-  const liftId = parseInt(req.params.liftId);
-
-  const lift = await prisma.coreWorkout.findUnique({ where: { id: liftId } });
-  if (!lift) return res.redirect("/");
-
-  const config = await getConfig(user.userId, liftId);
-
-  let auxLifts: Awaited<ReturnType<typeof getAuxLifts>> = [];
-  if (config) {
-    const saved = await prisma.auxLift.findMany({
-      where: { userId: user.userId, liftId },
-      orderBy: { displayOrder: "asc" },
-    });
-    if (saved.length > 0) {
-      auxLifts = saved.map((a) => ({
-        name: a.name,
-        description: a.description,
-        setsReps: a.setsReps,
-        weightRecommendation: a.weightRecommendation,
-        youtubeSearchUrl: a.youtubeSearchUrl,
-        displayOrder: a.displayOrder,
-      }));
-    } else {
-      try {
-        auxLifts = await getAuxLifts(lift, config.trainingMax);
-        await prisma.auxLift.createMany({
-          data: auxLifts.map((a) => ({
-            userId: user.userId,
-            liftId,
-            name: a.name,
-            description: a.description,
-            setsReps: a.setsReps,
-            weightRecommendation: a.weightRecommendation,
-            youtubeSearchUrl: a.youtubeSearchUrl,
-            displayOrder: a.displayOrder,
-          })),
-        });
-      } catch (err) {
-        console.error("Failed to load aux lifts:", err);
-      }
-    }
-  }
-
-  res.render("workout", {
-    user,
-    lift,
-    needsSetup: !config,
-    plan: config ? await buildPlan(config, lift) : null,
-    auxLifts,
-  });
+router.get("/workout/:liftId", ensureAuth, (_req, res) => {
+  res.redirect("/#tab-workouts");
 });
 
 router.post("/workout/:liftId/setup", ensureAuth, async (req, res) => {
