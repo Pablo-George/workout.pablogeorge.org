@@ -174,10 +174,11 @@ router.get("/group/:sessionId", ensureAuth, async (req, res) => {
 
   const completedSets = getAllCompleted(sessionId);
   const myTabIndex = Math.max(0, membersData.findIndex((m) => m.userId === userId));
+  const myStatus = session.members.find((m) => m.userId === userId)?.status ?? "ACTIVE";
 
   res.render("group-workout", {
     user, session, isMember: true, sessionEnded: false,
-    members: membersData, completedSets, myUserId: userId, myTabIndex,
+    members: membersData, completedSets, myUserId: userId, myTabIndex, myStatus,
   });
 });
 
@@ -241,6 +242,30 @@ router.get("/group/:sessionId/state", ensureAuth, async (req, res) => {
     completed: getAllCompleted(sessionId),
     memberStatuses,
   });
+});
+
+// Leave a session (active members only — completed members just navigate away)
+router.post("/group/:sessionId/leave", ensureAuth, async (req, res) => {
+  const user = req.user as any;
+  const userId = user.userId;
+  const sessionId = parseInt(req.params.sessionId);
+
+  const member = await prisma.groupSessionMember.findUnique({
+    where: { sessionId_userId: { sessionId, userId } },
+  });
+
+  if (member && member.status === "ACTIVE") {
+    await prisma.auxLift.deleteMany({ where: { userId, liftId: member.liftId } });
+    await prisma.groupSessionMember.delete({ where: { sessionId_userId: { sessionId, userId } } });
+
+    const remaining = await prisma.groupSessionMember.findMany({ where: { sessionId } });
+    if (remaining.length === 0 || remaining.every((m) => m.status === "COMPLETED")) {
+      await prisma.groupSession.update({ where: { id: sessionId }, data: { status: "COMPLETED" } });
+      clearSession(sessionId);
+    }
+  }
+
+  res.redirect("/#tab-workouts");
 });
 
 // Complete workout for this member
