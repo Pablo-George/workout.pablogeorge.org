@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Group Workout</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f0f0f;
+            color: #fff;
+            min-height: 100dvh;
+            padding-bottom: 3rem;
+        }
+
+        /* ── Header ── */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: #0f0f0f;
+            border-bottom: 1px solid #1e1e1e;
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .back-link { color: #4f9eff; font-size: 0.9rem; font-weight: 600; text-decoration: none; flex-shrink: 0; }
+        .header-title { font-size: 0.9rem; font-weight: 700; flex: 1; }
+        .code-chip {
+            background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 20px;
+            padding: 0.3rem 0.75rem; font-size: 0.82rem; font-weight: 700;
+            color: #4f9eff; letter-spacing: 0.12em; cursor: pointer; flex-shrink: 0; user-select: none;
+        }
+        .copy-feedback { font-size: 0.7rem; color: #4ade80; opacity: 0; margin-left: 0.25rem; transition: opacity 0.3s; }
+
+        /* ── Member tabs ── */
+        .tabs {
+            position: sticky; top: 49px; z-index: 9; background: #0f0f0f;
+            border-bottom: 1px solid #1e1e1e;
+            display: flex; overflow-x: auto; scrollbar-width: none;
+        }
+        .tabs::-webkit-scrollbar { display: none; }
+        .tab-btn {
+            flex-shrink: 0; padding: 0.7rem 1.25rem; background: none;
+            border: none; border-bottom: 2px solid transparent;
+            color: #555; font-size: 0.88rem; font-weight: 600; cursor: pointer;
+            display: flex; align-items: center; gap: 0.4rem;
+            transition: color 0.15s, border-color 0.15s;
+        }
+        .tab-btn.active { color: #fff; border-bottom-color: #4f9eff; }
+        .tab-btn.mine.active { border-bottom-color: #4ade80; }
+        .done-dot { display: none; width: 7px; height: 7px; background: #4ade80; border-radius: 50%; }
+
+        /* ── Panels ── */
+        .panel { display: none; padding: 1.5rem 1rem 2rem; }
+        .panel.active { display: flex; flex-direction: column; gap: 1.5rem; }
+
+        /* ── Shared set-card styles (same as solo workout.ejs) ── */
+        .lift-title { font-size: 2rem; font-weight: 800; letter-spacing: -0.5px; }
+        .meta-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.4rem; }
+        .week-badge {
+            background: #1a2a3a; color: #4f9eff; border-radius: 20px;
+            padding: 0.3rem 0.8rem; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.03em;
+        }
+        .tm-badge { color: #555; font-size: 0.82rem; }
+        .section-label {
+            font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em; color: #444; text-transform: uppercase;
+        }
+        .sets-group { display: flex; flex-direction: column; gap: 0.6rem; }
+        .set-card {
+            background: #1a1a1a; border-radius: 14px; padding: 1.1rem 1.2rem;
+            display: grid; grid-template-columns: 44px 1fr; gap: 0 0.9rem; align-items: start;
+        }
+        .set-card.amrap { background: #0e1e33; border: 1.5px solid #4f9eff55; }
+        .set-card.interactive { cursor: pointer; user-select: none; }
+        .set-card.interactive:active { opacity: 0.6; }
+        .set-card.done { opacity: 0.35; text-decoration: line-through; }
+        .set-pct { font-size: 0.78rem; font-weight: 700; color: #555; padding-top: 0.35rem; text-align: center; }
+        .set-card.amrap .set-pct { color: #4f9eff; }
+        .set-body { display: flex; flex-direction: column; gap: 0.2rem; }
+        .set-weight-reps { font-size: 1.45rem; font-weight: 800; letter-spacing: -0.5px; line-height: 1.1; }
+        .set-weight-reps .reps { font-size: 1rem; font-weight: 500; color: #888; }
+        .set-card.amrap .set-weight-reps .reps { color: #4f9eff; font-weight: 700; }
+        .set-plates { font-size: 0.88rem; color: #666; margin-top: 0.15rem; }
+        .set-plates strong { color: #999; font-weight: 600; }
+
+        /* ── Complete section ── */
+        .complete-section {
+            background: #1a1a1a; border-radius: 14px; padding: 1.2rem;
+            display: flex; flex-direction: column; gap: 0.75rem;
+        }
+        .amrap-input-row { display: flex; align-items: center; gap: 0.6rem; }
+        .amrap-input-row input {
+            flex: 1; background: #0f0f0f; border: 1.5px solid #2a3a4a; border-radius: 10px;
+            color: #fff; font-size: 1.1rem; font-weight: 700; padding: 0.65rem 0.9rem; outline: none;
+            -moz-appearance: textfield;
+        }
+        .amrap-input-row input::-webkit-outer-spin-button,
+        .amrap-input-row input::-webkit-inner-spin-button { -webkit-appearance: none; }
+        .amrap-input-row input:focus { border-color: #4f9eff; }
+        .amrap-input-row label { font-size: 0.82rem; color: #555; white-space: nowrap; }
+        .btn-complete {
+            width: 100%; padding: 1.05rem; background: #4ade80; border: none; border-radius: 14px;
+            color: #000; font-size: 1.05rem; font-weight: 700; cursor: pointer;
+        }
+        .btn-complete:active { opacity: 0.8; }
+        .my-done-badge { text-align: center; padding: 1.5rem; color: #4ade80; font-size: 1rem; font-weight: 700; }
+        .other-done-badge { text-align: center; padding: 0.75rem; color: #4ade80; font-size: 0.85rem; font-weight: 600; }
+
+        /* ── Session done bar ── */
+        .session-done-bar {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: #1a2a1a; border-top: 1px solid #2a3a2a;
+            padding: 0.9rem 1rem; text-align: center;
+            font-size: 0.88rem; font-weight: 700; color: #4ade80; z-index: 50;
+        }
+
+        /* ── Join UI ── */
+        .join-wrap { max-width: 400px; margin: 3rem auto; padding: 1.5rem 1rem; }
+        .join-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 0.35rem; }
+        .join-sub { font-size: 0.85rem; color: #555; margin-bottom: 1.5rem; }
+        .join-select {
+            width: 100%; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px;
+            color: #fff; font-size: 0.9rem; padding: 0.65rem 0.75rem; outline: none; margin-bottom: 0.75rem;
+        }
+        .btn-join {
+            width: 100%; background: #4f9eff; border: none; border-radius: 8px;
+            color: #fff; font-size: 0.95rem; font-weight: 700; padding: 0.75rem; cursor: pointer;
+        }
+        .btn-back-home { display: block; text-align: center; margin-top: 1rem; color: #4f9eff; font-size: 0.9rem; font-weight: 600; text-decoration: none; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <a href="/" class="back-link">← Back</a>
+        <div class="header-title">Group Workout</div>
+        <% if (isMember && session.status === 'ACTIVE') { %>
+        <div class="code-chip" onclick="copyCode()">
+            <%= session.code %><span id="copy-feedback" class="copy-feedback">✓</span>
+        </div>
+        <% } %>
+    </div>
+
+    <% if (!isMember) { %>
+
+        <div class="join-wrap">
+            <% if (sessionEnded) { %>
+                <div class="join-title">Session Ended</div>
+                <div class="join-sub">This group workout is already complete.</div>
+                <a href="/" class="btn-back-home">← Back to home</a>
+            <% } else { %>
+                <div class="join-title">Join <%= hostName %>'s Workout</div>
+                <div class="join-sub">You're joining an active group session.</div>
+                <% if (myLifts.length === 0) { %>
+                    <div style="color:#e05252;font-size:0.9rem;margin-bottom:1rem;">Set up a training max in Profile before joining.</div>
+                    <a href="/#tab-profile" class="btn-back-home">Go to Profile →</a>
+                <% } else { %>
+                    <form action="/group/<%= session.id %>/join" method="post">
+                        <div style="font-size:0.78rem;color:#555;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.4rem;">Your lift</div>
+                        <select name="liftId" class="join-select">
+                            <% myLifts.forEach(l => { %>
+                            <option value="<%= l.id %>"><%= l.name %></option>
+                            <% }) %>
+                        </select>
+                        <button type="submit" class="btn-join">Join Session</button>
+                    </form>
+                <% } %>
+            <% } %>
+        </div>
+
+    <% } else { %>
+
+        <!-- Member tab bar -->
+        <div class="tabs" id="tab-bar">
+            <% members.forEach((m, i) => { %>
+            <button class="tab-btn <%= m.userId === myUserId ? 'mine' : '' %> <%= i === myTabIndex ? 'active' : '' %>"
+                    id="tab-btn-<%= i %>"
+                    onclick="showTab(<%= i %>)">
+                <%= m.displayName %>
+                <span class="done-dot" id="done-dot-<%= i %>"
+                      style="display:<%= m.status === 'COMPLETED' ? 'inline-block' : 'none' %>"></span>
+            </button>
+            <% }) %>
+        </div>
+
+        <!-- Member panels -->
+        <% members.forEach((m, i) => { %>
+        <div class="panel <%= i === myTabIndex ? 'active' : '' %>" id="panel-<%= i %>">
+
+            <% if (m.plan) { %>
+
+            <!-- Lift header (matches solo style) -->
+            <div>
+                <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+                    <div class="lift-title"><%= m.liftName %></div>
+                    <% if (m.userId === myUserId) { %>
+                    <button type="button" onclick="showGuide('<%= m.liftName.replace(/'/g, "\\'") %>')"
+                            style="display:flex;align-items:center;gap:0.3rem;background:none;border:none;
+                                   color:#4f9eff;font-size:0.78rem;font-weight:600;cursor:pointer;padding:0;">
+                        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#4f9eff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;">
+                            <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+                        </svg>
+                        How to do it
+                    </button>
+                    <% } %>
+                </div>
+                <div class="meta-row">
+                    <span class="week-badge">WEEK <%= m.plan.week %> &nbsp;·&nbsp; <%= m.plan.weekLabel %></span>
+                    <span class="tm-badge">TM: <strong><%= m.plan.trainingMax %> lbs</strong></span>
+                </div>
+            </div>
+
+            <!-- Sets + Aux (shared partial) -->
+            <%- include('partials/workout-sets', {
+                plan: m.plan,
+                auxLifts: m.auxLifts,
+                interactive: m.userId === myUserId,
+                showAmrapInput: false,
+                dataUser: m.userId
+            }) %>
+
+            <!-- Complete / status (my tab only) -->
+            <% if (m.userId === myUserId) { %>
+                <% if (m.status === 'ACTIVE') { %>
+                <div class="complete-section">
+                    <div style="font-size:0.82rem;color:#555;">AMRAP reps on last set</div>
+                    <form action="/group/<%= session.id %>/complete" method="post">
+                        <div class="amrap-input-row">
+                            <input type="number" name="amrapReps" placeholder="0" min="1" max="99" required/>
+                            <label>reps completed</label>
+                        </div>
+                        <button type="submit" class="btn-complete">Complete Workout</button>
+                    </form>
+                </div>
+                <% } else { %>
+                <div class="my-done-badge">✓ Workout Complete</div>
+                <% } %>
+            <% } else { %>
+                <div id="done-badge-<%= i %>" class="other-done-badge"
+                     style="display:<%= m.status === 'COMPLETED' ? 'block' : 'none' %>">✓ Completed</div>
+            <% } %>
+
+            <% } else { %>
+            <div style="padding:2rem;text-align:center;color:#555;font-size:0.9rem;">Training max not configured.</div>
+            <% } %>
+
+        </div>
+        <% }) %>
+
+        <div class="session-done-bar" id="session-done-bar"
+             style="display:<%= session.status === 'COMPLETED' ? 'block' : 'none' %>">
+            Session Complete — Great workout!
+        </div>
+
+        <!-- Guide modal (same as solo) -->
+        <div id="guide-modal"
+             style="display:none;position:fixed;inset:0;background:#0f0f0f;z-index:9998;
+                    flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+            <div style="position:sticky;top:0;z-index:1;background:#0f0f0f;
+                        display:flex;justify-content:space-between;align-items:center;
+                        padding:0.9rem 1rem;border-bottom:1px solid #1a1a1a;">
+                <div id="guide-modal-title" style="font-size:1rem;font-weight:700;"></div>
+                <button type="button" onclick="closeGuide()"
+                        style="background:none;border:none;color:#888;font-size:1.6rem;cursor:pointer;line-height:1;padding:0;">✕</button>
+            </div>
+            <div id="guide-loading"
+                 style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+                        gap:1rem;flex:1;color:#555;font-size:0.85rem;min-height:60vh;">
+                <div style="width:32px;height:32px;border:3px solid #2a2a2a;border-top-color:#4f9eff;
+                            border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+                Generating your form guide…
+            </div>
+            <img id="guide-image" src="" alt=""
+                 style="display:none;width:100%;height:auto;touch-action:pinch-zoom;"/>
+            <div id="guide-error" style="display:none;color:#f87171;font-size:0.85rem;text-align:center;padding:4rem 1rem;">
+                Could not generate guide. Try again later.
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('touchmove', function(e) { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+
+            const sessionId = <%= session.id %>;
+            const myUserId  = <%- JSON.stringify(myUserId) %>;
+            const initialMemberCount = <%= members.length %>;
+            const memberIndex = <%- JSON.stringify(members.map((m, i) => ({ i, userId: m.userId }))) %>;
+
+            // ── Set completion state ──
+            const serverCompleted = <%- JSON.stringify(completedSets) %>;
+            const localCompleted = {};
+            for (const [uid, keys] of Object.entries(serverCompleted)) {
+                localCompleted[uid] = new Set(keys);
+            }
+
+            function applyAllStates() {
+                document.querySelectorAll('.set-card[data-user]').forEach(el => {
+                    const uid = el.dataset.user;
+                    const key = el.dataset.key;
+                    el.classList.toggle('done', !!(localCompleted[uid]?.has(key)));
+                });
+            }
+            applyAllStates();
+
+            // Scroll my tab into view
+            document.getElementById('tab-btn-<%= myTabIndex %>')
+                ?.scrollIntoView({ block: 'nearest', inline: 'center' });
+
+            // ── Tab switching ──
+            function showTab(idx) {
+                document.querySelectorAll('.tab-btn').forEach((t, i) => t.classList.toggle('active', i === idx));
+                document.querySelectorAll('.panel').forEach((p, i) => p.classList.toggle('active', i === idx));
+                document.getElementById(`tab-btn-${idx}`)
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+
+            // ── Tap-to-cross-out (my sets only) ──
+            function toggleSetDone(el) {
+                const uid = el.dataset.user;
+                const key = el.dataset.key;
+                if (uid !== myUserId) return;
+                if (!localCompleted[uid]) localCompleted[uid] = new Set();
+                if (localCompleted[uid].has(key)) {
+                    localCompleted[uid].delete(key); el.classList.remove('done');
+                } else {
+                    localCompleted[uid].add(key);    el.classList.add('done');
+                }
+                fetch(`/group/${sessionId}/set-toggle`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ setKey: key })
+                }).catch(() => {});
+            }
+
+            // ── Copy session code ──
+            function copyCode() {
+                navigator.clipboard.writeText('<%= session.code %>').catch(() => {});
+                const fb = document.getElementById('copy-feedback');
+                fb.style.opacity = '1';
+                setTimeout(() => fb.style.opacity = '0', 1500);
+            }
+
+            // ── Guide modal ──
+            const vpMeta    = document.querySelector('meta[name="viewport"]');
+            const vpDefault = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+            const vpZoom    = 'width=device-width, initial-scale=1.0';
+
+            async function showGuide(liftName) {
+                const modal   = document.getElementById('guide-modal');
+                const loading = document.getElementById('guide-loading');
+                const img     = document.getElementById('guide-image');
+                const err     = document.getElementById('guide-error');
+                document.getElementById('guide-modal-title').textContent = liftName;
+                loading.style.display = 'flex';
+                img.style.display = 'none';
+                err.style.display = 'none';
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                vpMeta.setAttribute('content', vpZoom);
+                try {
+                    const res  = await fetch('/workout/guide/' + encodeURIComponent(liftName));
+                    const data = await res.json();
+                    if (!res.ok || !data.imageUrl) throw new Error();
+                    img.src = data.imageUrl;
+                    img.onload = () => { loading.style.display = 'none'; img.style.display = 'block'; };
+                } catch {
+                    loading.style.display = 'none';
+                    err.style.display = 'block';
+                }
+            }
+
+            function closeGuide() {
+                document.getElementById('guide-modal').style.display = 'none';
+                document.body.style.overflow = '';
+                vpMeta.setAttribute('content', vpDefault);
+            }
+
+            // ── 3-second polling ──
+            <% if (session.status === 'ACTIVE') { %>
+            setInterval(async () => {
+                try {
+                    const res = await fetch(`/group/${sessionId}/state`);
+                    if (!res.ok) return;
+                    const data = await res.json();
+
+                    if (data.memberCount !== initialMemberCount) { location.reload(); return; }
+
+                    for (const [uid, keys] of Object.entries(data.completed)) {
+                        if (uid === myUserId) continue;
+                        localCompleted[uid] = new Set(keys);
+                    }
+                    applyAllStates();
+
+                    for (const { i, userId } of memberIndex) {
+                        const status = data.memberStatuses[userId];
+                        const dot   = document.getElementById(`done-dot-${i}`);
+                        const badge = document.getElementById(`done-badge-${i}`);
+                        if (dot)   dot.style.display   = status === 'COMPLETED' ? 'inline-block' : 'none';
+                        if (badge) badge.style.display  = status === 'COMPLETED' ? 'block'        : 'none';
+                    }
+
+                    if (data.sessionStatus === 'COMPLETED') {
+                        document.getElementById('session-done-bar').style.display = 'block';
+                    }
+                } catch(e) {}
+            }, 3000);
+            <% } %>
+        </script>
+
+    <% } %>
+
+</body>
+</html>

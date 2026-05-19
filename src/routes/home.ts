@@ -46,6 +46,7 @@ router.get("/", ensureAuth, async (req, res) => {
   const pendingRequests = await getPendingRequests(userId);
   const friends = await getFriends(userId);
   const inviteToken = await getOrCreateInviteToken(userId);
+
   const inviteLink = `${req.protocol}://${req.get("host")}/invite/${inviteToken}`;
   const myProfile = await prisma.userProfile.findUnique({ where: { userId } });
   const hideWeight = myProfile?.hideWeight ?? false;

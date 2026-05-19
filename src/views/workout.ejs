@@ -252,12 +252,19 @@
             font-weight: 700;
             cursor: pointer;
         }
+
+        .set-card.interactive { cursor: pointer; user-select: none; }
+        .set-card.interactive:active { opacity: 0.6; }
+        .set-card.done {
+            opacity: 0.35;
+            text-decoration: line-through;
+        }
     </style>
 </head>
 <body>
 
     <header>
-        <a href="/">
+        <a href="/#tab-workouts">
             <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
             Workouts
         </a>
@@ -316,94 +323,16 @@
 
         <% if (!needsSetup && plan) { %>
             <form action="/workout/<%= lift.id %>/complete" method="post"
-                  style="display:flex;flex-direction:column;gap:1.5rem;flex:1;">
+                  style="display:flex;flex-direction:column;gap:1.5rem;flex:1;"
+                  id="complete-form">
 
-                <div style="display:flex;flex-direction:column;gap:0.6rem;">
-                    <div class="section-label">Warm-up</div>
-                    <div class="sets-group">
-                        <% plan.sets.filter(s => s.warmup).forEach(s => { %>
-                            <div class="set-card">
-                                <div class="set-pct"><%= s.percentageLabel %></div>
-                                <div class="set-body">
-                                    <div class="set-weight-reps">
-                                        <%= Math.round(s.weight) %> lbs
-                                        <span class="reps">&nbsp;× <%= s.reps %></span>
-                                    </div>
-                                    <div class="set-plates">
-                                        Each side: <strong><%= s.platesDisplay %></strong>
-                                    </div>
-                                </div>
-                            </div>
-                        <% }) %>
-                    </div>
-                </div>
-
-                <div style="display:flex;flex-direction:column;gap:0.6rem;">
-                    <div class="section-label">Working sets</div>
-                    <div class="sets-group">
-                        <% plan.sets.filter(s => !s.warmup).forEach(s => { %>
-                            <div class="set-card<%= s.amrap ? ' amrap' : '' %>">
-                                <div class="set-pct"><%= s.percentageLabel %></div>
-                                <div class="set-body">
-                                    <div class="set-weight-reps">
-                                        <%= Math.round(s.weight) %> lbs
-                                        <% if (s.amrap) { %>
-                                            <span class="reps">&nbsp;× AMRAP</span>
-                                        <% } else { %>
-                                            <span class="reps">&nbsp;× <%= s.reps %></span>
-                                        <% } %>
-                                    </div>
-                                    <div class="set-plates">
-                                        Each side: <strong><%= s.platesDisplay %></strong>
-                                    </div>
-                                    <% if (s.amrap) { %>
-                                        <div class="amrap-input-row">
-                                            <input type="number" name="amrapReps"
-                                                   placeholder="0" min="1" max="99" required/>
-                                            <label>reps completed</label>
-                                        </div>
-                                    <% } %>
-                                </div>
-                            </div>
-                        <% }) %>
-                    </div>
-                </div>
-
-                <% if (auxLifts.length > 0) { %>
-                <div style="display:flex;flex-direction:column;gap:0.6rem;">
-                    <div class="section-label">Auxiliary Lifts</div>
-
-                    <% auxLifts.forEach(aux => { %>
-                    <div style="background:#1a1a1a;border-radius:14px;padding:1.2rem;display:flex;flex-direction:column;gap:0.75rem;">
-                        <div style="font-size:1rem;font-weight:700;"><%= aux.name %></div>
-                        <div style="font-size:0.85rem;color:#888;line-height:1.5;"><%= aux.description %></div>
-
-                        <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
-                            <span style="background:#0e2a1e;color:#4ade80;border-radius:20px;padding:0.25rem 0.8rem;font-size:0.78rem;font-weight:700;">
-                                <%= aux.setsReps %>
-                            </span>
-                            <span style="background:#1a2a1a;color:#86efac;border-radius:20px;padding:0.25rem 0.8rem;font-size:0.78rem;font-weight:700;">
-                                <%= aux.weightRecommendation %>
-                            </span>
-                            <button type="button" onclick="showGuide('<%= aux.name %>')"
-                                    style="display:flex;align-items:center;gap:0.3rem;background:none;border:none;
-                                           color:#4f9eff;font-size:0.78rem;font-weight:600;cursor:pointer;padding:0;">
-                                <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#4f9eff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;">
-                                    <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
-                                </svg>
-                                How to do it
-                            </button>
-                            <a href="<%= aux.youtubeSearchUrl %>" target="_blank" rel="noopener"
-                               style="display:flex;align-items:center;color:#ff4444;flex-shrink:0;">
-                                <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#ff4444;">
-                                    <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.7 15.5V8.5l6.3 3.5-6.3 3.5z"/>
-                                </svg>
-                            </a>
-                        </div>
-                    </div>
-                    <% }) %>
-                </div>
-                <% } %>
+                <%- include('partials/workout-sets', {
+                    plan,
+                    auxLifts,
+                    interactive: true,
+                    showAmrapInput: true,
+                    dataUser: null
+                }) %>
 
                 <button type="submit" class="btn-complete" style="margin-top:auto;">
                     Complete Workout
@@ -448,6 +377,29 @@
     </div>
     <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
     <script>function showLoader() { document.getElementById('loader').style.display = 'flex'; }</script>
+    <script>
+        // Tap-to-cross-out sets (persisted in localStorage for this lift)
+        const _liftId = '<%= lift.id %>';
+        const _storageKey = 'solo-done-' + _liftId;
+        const _done = new Set(JSON.parse(localStorage.getItem(_storageKey) || '[]'));
+
+        function toggleSetDone(el) {
+            const key = el.dataset.key;
+            if (_done.has(key)) { _done.delete(key); el.classList.remove('done'); }
+            else                 { _done.add(key);    el.classList.add('done');    }
+            localStorage.setItem(_storageKey, JSON.stringify([..._done]));
+        }
+
+        // Restore state on load
+        document.querySelectorAll('.set-card.interactive').forEach(el => {
+            if (_done.has(el.dataset.key)) el.classList.add('done');
+        });
+
+        // Clear on complete
+        document.getElementById('complete-form')?.addEventListener('submit', () => {
+            localStorage.removeItem(_storageKey);
+        });
+    </script>
     <script>
         const vpMeta = document.querySelector('meta[name="viewport"]');
         const vpDefault = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';

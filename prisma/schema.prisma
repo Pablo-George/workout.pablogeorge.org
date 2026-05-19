@@ -21,10 +21,11 @@ model CoreWorkout {
   name   String
   userId String
 
-  configs   UserLiftConfig[]
-  logs      WorkoutLog[]
-  tmLogs    TrainingMaxLog[]
-  auxLifts  AuxLift[]
+  configs      UserLiftConfig[]
+  logs         WorkoutLog[]
+  tmLogs       TrainingMaxLog[]
+  auxLifts     AuxLift[]
+  groupMembers GroupSessionMember[]
 
   @@unique([userId, name])
 }
@@ -127,6 +128,28 @@ model Friendship {
   createdAt     DateTime         @default(now())
 
   @@unique([requesterId, addresseeId])
+}
+
+model GroupSession {
+  id        Int                  @id @default(autoincrement())
+  code      String               @unique
+  hostId    String
+  status    String               @default("ACTIVE")
+  createdAt DateTime             @default(now())
+  members   GroupSessionMember[]
+}
+
+model GroupSessionMember {
+  id        Int          @id @default(autoincrement())
+  sessionId Int
+  userId    String
+  liftId    Int
+  status    String       @default("ACTIVE")
+  joinedAt  DateTime     @default(now())
+  session   GroupSession @relation(fields: [sessionId], references: [id])
+  lift      CoreWorkout  @relation(fields: [liftId], references: [id])
+
+  @@unique([sessionId, userId])
 }
 
 

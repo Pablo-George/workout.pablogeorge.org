@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Open Rooms</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f0f0f;
+            color: #fff;
+            min-height: 100dvh;
+            padding: 1.5rem 1rem 3rem;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .back { display: inline-flex; align-items: center; gap: 0.3rem; color: #4f9eff;
+                font-size: 0.9rem; font-weight: 600; text-decoration: none; margin-bottom: 1.5rem; }
+        h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.25rem; }
+        .subtitle { font-size: 0.85rem; color: #555; margin-bottom: 1.5rem; }
+
+        .room-card {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 14px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        .room-members { font-size: 0.95rem; font-weight: 700; }
+        .room-lifts { font-size: 0.78rem; color: #555; margin-top: 0.25rem; }
+        .room-avatars {
+            display: flex;
+            gap: -4px;
+            margin-bottom: 0.4rem;
+        }
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid #0f0f0f;
+            object-fit: cover;
+        }
+        .avatar-placeholder {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid #0f0f0f;
+            background: #2a2a2a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #555;
+        }
+        .btn-join {
+            background: #4f9eff;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.88rem;
+            font-weight: 700;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            flex-shrink: 0;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+        }
+        .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .empty-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .empty-sub { font-size: 0.88rem; color: #555; margin-bottom: 1.75rem; line-height: 1.5; }
+        .btn-host {
+            display: inline-block;
+            background: #fff;
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <a href="/#tab-workouts" class="back">← Back</a>
+    <h1>Open Rooms</h1>
+    <div class="subtitle">Friends hosting right now</div>
+
+    <% if (sessions.length === 0) { %>
+
+    <div class="empty-state">
+        <div class="empty-icon">🏋️</div>
+        <div class="empty-title">No friends hosting right now</div>
+        <div class="empty-sub">Go back and host your own room —<br>your friends can join you!</div>
+        <a href="/#tab-workouts" class="btn-host" onclick="setTimeout(() => { setWorkoutMode && setWorkoutMode('group'); showGroupHost && showGroupHost(); }, 100);">
+            Host a Room
+        </a>
+    </div>
+
+    <% } else { %>
+
+    <% sessions.forEach(s => { %>
+    <div class="room-card">
+        <div>
+            <div class="room-members"><%= s.members.map(m => m.displayName).join(' & ') %></div>
+            <div class="room-lifts"><%= s.members.map(m => m.liftName).join(' · ') %></div>
+        </div>
+        <a href="/group/<%= s.id %>" class="btn-join">Join</a>
+    </div>
+    <% }) %>
+
+    <% } %>
+
+</body>
+</html>

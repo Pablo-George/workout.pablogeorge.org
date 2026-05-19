@@ -14,6 +14,7 @@ import workoutRoutes from "./routes/workout.js";
 import socialRoutes from "./routes/social.js";
 import calsRoutes from "./routes/cals.js";
 import adminRoutes from "./routes/admin.js";
+import groupRoutes from "./routes/group.js";
 
 export const prisma = new PrismaClient();
 
@@ -50,5 +51,6 @@ app.use(workoutRoutes);
 app.use(socialRoutes);
 app.use(calsRoutes);
 app.use(adminRoutes);
+app.use(groupRoutes);
 
 export default app;
