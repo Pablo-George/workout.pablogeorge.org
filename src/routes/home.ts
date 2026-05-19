@@ -190,26 +190,39 @@ async function getFeed(userId: string) {
   const visibleIds = [...friendIds, userId];
 
   const posts = await prisma.post.findMany({
-    where: { authorId: { in: visibleIds } },
+    where: { authorId: { in: visibleIds }, parentId: null },
     orderBy: { createdAt: "desc" },
     take: 50,
+    include: { replies: { orderBy: { createdAt: "asc" } } },
   });
 
-  return Promise.all(
-    posts.map(async (post) => {
-      const profile = await prisma.userProfile.findUnique({
-        where: { userId: post.authorId },
-      });
-      return {
-        authorId: post.authorId,
-        authorName: profile?.displayName ?? post.authorId,
-        authorPicture: profile?.pictureUrl ?? null,
-        content: post.content,
-        imageUrl: post.imageUrl,
-        timeAgo: timeAgo(post.createdAt),
-      };
-    })
-  );
+  const allAuthorIds = new Set<string>();
+  for (const post of posts) {
+    allAuthorIds.add(post.authorId);
+    for (const reply of post.replies) allAuthorIds.add(reply.authorId);
+  }
+  const profiles = await prisma.userProfile.findMany({
+    where: { userId: { in: [...allAuthorIds] } },
+  });
+  const profileMap = Object.fromEntries(profiles.map((p) => [p.userId, p]));
+
+  return posts.map((post) => ({
+    id: post.id,
+    authorId: post.authorId,
+    authorName: profileMap[post.authorId]?.displayName ?? post.authorId,
+    authorPicture: profileMap[post.authorId]?.pictureUrl ?? null,
+    content: post.content,
+    imageUrl: post.imageUrl,
+    timeAgo: timeAgo(post.createdAt),
+    replies: post.replies.map((r) => ({
+      id: r.id,
+      authorId: r.authorId,
+      authorName: profileMap[r.authorId]?.displayName ?? r.authorId,
+      authorPicture: profileMap[r.authorId]?.pictureUrl ?? null,
+      content: r.content,
+      timeAgo: timeAgo(r.createdAt),
+    })),
+  }));
 }
 
 async function getPendingRequests(userId: string) {

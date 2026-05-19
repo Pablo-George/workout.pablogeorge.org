@@ -75,6 +75,9 @@ model Post {
   content   String?
   imageUrl  String?
   createdAt DateTime @default(now())
+  parentId  Int?
+  parent    Post?    @relation("PostReplies", fields: [parentId], references: [id])
+  replies   Post[]   @relation("PostReplies")
 }
 
 model AuxLift {

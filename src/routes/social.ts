@@ -44,6 +44,23 @@ router.post("/social/post", ensureAuth, upload.single("image"), async (req, res)
   res.redirect("/#tab-social");
 });
 
+router.post("/social/reply/:postId", ensureAuth, async (req, res) => {
+  const user = req.user as any;
+  const postId = parseInt(req.params.postId);
+  const content = (req.body.content as string)?.trim() || null;
+
+  if (!content) return res.redirect("/#tab-social");
+
+  const parent = await prisma.post.findUnique({ where: { id: postId } });
+  if (!parent || parent.parentId !== null) return res.redirect("/#tab-social");
+
+  await prisma.post.create({
+    data: { authorId: user.userId, content, parentId: postId },
+  });
+
+  res.redirect(`/#thread-${postId}`);
+});
+
 router.get("/og/invite", (_req, res) => {
   // Minimal 1x1 dark PNG, scaled up by og:image:width/height hints.
   // iMessage ignores SVG, so we serve a real PNG and let the title/description carry the message.
