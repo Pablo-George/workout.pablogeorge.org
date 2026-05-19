@@ -44,12 +44,60 @@ router.post("/social/post", ensureAuth, upload.single("image"), async (req, res)
   res.redirect("/#tab-social");
 });
 
+function timeAgo(dt: Date): string {
+  const diff = Date.now() - dt.getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d`;
+  return dt.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+router.get("/social/post/:postId", ensureAuth, async (req, res) => {
+  const user = req.user as any;
+  const postId = parseInt(req.params.postId);
+  if (isNaN(postId)) return res.redirect("/#tab-social");
+
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    include: { replies: { orderBy: { createdAt: "asc" } } },
+  });
+  if (!post || post.parentId !== null) return res.redirect("/#tab-social");
+
+  const allAuthorIds = new Set([post.authorId, ...post.replies.map((r) => r.authorId)]);
+  const profiles = await prisma.userProfile.findMany({ where: { userId: { in: [...allAuthorIds] } } });
+  const profileMap = Object.fromEntries(profiles.map((p) => [p.userId, p]));
+
+  res.render("thread", {
+    user,
+    post: {
+      id: post.id,
+      authorId: post.authorId,
+      authorName: profileMap[post.authorId]?.displayName ?? post.authorId,
+      authorPicture: profileMap[post.authorId]?.pictureUrl ?? null,
+      content: post.content,
+      imageUrl: post.imageUrl,
+      timeAgo: timeAgo(post.createdAt),
+      replies: post.replies.map((r) => ({
+        authorId: r.authorId,
+        authorName: profileMap[r.authorId]?.displayName ?? r.authorId,
+        authorPicture: profileMap[r.authorId]?.pictureUrl ?? null,
+        content: r.content,
+        timeAgo: timeAgo(r.createdAt),
+      })),
+    },
+  });
+});
+
 router.post("/social/reply/:postId", ensureAuth, async (req, res) => {
   const user = req.user as any;
   const postId = parseInt(req.params.postId);
   const content = (req.body.content as string)?.trim() || null;
 
-  if (!content) return res.redirect("/#tab-social");
+  if (!content) return res.redirect(`/social/post/${postId}`);
 
   const parent = await prisma.post.findUnique({ where: { id: postId } });
   if (!parent || parent.parentId !== null) return res.redirect("/#tab-social");
@@ -58,7 +106,7 @@ router.post("/social/reply/:postId", ensureAuth, async (req, res) => {
     data: { authorId: user.userId, content, parentId: postId },
   });
 
-  res.redirect(`/#thread-${postId}`);
+  res.redirect(`/social/post/${postId}`);
 });
 
 router.get("/og/invite", (_req, res) => {

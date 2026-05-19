@@ -328,15 +328,12 @@
 
         .post-card {
             display: flex;
-            flex-direction: column;
-            gap: 0;
+            gap: 0.75rem;
             padding: 1rem 0;
             border-bottom: 1px solid #1a1a1a;
         }
 
         .post-card:last-child { border-bottom: none; }
-
-        .post-top { display: flex; gap: 0.75rem; }
 
         .post-avatar {
             width: 38px;
@@ -392,55 +389,11 @@
         }
 
         .reply-btn {
-            background: none; border: none; color: #555;
-            font-size: 0.78rem; font-weight: 600; cursor: pointer;
-            padding: 0; margin-top: 0.5rem; display: inline-flex;
-            align-items: center; gap: 0.3rem;
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            color: #555; font-size: 0.78rem; font-weight: 600;
+            text-decoration: none; margin-top: 0.5rem;
         }
         .reply-btn:active { color: #4f9eff; }
-
-        .replies-section {
-            margin-left: calc(38px + 0.75rem);
-            border-top: 1px solid #1e1e1e;
-            margin-top: 0.5rem;
-            padding-top: 0.4rem;
-        }
-
-        .reply-card {
-            display: flex; gap: 0.5rem;
-            padding: 0.5rem 0;
-        }
-
-        .reply-avatar {
-            width: 26px; height: 26px; border-radius: 50%;
-            object-fit: cover; flex-shrink: 0; background: #2a2a2a;
-        }
-
-        .reply-avatar-placeholder {
-            width: 26px; height: 26px; border-radius: 50%;
-            background: #2a2a2a; display: flex; align-items: center;
-            justify-content: center; color: #555;
-            font-size: 0.65rem; font-weight: 700; flex-shrink: 0;
-        }
-
-        .reply-body { flex: 1; min-width: 0; }
-
-        .reply-composer {
-            display: flex; align-items: center; gap: 0.5rem;
-            padding: 0.5rem 0 0.25rem;
-            border-top: 1px solid #1e1e1e;
-        }
-
-        .reply-composer textarea {
-            flex: 1; background: #1a1a1a; border: 1px solid #2a2a2a;
-            border-radius: 8px; color: #fff; font-size: 0.85rem;
-            font-family: inherit; resize: none; outline: none;
-            padding: 0.4rem 0.6rem; min-height: 32px; max-height: 80px;
-            overflow-y: auto;
-        }
-
-        .reply-composer textarea::placeholder { color: #444; }
-        .reply-composer textarea:focus { border-color: #4f9eff; }
 
         .request-card {
             display: flex;
@@ -779,72 +732,43 @@
                 <% } %>
 
                 <% feedPosts.forEach(post => { %>
-                    <div class="post-card" id="post-<%= post.id %>">
-                        <div class="post-top">
-                            <% if (post.authorId !== user.userId) { %>
-                                <a href="/user/<%= post.authorId %>" style="display:block;flex-shrink:0;">
-                            <% } %>
-                            <% if (post.authorPicture) { %>
-                                <img src="<%= post.authorPicture %>" class="post-avatar" alt="" style="<%= post.authorId !== user.userId ? 'cursor:pointer;' : '' %>"/>
-                            <% } else { %>
-                                <div class="post-avatar-placeholder" style="<%= post.authorId !== user.userId ? 'cursor:pointer;' : '' %>"><%= post.authorName.charAt(0).toUpperCase() %></div>
-                            <% } %>
-                            <% if (post.authorId !== user.userId) { %>
-                                </a>
-                            <% } %>
-                            <div class="post-body">
-                                <div class="post-meta">
-                                    <span class="post-author"><%= post.authorName %></span>
-                                    <span class="post-time"><%= post.timeAgo %></span>
-                                </div>
-                                <% if (post.content) { %>
-                                    <div class="post-content"><%= post.content %></div>
-                                <% } %>
-                                <% if (post.imageUrl) { %>
-                                    <div style="width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:10px;margin-top:0.5rem;cursor:zoom-in;"
-                                         onclick="openLightbox('<%= post.imageUrl %>')">
-                                        <img src="<%= post.imageUrl %>" alt=""
-                                             style="width:100%;height:100%;object-fit:cover;display:block;"/>
-                                    </div>
-                                <% } %>
-                                <button type="button" class="reply-btn" onclick="toggleReplies(<%= post.id %>)">
-                                    <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;">
-                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                                    </svg>
-                                    <% if (post.replies.length > 0) { %>
-                                        <%= post.replies.length %> <%= post.replies.length === 1 ? 'reply' : 'replies' %>
-                                    <% } else { %>
-                                        Reply
-                                    <% } %>
-                                </button>
+                    <div class="post-card">
+                        <% if (post.authorId !== user.userId) { %>
+                            <a href="/user/<%= post.authorId %>" style="display:block;flex-shrink:0;">
+                        <% } %>
+                        <% if (post.authorPicture) { %>
+                            <img src="<%= post.authorPicture %>" class="post-avatar" alt="" style="<%= post.authorId !== user.userId ? 'cursor:pointer;' : '' %>"/>
+                        <% } else { %>
+                            <div class="post-avatar-placeholder" style="<%= post.authorId !== user.userId ? 'cursor:pointer;' : '' %>"><%= post.authorName.charAt(0).toUpperCase() %></div>
+                        <% } %>
+                        <% if (post.authorId !== user.userId) { %>
+                            </a>
+                        <% } %>
+                        <div class="post-body">
+                            <div class="post-meta">
+                                <span class="post-author"><%= post.authorName %></span>
+                                <span class="post-time"><%= post.timeAgo %></span>
                             </div>
-                        </div>
-
-                        <!-- Replies thread (hidden by default) -->
-                        <div id="replies-<%= post.id %>" class="replies-section" style="display:none;">
-                            <% post.replies.forEach(reply => { %>
-                            <div class="reply-card">
-                                <% if (reply.authorPicture) { %>
-                                    <img src="<%= reply.authorPicture %>" class="reply-avatar" alt=""/>
+                            <% if (post.content) { %>
+                                <div class="post-content"><%= post.content %></div>
+                            <% } %>
+                            <% if (post.imageUrl) { %>
+                                <div style="width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:10px;margin-top:0.5rem;cursor:zoom-in;"
+                                     onclick="openLightbox('<%= post.imageUrl %>')">
+                                    <img src="<%= post.imageUrl %>" alt=""
+                                         style="width:100%;height:100%;object-fit:cover;display:block;"/>
+                                </div>
+                            <% } %>
+                            <a href="/social/post/<%= post.id %>" class="reply-btn">
+                                <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                </svg>
+                                <% if (post.replies.length > 0) { %>
+                                    <%= post.replies.length %> <%= post.replies.length === 1 ? 'reply' : 'replies' %>
                                 <% } else { %>
-                                    <div class="reply-avatar-placeholder"><%= reply.authorName.charAt(0).toUpperCase() %></div>
+                                    Reply
                                 <% } %>
-                                <div class="reply-body">
-                                    <div class="post-meta" style="margin-bottom:0.15rem;">
-                                        <span class="post-author" style="font-size:0.82rem;"><%= reply.authorName %></span>
-                                        <span class="post-time"><%= reply.timeAgo %></span>
-                                    </div>
-                                    <% if (reply.content) { %>
-                                        <div class="post-content" style="font-size:0.85rem;"><%= reply.content %></div>
-                                    <% } %>
-                                </div>
-                            </div>
-                            <% }) %>
-                            <form action="/social/reply/<%= post.id %>" method="post" class="reply-composer">
-                                <textarea name="content" placeholder="Write a reply…" rows="1" maxlength="280" required
-                                          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();this.form.submit();}"></textarea>
-                                <button type="submit" class="btn-post">Post</button>
-                            </form>
+                            </a>
                         </div>
                     </div>
                 <% }) %>
@@ -1218,15 +1142,6 @@
             history.replaceState(null, '', '#tab-' + name);
         }
 
-        function toggleReplies(postId) {
-            const section = document.getElementById('replies-' + postId);
-            const isHidden = section.style.display === 'none';
-            section.style.display = isHidden ? 'block' : 'none';
-            if (isHidden) {
-                section.querySelector('textarea')?.focus();
-            }
-        }
-
         const hash = window.location.hash;
         const hashTab = hash.replace('#tab-', '');
         if (['home', 'profile', 'social', 'workouts', 'cals'].includes(hashTab)) {
@@ -1236,15 +1151,6 @@
             const btn = document.querySelector('nav button[aria-label="Social"]');
             if (btn) switchTab('social', btn);
             switchSubTab('friends');
-        } else if (hash.startsWith('#thread-')) {
-            const postId = hash.replace('#thread-', '');
-            const btn = document.querySelector('nav button[aria-label="Social"]');
-            if (btn) switchTab('social', btn);
-            const section = document.getElementById('replies-' + postId);
-            if (section) {
-                section.style.display = 'block';
-                setTimeout(() => document.getElementById('post-' + postId)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-            }
         }
 
         const rawDatasets = <%- JSON.stringify(chartDatasets) %>;
