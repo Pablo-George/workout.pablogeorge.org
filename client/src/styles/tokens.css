@@ -1,0 +1,66 @@
+/*
+ * Design tokens extracted from the EJS templates.
+ *
+ * The old templates hard-coded every hex and re-declared them per file, which had
+ * already drifted (.post-avatar was 38px in home.ejs and 40px in thread.ejs).
+ * These are the de-facto values, consolidated once. Same look, one source.
+ */
+
+:root {
+  /* Surfaces, darkest to lightest */
+  --color-bg: #0f0f0f;
+  --color-surface: #1a1a1a;
+  --color-inset: #111;
+  --color-divider: #1e1e1e;
+  --color-divider-strong: #222;
+  --color-border: #2a2a2a;
+
+  /* Text ramp */
+  --color-text: #fff;
+  --color-text-body: #ccc;
+  --color-text-secondary: #888;
+  --color-text-muted: #555;
+  --color-text-faint: #444;
+
+  /* Accents */
+  --color-primary: #4f9eff;
+  --color-success: #4ade80; /* also calories */
+  --color-warning: #f59e0b; /* also carbs */
+  --color-danger: #e05252;
+  --color-danger-soft: #f87171;
+  --color-weight: #a78bfa;
+
+  /* Chart series palette (matches workoutService CHART_COLORS ordering) */
+  --chart-1: #4f9eff;
+  --chart-2: #4ade80;
+  --chart-3: #f59e0b;
+  --chart-4: #a78bfa;
+  --chart-5: #f87171;
+
+  /* Radii — the old files used an ad-hoc 6/8/10/12/14/20 mix */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /* Type */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 15px;
+  --text-lg: 18px;
+  --text-xl: 24px;
+  --text-2xl: 32px;
+
+  /* Layout */
+  --nav-height: 56px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}

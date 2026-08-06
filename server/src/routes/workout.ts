@@ -3,8 +3,7 @@ import { Router, type Request } from "express";
 const isHTMX = (req: Request) => req.headers["hx-request"] === "true";
 import { ensureAuth } from "../middleware/auth.js";
 import { prisma } from "../app.js";
-import { buildPlan, createConfig, getConfig, updateTrainingMax, completeWorkout } from "../services/workoutService.js";
-import { getAuxLifts } from "../services/auxLiftService.js";
+import { createConfig, getConfig, updateTrainingMax, completeWorkout } from "../services/workoutService.js";
 import { generateGuideImage } from "../services/guideService.js";
 
 const router = Router();
