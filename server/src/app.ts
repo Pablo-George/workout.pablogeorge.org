@@ -1,13 +1,13 @@
 import express from "express";
 import session from "express-session";
 import passport from "passport";
-import { PrismaClient } from "@prisma/client";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { mkdirSync } from "fs";
 import ConnectSqlite3 from "connect-sqlite3";
 import { APP_VERSION } from "./version.js";
 import "./config/passport.js";
+import apiRoutes from "./api/index.js";
 import authRoutes from "./routes/auth.js";
 import homeRoutes from "./routes/home.js";
 import workoutRoutes from "./routes/workout.js";
@@ -16,7 +16,9 @@ import calsRoutes from "./routes/cals.js";
 import adminRoutes from "./routes/admin.js";
 import groupRoutes from "./routes/group.js";
 
-export const prisma = new PrismaClient();
+// Re-exported for the EJS-era routes that still import it from here.
+// New code should import from ./db.js directly.
+export { prisma } from "./db.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -44,6 +46,9 @@ app.use(
 );
 app.use(passport.initialize());
 app.use(passport.session());
+
+// Mounted before the EJS routes so /api/* can never be shadowed by them.
+app.use("/api", apiRoutes);
 
 app.use(authRoutes);
 app.use(homeRoutes);

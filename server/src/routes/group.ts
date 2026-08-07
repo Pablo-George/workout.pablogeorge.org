@@ -172,7 +172,7 @@ router.get("/group/:sessionId", ensureAuth, async (req, res) => {
     })
   );
 
-  const completedSets = getAllCompleted(sessionId);
+  const completedSets = await getAllCompleted(sessionId);
   const myTabIndex = Math.max(0, membersData.findIndex((m) => m.userId === userId));
   const myStatus = session.members.find((m) => m.userId === userId)?.status ?? "ACTIVE";
 
@@ -220,7 +220,7 @@ router.post("/group/:sessionId/set-toggle", ensureAuth, async (req, res) => {
   });
   if (!member) return res.status(403).json({ error: "Not a member" });
 
-  const active = toggleSet(sessionId, user.userId, setKey);
+  const active = await toggleSet(sessionId, user.userId, setKey);
   res.json({ active });
 });
 
@@ -239,7 +239,7 @@ router.get("/group/:sessionId/state", ensureAuth, async (req, res) => {
   res.json({
     sessionStatus: session.status,
     memberCount: session.members.length,
-    completed: getAllCompleted(sessionId),
+    completed: await getAllCompleted(sessionId),
     memberStatuses,
   });
 });
@@ -261,7 +261,7 @@ router.post("/group/:sessionId/leave", ensureAuth, async (req, res) => {
     const remaining = await prisma.groupSessionMember.findMany({ where: { sessionId } });
     if (remaining.length === 0 || remaining.every((m) => m.status === "COMPLETED")) {
       await prisma.groupSession.update({ where: { id: sessionId }, data: { status: "COMPLETED" } });
-      clearSession(sessionId);
+      await clearSession(sessionId);
     }
   }
 
@@ -293,7 +293,7 @@ router.post("/group/:sessionId/complete", ensureAuth, async (req, res) => {
   const allMembers = await prisma.groupSessionMember.findMany({ where: { sessionId } });
   if (allMembers.every((m) => m.status === "COMPLETED")) {
     await prisma.groupSession.update({ where: { id: sessionId }, data: { status: "COMPLETED" } });
-    clearSession(sessionId);
+    await clearSession(sessionId);
   }
 
   res.redirect(`/group/${sessionId}`);

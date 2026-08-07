@@ -30,12 +30,13 @@
   --color-danger-soft: #f87171;
   --color-weight: #a78bfa;
 
-  /* Chart series palette (matches workoutService CHART_COLORS ordering) */
+  /* Chart series palette. Must stay in step with CHART_COLORS in
+     server/src/services/workoutService.ts, which colours the datasets. */
   --chart-1: #4f9eff;
   --chart-2: #4ade80;
-  --chart-3: #f59e0b;
+  --chart-3: #fb923c;
   --chart-4: #a78bfa;
-  --chart-5: #f87171;
+  --chart-5: #f472b6;
 
   /* Radii — the old files used an ad-hoc 6/8/10/12/14/20 mix */
   --radius-sm: 6px;

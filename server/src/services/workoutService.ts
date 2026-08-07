@@ -92,10 +92,20 @@ export async function getConfig(userId: string, liftId: number) {
   });
 }
 
+/** Records the training max at this point in time, which is what the
+ *  progression chart on the home screen plots. */
+async function logTrainingMax(userId: string, liftId: number, trainingMax: number) {
+  await prisma.trainingMaxLog.create({
+    data: { userId, liftId, trainingMax, loggedOn: new Date().toISOString().split("T")[0] },
+  });
+}
+
 export async function createConfig(userId: string, lift: { id: number; name: string }, trainingMax: number) {
-  return prisma.userLiftConfig.create({
+  const config = await prisma.userLiftConfig.create({
     data: { userId, liftId: lift.id, trainingMax, currentWeek: 1 },
   });
+  await logTrainingMax(userId, lift.id, trainingMax);
+  return config;
 }
 
 export async function updateTrainingMax(
@@ -106,6 +116,7 @@ export async function updateTrainingMax(
     where: { id: config.id },
     data: { trainingMax: newMax },
   });
+  await logTrainingMax(config.userId, config.liftId, newMax);
 }
 
 export async function getWeekLabels(userId: string) {
