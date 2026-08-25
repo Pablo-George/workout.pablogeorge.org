@@ -37,6 +37,12 @@ router.get("/", ensureAuth, async (req, res) => {
   const chartDatasets = await buildChartDatasets(userId);
   const totalSessions = await countLogs(userId);
 
+  const activeMembership = await prisma.groupSessionMember.findFirst({
+    where: { userId, status: "ACTIVE", session: { status: "ACTIVE" } },
+    orderBy: { joinedAt: "desc" },
+  });
+  const activeSessionId = activeMembership?.sessionId ?? null;
+
   const latestWeight = await prisma.bodyWeightLog.findFirst({
     where: { userId },
     orderBy: { loggedOn: "desc" },
@@ -97,12 +103,15 @@ router.get("/", ensureAuth, async (req, res) => {
   });
   const weightChartData = weightHistory.map((w) => ({ date: w.loggedOn, weight: w.weightLbs }));
 
+  const calendar = await buildMonthCalendar(userId, req.query.mo);
+
   res.render("home", {
     user,
     coreWorkouts: liftsWithConfig,
     weekLabels,
     chartDatasets,
     totalSessions,
+    activeSessionId,
     currentWeight: latestWeight?.weightLbs ?? null,
     hideWeight,
     feedPosts,
@@ -116,6 +125,7 @@ router.get("/", ensureAuth, async (req, res) => {
     calChartData,
     calHistoryDays,
     weightChartData,
+    calendar,
     calsError: req.query.cals_error === "1",
     isAdmin: process.env.ADMIN_EMAIL && user.userId === process.env.ADMIN_EMAIL,
   });
@@ -317,6 +327,183 @@ function formatCalDate(dateStr: string, today: string): string {
   if (dateStr === yesterday.toISOString().split("T")[0]) return "Yesterday";
   const date = new Date(dateStr + "T12:00:00");
   return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
+
+// ── Month activity calendar ───────────────────────────────────────────────
+// All workout/calorie dates in the app are stored as UTC "YYYY-MM-DD"
+// strings (see completeWorkout / cal routes), so the calendar math here
+// stays in UTC too rather than mixing local-timezone days into the grid.
+
+type CalItemKind = "main" | "aux" | "cals" | "weight";
+
+interface CalDayItem {
+  kind: CalItemKind;
+  title: string;
+  detail: string;
+}
+
+interface CalDay {
+  iso: string;
+  dayNum: number;
+  detailDate: string;
+  inMonth: boolean;
+  isToday: boolean;
+  isFuture: boolean;
+  items: CalDayItem[];
+}
+
+function isoUTC(d: Date): string {
+  return d.toISOString().split("T")[0];
+}
+
+function parseISO(iso: string): Date {
+  return new Date(iso + "T00:00:00Z");
+}
+
+function addDaysISO(iso: string, n: number): string {
+  const d = parseISO(iso);
+  d.setUTCDate(d.getUTCDate() + n);
+  return isoUTC(d);
+}
+
+/** Sunday-start week containing `iso`. */
+function startOfWeek(iso: string): string {
+  const d = parseISO(iso);
+  d.setUTCDate(d.getUTCDate() - d.getUTCDay());
+  return isoUTC(d);
+}
+
+/** First day of the month containing `iso`, shifted by `n` months. */
+function monthStartOffset(iso: string, n: number): string {
+  const d = parseISO(iso);
+  d.setUTCDate(1);
+  d.setUTCMonth(d.getUTCMonth() + n);
+  return isoUTC(d);
+}
+
+/** Number of days in the UTC month containing `iso`. */
+function daysInMonth(iso: string): number {
+  const d = parseISO(iso);
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate();
+}
+
+async function buildMonthCalendar(userId: string, moParam: unknown) {
+  const today = new Date().toISOString().split("T")[0];
+  // Any date inside the target month; falls back to the current month.
+  const anchor =
+    typeof moParam === "string" && /^\d{4}-\d{2}-\d{2}$/.test(moParam) ? moParam : today;
+  const monthStart = anchor.slice(0, 8) + "01";
+  // Grid spans whole Sunday-start weeks covering the month (5–6 rows),
+  // so activity on leading/trailing edge days still shows up.
+  const gridStart = startOfWeek(monthStart);
+  const rows = Math.ceil((parseISO(monthStart).getUTCDay() + daysInMonth(monthStart)) / 7);
+  const gridEnd = addDaysISO(gridStart, rows * 7 - 1);
+
+  const [mainLogs, auxLogs, weights, cals] = await Promise.all([
+    prisma.workoutLog.findMany({
+      where: { userId, completedOn: { gte: gridStart, lte: gridEnd } },
+      include: { lift: true },
+      orderBy: { id: "asc" },
+    }),
+    prisma.auxLiftLog.findMany({
+      where: { userId, completedOn: { gte: gridStart, lte: gridEnd } },
+      include: { auxLift: true },
+      orderBy: { id: "asc" },
+    }),
+    prisma.bodyWeightLog.findMany({
+      where: { userId, loggedOn: { gte: gridStart, lte: gridEnd } },
+    }),
+    prisma.calorieEntry.findMany({
+      where: { userId, loggedOn: { gte: gridStart, lte: gridEnd } },
+      select: { loggedOn: true, calories: true, proteinG: true },
+    }),
+  ]);
+
+  const byDay = new Map<string, CalDayItem[]>();
+  const push = (iso: string, item: CalDayItem) => {
+    const list = byDay.get(iso) ?? [];
+    list.push(item);
+    byDay.set(iso, list);
+  };
+
+  for (const log of mainLogs) {
+    push(log.completedOn, {
+      kind: "main",
+      title: log.lift.name,
+      detail: log.amrapReps != null ? `Week ${log.week} · AMRAP ${log.amrapReps} reps` : `Week ${log.week}`,
+    });
+  }
+  for (const log of auxLogs) {
+    push(log.completedOn, {
+      kind: "aux",
+      title: log.auxLift.name,
+      detail: log.weightLbs != null ? `${log.weightLbs} lbs` : "",
+    });
+  }
+  for (const w of weights) {
+    push(w.loggedOn, { kind: "weight", title: "Body weight", detail: `${w.weightLbs} lbs` });
+  }
+  const calsByDay = new Map<string, { total: number; protein: number }>();
+  for (const e of cals) {
+    const cur = calsByDay.get(e.loggedOn) ?? { total: 0, protein: 0 };
+    cur.total += e.calories;
+    cur.protein += e.proteinG ?? 0;
+    calsByDay.set(e.loggedOn, cur);
+  }
+  for (const [iso, { total, protein }] of calsByDay) {
+    push(iso, {
+      kind: "cals",
+      title: "Calories",
+      detail: protein > 0 ? `${total.toLocaleString("en-US")} kcal · ${protein}g protein` : `${total.toLocaleString("en-US")} kcal`,
+    });
+  }
+
+  const days: CalDay[] = Array.from({ length: rows * 7 }, (_, i) => {
+    const iso = addDaysISO(gridStart, i);
+    return {
+      iso,
+      dayNum: parseInt(iso.slice(8, 10), 10),
+      detailDate: parseISO(iso).toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "short",
+        day: "numeric",
+        timeZone: "UTC",
+      }),
+      inMonth: iso.slice(0, 7) === monthStart.slice(0, 7),
+      isToday: iso === today,
+      isFuture: iso > today,
+      items: byDay.get(iso) ?? [],
+    };
+  });
+
+  // Open today's panel when browsing the current month; otherwise open the
+  // most recent in-month day that actually has something logged.
+  let selectedIso: string | null = days.some((d) => d.isToday) ? today : null;
+  if (!selectedIso) {
+    for (let i = days.length - 1; i >= 0; i--) {
+      if (!days[i].inMonth) continue;
+      if ((byDay.get(days[i].iso) ?? []).length > 0) {
+        selectedIso = days[i].iso;
+        break;
+      }
+    }
+  }
+
+  const label = parseISO(monthStart).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+
+  return {
+    days,
+    weekdays: ["S", "M", "T", "W", "T", "F", "S"],
+    selectedIso,
+    label,
+    prevMo: monthStartOffset(monthStart, -1),
+    nextMo: monthStartOffset(monthStart, 1),
+    isCurrentMonth: monthStart === today.slice(0, 8) + "01",
+  };
 }
 
 function timeAgo(dt: Date) {

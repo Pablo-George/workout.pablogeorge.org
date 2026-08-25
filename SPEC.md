@@ -224,6 +224,7 @@ When a user first visits `/`, the app auto-creates four lifts: **Bench Press**, 
 | `AWS_ACCESS_KEY_ID` | AWS credentials |
 | `AWS_SECRET_ACCESS_KEY` | AWS credentials |
 | `AWS_S3_BUCKET` | S3 bucket name for post images |
+| `WORKOUT_GROUPS_ENABLED` | Set to `true` to enable multiplayer group workouts (rooms, share codes, joining friends' sessions). Default: off — solo workouts are unaffected. |
 
 ---
 

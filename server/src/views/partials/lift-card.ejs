@@ -20,7 +20,7 @@
     <input type="number" name="trainingMax"
            value="<%= w.trainingMax || '' %>"
            placeholder="Training max (lbs)"
-           min="45" step="2.5"
+           min="45" step="any"
            hx-post="/workout/<%= w.id %>/update-tm"
            hx-target="#lift-card-<%= w.id %>"
            hx-swap="outerHTML"

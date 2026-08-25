@@ -119,7 +119,7 @@
         <div class="log-row" id="tm-config-<%= config.id %>">
             <span style="font-size:0.88rem;font-weight:600;flex:1;"><%= config.lift.name %></span>
             <div style="display:flex;align-items:center;gap:0.4rem;">
-                <input type="number" value="<%= config.trainingMax %>" step="2.5" min="45" class="edit-num"
+                <input type="number" value="<%= config.trainingMax %>" step="any" min="45" class="edit-num"
                        onchange="adminSave('/admin/tm-config/update/<%= config.id %>', {trainingMax: this.value}, this)"/>
                 <span class="unit">lbs</span>
                 <select class="edit-select"

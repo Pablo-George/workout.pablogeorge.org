@@ -484,6 +484,175 @@
             stroke-linecap: round;
             stroke-linejoin: round;
         }
+
+        /* ── Month activity calendar ── */
+        .cal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+        }
+
+        .cal-nav {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: #111;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .cal-nav svg {
+            width: 15px;
+            height: 15px;
+            stroke: #777;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .cal-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .cal-today-link {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #4f9eff;
+            text-decoration: none;
+            margin-left: 0.4rem;
+        }
+
+        .cal-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            margin-bottom: 4px;
+        }
+
+        .cal-weekdays span {
+            text-align: center;
+            font-size: 0.58rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            color: #555;
+        }
+
+        .cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+
+        .cal-day {
+            background: #111;
+            border: none;
+            border-radius: 10px;
+            padding: 0.4rem 0 0.35rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .cal-day.future .cal-num { color: #3d3d3d; }
+
+        .cal-day.today .cal-num { color: #4f9eff; }
+
+        .cal-day.selected { background: #1c2b40; }
+
+        .cal-day.outside { background: transparent; }
+        .cal-day.outside .cal-num { color: #3a3a3a; }
+
+        .cal-num {
+            font-size: 0.72rem;
+            font-weight: 600;
+            line-height: 1.25;
+            color: #ccc;
+        }
+
+        .cal-dots {
+            display: flex;
+            gap: 2px;
+            min-height: 5px;
+        }
+
+        .cal-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            display: block;
+        }
+
+        .cal-dot.main { background: #4ade80; }
+        .cal-dot.aux { background: #fb923c; }
+        .cal-dot.cals { background: #4f9eff; }
+        .cal-dot.weight { background: #a78bfa; }
+
+        .cal-detail {
+            background: #111;
+            border-radius: 10px;
+            padding: 0.65rem 0.8rem 0.6rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+        }
+
+        .cal-detail-date {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #555;
+        }
+
+        .cal-empty {
+            font-size: 0.8rem;
+            color: #444;
+            padding-bottom: 0.1rem;
+        }
+
+        .cal-item {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+        }
+
+        .cal-item-icon {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .cal-item-icon.main { stroke: #4ade80; }
+        .cal-item-icon.aux { stroke: #fb923c; }
+        .cal-item-icon.cals { stroke: #4f9eff; }
+        .cal-item-icon.weight { stroke: #a78bfa; }
+
+        .cal-item-title {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #ddd;
+            flex-shrink: 0;
+        }
+
+        .cal-item-detail {
+            font-size: 0.75rem;
+            color: #666;
+            margin-left: auto;
+            text-align: right;
+        }
     </style>
 </head>
 <body>
@@ -502,6 +671,73 @@
                 <div class="stat-value"><%= currentWeight ? currentWeight + ' lbs' : '—' %></div>
                 <div class="stat-label">Body weight</div>
             </div>
+        </div>
+
+        <!-- Month activity calendar -->
+        <div class="chart-card" id="month-calendar">
+            <div class="cal-header">
+                <a href="/?mo=<%= calendar.prevMo %>#tab-home" class="cal-nav" aria-label="Previous month">
+                    <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+                </a>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+                    <div style="display:flex;align-items:baseline;">
+                        <span class="chart-title">Activity</span>
+                        <% if (!calendar.isCurrentMonth) { %>
+                            <a href="/#tab-home" class="cal-today-link">Today</a>
+                        <% } %>
+                    </div>
+                    <span class="cal-label"><%= calendar.label %></span>
+                </div>
+                <a href="/?mo=<%= calendar.nextMo %>#tab-home" class="cal-nav" aria-label="Next month">
+                    <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+                </a>
+            </div>
+
+            <div class="cal-weekdays">
+                <% calendar.weekdays.forEach(l => { %><span><%= l %></span><% }) %>
+            </div>
+
+            <div class="cal-grid">
+                <% calendar.days.forEach(d => { %>
+                <button type="button"
+                        id="cal-day-<%= d.iso %>"
+                        class="cal-day<%= d.inMonth ? '' : ' outside' %><%= d.isToday ? ' today' : '' %><%= d.isFuture ? ' future' : '' %><%= calendar.selectedIso === d.iso ? ' selected' : '' %>"
+                        onclick="toggleCalDay('<%= d.iso %>')">
+                    <span class="cal-num"><%= d.dayNum %></span>
+                    <span class="cal-dots">
+                        <% d.items.slice(0, 3).forEach(it => { %><i class="cal-dot <%= it.kind %>"></i><% }) %>
+                    </span>
+                </button>
+                <% }) %>
+            </div>
+
+            <% calendar.days.forEach(d => { %>
+            <div id="cal-detail-<%= d.iso %>" class="cal-detail"
+                 style="display:<%= calendar.selectedIso === d.iso ? 'block' : 'none' %>;">
+                <div class="cal-detail-date">
+                    <%= d.isToday ? 'Today · ' : '' %><%= d.detailDate %>
+                </div>
+                <% if (d.items.length === 0) { %>
+                    <div class="cal-empty">No activity logged.</div>
+                <% } else { %>
+                    <% d.items.forEach(it => {
+                           const iconPath = it.kind === 'main'
+                               ? '<path d="M6.5 6.5v11"/><path d="M17.5 6.5v11"/><path d="M3 9.5v5"/><path d="M21 9.5v5"/><path d="M6.5 12h11"/>'
+                               : it.kind === 'aux'
+                               ? '<circle cx="12" cy="12" r="9"/><path d="M12 8v8"/><path d="M8 12h8"/>'
+                               : it.kind === 'cals'
+                               ? '<path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>'
+                               : '<path d="M3 12h4l3-9 4 18 3-9h4"/>';
+                    %>
+                    <div class="cal-item">
+                        <svg class="cal-item-icon <%= it.kind %>" viewBox="0 0 24 24"><%- iconPath %></svg>
+                        <span class="cal-item-title"><%= it.title %></span>
+                        <% if (it.detail) { %><span class="cal-item-detail"><%= it.detail %></span><% } %>
+                    </div>
+                    <% }) %>
+                <% } %>
+            </div>
+            <% }) %>
         </div>
 
         <div class="chart-card">
@@ -587,7 +823,7 @@
                 <input type="hidden" name="liftId" value="<%= w.id %>">
                 <div style="font-size:0.75rem;color:#555;margin-bottom:0.5rem;">Training max for <%= w.name %>:</div>
                 <div style="display:flex;gap:0.5rem;align-items:center;">
-                    <input type="number" name="trainingMax" placeholder="e.g. 185" step="2.5" min="45" required
+                    <input type="number" name="trainingMax" placeholder="e.g. 185" step="any" min="45" required
                            style="background:#111;border:1px solid #2a2a2a;border-radius:8px;color:#fff;font-size:0.95rem;font-weight:700;padding:0.4rem 0.65rem;outline:none;width:130px;">
                     <span style="font-size:0.8rem;color:#555;flex-shrink:0;">lbs</span>
                     <button type="submit"
@@ -605,6 +841,7 @@
         <% } %>
 
         <!-- Join a friend's room -->
+        <% if (groupsEnabled) { %>
         <a href="/group/rooms" style="display:flex;align-items:center;gap:1rem;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:14px;padding:1.1rem 1rem;margin-top:1rem;text-decoration:none;color:inherit;">
             <div style="width:42px;height:42px;border-radius:10px;background:#1a1e2e;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">👥</div>
             <div>
@@ -612,6 +849,7 @@
                 <div style="font-size:0.78rem;color:#555;margin-top:2px;">See who's hosting right now</div>
             </div>
         </a>
+        <% } %>
     </section>
 
     <section class="tab-content" id="tab-profile">
@@ -753,11 +991,10 @@
                                 <div class="post-content"><%= post.content %></div>
                             <% } %>
                             <% if (post.imageUrl) { %>
-                                <div style="width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:10px;margin-top:0.5rem;cursor:zoom-in;"
-                                     onclick="openLightbox('<%= post.imageUrl %>')">
-                                    <img src="<%= post.imageUrl %>" alt=""
-                                         style="width:100%;height:100%;object-fit:cover;display:block;"/>
-                                </div>
+                                <img src="<%= post.imageUrl %>" alt=""
+                                     onclick="openLightbox('<%= post.imageUrl %>')"
+                                     style="width:100%;height:auto;max-height:min(70vh,600px);object-fit:contain;
+                                            background:#000;border-radius:10px;margin-top:0.5rem;cursor:zoom-in;display:block;"/>
                             <% } %>
                             <a href="/social/post/<%= post.id %>" class="reply-btn">
                                 <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;">
@@ -778,7 +1015,7 @@
                 <form action="/social/post" method="post" enctype="multipart/form-data" id="postForm">
                     <div id="imagePreview" style="display:none;margin-bottom:0.4rem;">
                         <img id="previewImg" src="" alt=""
-                             style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;"/>
+                             style="width:100%;height:auto;max-height:180px;object-fit:contain;background:#000;border-radius:8px;"/>
                         <button type="button" onclick="clearImage()"
                                 style="background:none;border:none;color:#e05252;font-size:0.75rem;
                                        cursor:pointer;margin-top:0.2rem;">Remove image</button>
@@ -1158,28 +1395,7 @@
 
     </section>
 
-    <nav>
-        <button class="active" onclick="switchTab('home', this)" aria-label="Home">
-            <svg viewBox="0 0 24 24"><path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/></svg>
-            Home
-        </button>
-        <button onclick="switchTab('workouts', this)" aria-label="Workouts">
-            <svg viewBox="0 0 24 24"><path d="M6 4v16M18 4v16M2 9h4M18 9h4M2 15h4M18 15h4"/></svg>
-            Workouts
-        </button>
-        <button onclick="switchTab('cals', this)" aria-label="Cals">
-            <svg viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
-            Cals
-        </button>
-        <button onclick="switchTab('social', this)" aria-label="Social">
-            <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            Social
-        </button>
-        <button onclick="switchTab('profile', this)" aria-label="Profile">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-            Profile
-        </button>
-    </nav>
+    <%- include('partials/bottom-nav', { mode: 'tabs', current: 'home', workoutHref: activeSessionId ? '/group/' + activeSessionId : null }) %>
 
     <script>
         function switchSubTab(name) {
@@ -1222,9 +1438,13 @@
             history.replaceState(null, '', '#tab-' + name);
         }
 
+        const ACTIVE_SESSION_ID = <%- JSON.stringify(activeSessionId) %>;
+
         const hash = window.location.hash;
         const hashTab = hash.replace('#tab-', '');
-        if (['home', 'profile', 'social', 'workouts', 'cals'].includes(hashTab)) {
+        if (hashTab === 'workouts' && ACTIVE_SESSION_ID) {
+            location.replace('/group/' + ACTIVE_SESSION_ID);
+        } else if (['home', 'profile', 'social', 'workouts', 'cals'].includes(hashTab)) {
             const btn = document.querySelector(`nav button[aria-label="${hashTab.charAt(0).toUpperCase() + hashTab.slice(1)}"]`);
             if (btn) switchTab(hashTab, btn);
         } else if (hash === '#social-friends') {
@@ -1574,6 +1794,19 @@
             document.getElementById('cals-tab-today').style.color = isToday ? '#fff' : '#555';
             document.getElementById('cals-tab-history').style.background = isToday ? 'transparent' : '#1e1e1e';
             document.getElementById('cals-tab-history').style.color = isToday ? '#555' : '#fff';
+        }
+
+        function toggleCalDay(iso) {
+            const det = document.getElementById('cal-detail-' + iso);
+            const btn = document.getElementById('cal-day-' + iso);
+            const wasOpen = det.style.display !== 'none';
+            document.querySelectorAll('.cal-detail').forEach(e => e.style.display = 'none');
+            document.querySelectorAll('.cal-day.selected').forEach(e => e.classList.remove('selected'));
+            if (!wasOpen) {
+                det.style.display = 'block';
+                btn.classList.add('selected');
+                det.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
         }
 
         function toggleHistoryDay(date) {

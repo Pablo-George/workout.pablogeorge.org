@@ -15,6 +15,7 @@ import socialRoutes from "./routes/social.js";
 import calsRoutes from "./routes/cals.js";
 import adminRoutes from "./routes/admin.js";
 import groupRoutes from "./routes/group.js";
+import { GROUP_WORKOUTS_ENABLED } from "./config/features.js";
 
 // Re-exported for the EJS-era routes that still import it from here.
 // New code should import from ./db.js directly.
@@ -49,6 +50,12 @@ app.use(passport.session());
 
 // Mounted before the EJS routes so /api/* can never be shadowed by them.
 app.use("/api", apiRoutes);
+
+// Feature flags exposed to all EJS views.
+app.use((_req, res, next) => {
+  res.locals.groupsEnabled = GROUP_WORKOUTS_ENABLED;
+  next();
+});
 
 app.use(authRoutes);
 app.use(homeRoutes);

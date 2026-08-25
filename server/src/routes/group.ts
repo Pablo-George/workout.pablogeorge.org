@@ -1,11 +1,15 @@
 import { Router } from "express";
 import { ensureAuth } from "../middleware/auth.js";
 import { prisma } from "../app.js";
+import { GROUP_WORKOUTS_ENABLED } from "../config/features.js";
 import { buildPlan, getConfig, createConfig, completeWorkout } from "../services/workoutService.js";
 import { getAuxLifts } from "../services/auxLiftService.js";
 import { toggleSet, getAllCompleted, clearSession } from "../services/groupState.js";
 
 const router = Router();
+
+// Multiplayer surfaces only — solo sessions still work when the flag is off.
+const rejectMultiplayer = (_req: any, res: any) => res.redirect("/#tab-workouts");
 
 function generateCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -33,6 +37,7 @@ async function ensureAuxLifts(userId: string, liftId: number, liftName: string, 
 
 // List open friend sessions
 router.get("/group/rooms", ensureAuth, async (req, res) => {
+  if (!GROUP_WORKOUTS_ENABLED) return rejectMultiplayer(req, res);
   const user = req.user as any;
   const userId = user.userId;
 
@@ -71,6 +76,7 @@ router.get("/group/rooms", ensureAuth, async (req, res) => {
 
 // Look up session by share code
 router.get("/group/j/:code", ensureAuth, async (req, res) => {
+  if (!GROUP_WORKOUTS_ENABLED) return rejectMultiplayer(req, res);
   const session = await prisma.groupSession.findUnique({
     where: { code: req.params.code.toUpperCase() },
   });
@@ -136,8 +142,8 @@ router.get("/group/:sessionId", ensureAuth, async (req, res) => {
   const isMember = session.members.some((m) => m.userId === userId);
 
   if (!isMember) {
-    if (session.status !== "ACTIVE") {
-      return res.render("group-workout", { user, session, isMember: false, sessionEnded: true, myLifts: [], hostName: "" });
+    if (session.status !== "ACTIVE" || !GROUP_WORKOUTS_ENABLED) {
+      return res.redirect("/#tab-workouts");
     }
     const hostProfile = await prisma.userProfile.findUnique({ where: { userId: session.hostId } });
     const configs = await prisma.userLiftConfig.findMany({ where: { userId }, include: { lift: true } });
@@ -184,6 +190,7 @@ router.get("/group/:sessionId", ensureAuth, async (req, res) => {
 
 // Join an existing session
 router.post("/group/:sessionId/join", ensureAuth, async (req, res) => {
+  if (!GROUP_WORKOUTS_ENABLED) return rejectMultiplayer(req, res);
   const user = req.user as any;
   const userId = user.userId;
   const sessionId = parseInt(req.params.sessionId);

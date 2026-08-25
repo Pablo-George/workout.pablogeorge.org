@@ -7,6 +7,7 @@ import workoutRoutes from "./workouts.js";
 import calsRoutes from "./cals.js";
 import socialRoutes from "./social.js";
 import usersRoutes from "./users.js";
+import { GROUP_WORKOUTS_ENABLED } from "../config/features.js";
 import groupRoutes from "./group.js";
 import guidesRoutes from "./guides.js";
 import adminRoutes from "./admin.js";
@@ -20,7 +21,9 @@ router.use("/workouts", workoutRoutes);
 router.use("/cals", calsRoutes);
 router.use("/social", socialRoutes);
 router.use("/users", usersRoutes);
-router.use("/group", groupRoutes);
+if (GROUP_WORKOUTS_ENABLED) {
+  router.use("/group", groupRoutes);
+}
 router.use("/guides", guidesRoutes);
 router.use("/admin", adminRoutes);
 
