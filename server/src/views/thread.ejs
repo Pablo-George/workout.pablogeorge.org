@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Thread</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f0f0f;
+            color: #fff;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            position: sticky; top: 0; z-index: 10;
+            background: #0f0f0f; border-bottom: 1px solid #1e1e1e;
+            display: flex; align-items: center; gap: 0.75rem;
+            padding: 0.75rem 1rem;
+        }
+
+        header a {
+            color: #4f9eff; font-size: 0.9rem; font-weight: 600;
+            text-decoration: none; display: flex; align-items: center;
+            gap: 4px; flex-shrink: 0;
+        }
+
+        header a svg {
+            width: 20px; height: 20px; stroke: currentColor; fill: none;
+            stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
+        }
+
+        .header-title { font-size: 0.95rem; font-weight: 700; }
+
+        main {
+            flex: 1;
+            padding: 1rem 1rem 6rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Original post */
+        .op-card {
+            display: flex; gap: 0.75rem;
+            padding-bottom: 1.25rem;
+            border-bottom: 1px solid #1e1e1e;
+        }
+
+        .post-avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            object-fit: cover; flex-shrink: 0; background: #2a2a2a;
+        }
+
+        .post-avatar-placeholder {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: #2a2a2a; display: flex; align-items: center;
+            justify-content: center; color: #555;
+            font-size: 0.85rem; font-weight: 700; flex-shrink: 0;
+        }
+
+        .post-body { flex: 1; min-width: 0; }
+
+        .post-meta {
+            display: flex; align-items: baseline; gap: 0.5rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .post-author { font-size: 0.9rem; font-weight: 700; }
+        .post-time { font-size: 0.75rem; color: #555; flex-shrink: 0; }
+
+        .post-content {
+            font-size: 0.95rem; color: #ccc;
+            line-height: 1.55; word-break: break-word;
+        }
+
+        /* Replies */
+        .replies-label {
+            font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em;
+            color: #444; text-transform: uppercase;
+            padding: 0.85rem 0 0.5rem;
+        }
+
+        .reply-card {
+            display: flex; gap: 0.6rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .reply-card:last-child { border-bottom: none; }
+
+        .reply-avatar {
+            width: 30px; height: 30px; border-radius: 50%;
+            object-fit: cover; flex-shrink: 0; background: #2a2a2a;
+        }
+
+        .reply-avatar-placeholder {
+            width: 30px; height: 30px; border-radius: 50%;
+            background: #2a2a2a; display: flex; align-items: center;
+            justify-content: center; color: #555;
+            font-size: 0.7rem; font-weight: 700; flex-shrink: 0;
+        }
+
+        .reply-body { flex: 1; min-width: 0; }
+
+        .empty-replies {
+            color: #444; font-size: 0.9rem;
+            text-align: center; padding: 2.5rem 0;
+        }
+
+        /* Sticky reply composer */
+        .composer {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: #0f0f0f; border-top: 1px solid #1e1e1e;
+            padding: 0.65rem 1rem;
+        }
+
+        .composer form {
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+
+        .composer textarea {
+            flex: 1; background: #1a1a1a; border: 1.5px solid #2a2a2a;
+            border-radius: 20px; color: #fff; font-size: 0.9rem;
+            font-family: inherit; resize: none; outline: none;
+            padding: 0.5rem 0.9rem; min-height: 38px; max-height: 100px;
+            overflow-y: auto; line-height: 1.4;
+        }
+
+        .composer textarea::placeholder { color: #444; }
+        .composer textarea:focus { border-color: #4f9eff; }
+
+        .btn-post {
+            background: #4f9eff; border: none; border-radius: 20px;
+            color: #fff; font-size: 0.85rem; font-weight: 700;
+            padding: 0.5rem 1rem; cursor: pointer; flex-shrink: 0;
+        }
+
+        .btn-post:active { opacity: 0.8; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="/#tab-social">
+            <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+            Back
+        </a>
+        <div class="header-title">Thread</div>
+    </header>
+
+    <main>
+        <!-- Original post -->
+        <div class="op-card">
+            <% if (post.authorPicture) { %>
+                <img src="<%= post.authorPicture %>" class="post-avatar" alt=""/>
+            <% } else { %>
+                <div class="post-avatar-placeholder"><%= post.authorName.charAt(0).toUpperCase() %></div>
+            <% } %>
+            <div class="post-body">
+                <div class="post-meta">
+                    <span class="post-author"><%= post.authorName %></span>
+                    <span class="post-time"><%= post.timeAgo %></span>
+                </div>
+                <% if (post.content) { %>
+                    <div class="post-content"><%= post.content %></div>
+                <% } %>
+                <% if (post.imageUrl) { %>
+                    <img src="<%= post.imageUrl %>" alt="" onclick="openLightbox('<%= post.imageUrl %>')"
+                         style="width:100%;height:auto;max-height:min(70vh,600px);object-fit:contain;
+                                background:#000;border-radius:10px;margin-top:0.75rem;cursor:zoom-in;display:block;"/>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Replies -->
+        <% if (post.replies.length > 0) { %>
+        <div class="replies-label"><%= post.replies.length %> <%= post.replies.length === 1 ? 'reply' : 'replies' %></div>
+        <% post.replies.forEach(reply => { %>
+        <div class="reply-card">
+            <% if (reply.authorPicture) { %>
+                <img src="<%= reply.authorPicture %>" class="reply-avatar" alt=""/>
+            <% } else { %>
+                <div class="reply-avatar-placeholder"><%= reply.authorName.charAt(0).toUpperCase() %></div>
+            <% } %>
+            <div class="reply-body">
+                <div class="post-meta">
+                    <span class="post-author" style="font-size:0.85rem;"><%= reply.authorName %></span>
+                    <span class="post-time"><%= reply.timeAgo %></span>
+                </div>
+                <% if (reply.content) { %>
+                    <div class="post-content" style="font-size:0.9rem;"><%= reply.content %></div>
+                <% } %>
+            </div>
+        </div>
+        <% }) %>
+        <% } else { %>
+        <div class="empty-replies">No replies yet. Be the first!</div>
+        <% } %>
+    </main>
+
+    <div class="composer">
+        <form action="/social/reply/<%= post.id %>" method="post">
+            <textarea name="content" placeholder="Reply…" rows="1" maxlength="280" required
+                      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();this.form.submit();}"></textarea>
+            <button type="submit" class="btn-post">Post</button>
+        </form>
+    </div>
+
+    <div id="lightbox" onclick="closeLightbox()"
+         style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;
+                align-items:center;justify-content:center;cursor:zoom-out;">
+        <img id="lightboxImg" src="" alt=""
+             style="max-width:95vw;max-height:95vh;object-fit:contain;border-radius:6px;"/>
+    </div>
+    <script>
+        function openLightbox(src) {
+            const lb = document.getElementById('lightbox');
+            document.getElementById('lightboxImg').src = src;
+            lb.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    </script>
+
+</body>
+</html>

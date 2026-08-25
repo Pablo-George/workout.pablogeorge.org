@@ -1,0 +1,1856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Workout App</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏋️</text></svg>"/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.3/dist/htmx.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f0f0f;
+            color: #fff;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .tab-content {
+            display: none;
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 1.5rem 1rem 1.5rem;
+        }
+
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            overflow-y: auto;
+        }
+
+        .greeting {
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .greeting span { color: #4f9eff; }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .stat-card {
+            background: #1a1a1a;
+            border-radius: 14px;
+            padding: 1.1rem 1.1rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .chart-card {
+            background: #1a1a1a;
+            border-radius: 14px;
+            padding: 1.1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .chart-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #555;
+        }
+
+        .chart-wrap { position: relative; height: 190px; }
+
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem 1rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .empty-chart {
+            height: 190px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            color: #333;
+        }
+
+        .empty-chart svg {
+            width: 36px;
+            height: 36px;
+            stroke: #2a2a2a;
+            fill: none;
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .empty-chart p { font-size: 0.82rem; }
+
+        .card {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 1.1rem 1.2rem;
+        }
+
+        .workout-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.9rem 1.1rem;
+            background: #1a1a1a;
+            border-radius: 10px;
+        }
+
+        .section-heading {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #444;
+        }
+
+        .lift-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.85rem 1rem;
+            background: #1a1a1a;
+            border-radius: 10px;
+        }
+
+        .lift-row span {
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .btn-remove {
+            background: none;
+            border: 1px solid #2a2a2a;
+            color: #e05252;
+            border-radius: 6px;
+            padding: 0.3rem 0.65rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+
+        .add-form { display: flex; gap: 0.5rem; }
+
+        .add-form input {
+            flex: 1;
+            background: #111;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.9rem;
+            padding: 0.65rem 0.9rem;
+            outline: none;
+        }
+
+        .add-form input:focus { border-color: #4f9eff; }
+
+        .add-form button {
+            background: #4f9eff;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 0.65rem 1rem;
+            cursor: pointer;
+        }
+
+
+        #tab-social.active {
+            overflow-y: hidden;
+            padding-bottom: 0;
+            gap: 0.75rem;
+        }
+
+        #tab-cals.active {
+            display: block;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #tab-cals.active > * + * {
+            margin-top: 1rem;
+        }
+
+        .social-thread {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .thread-feed {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .social-friends-panel {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding-bottom: 1rem;
+        }
+
+        .post-composer {
+            flex-shrink: 0;
+            background: #1a1a1a;
+            border-radius: 14px;
+            padding: 0.5rem 0.65rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .post-composer textarea {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 0.9rem;
+            font-family: inherit;
+            resize: none;
+            outline: none;
+            line-height: 1.5;
+            min-height: 36px;
+            max-height: 120px;
+            overflow-y: auto;
+            padding: 0.2rem 0;
+        }
+
+        .post-composer textarea::placeholder { color: #444; }
+
+        .composer-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-post {
+            background: #4f9eff;
+            border: none;
+            border-radius: 20px;
+            color: #fff;
+            font-size: 0.82rem;
+            font-weight: 700;
+            padding: 0.35rem 0.9rem;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .btn-log {
+            background: #4ade80;
+            border: none;
+            border-radius: 20px;
+            color: #0a0a0a;
+            font-size: 0.82rem;
+            font-weight: 700;
+            padding: 0.35rem 0.9rem;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .btn-log:disabled {
+            background: #1a2a1a;
+            color: #2a4a2a;
+            cursor: not-allowed;
+        }
+
+        .cal-num-input {
+            width: 68px;
+            background: transparent;
+            border: none;
+            border-left: 1px solid #2a2a2a;
+            color: #4ade80;
+            font-size: 0.85rem;
+            padding: 0.2rem 0.5rem;
+            outline: none;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .cal-num-input::placeholder { color: #2a4a2a; }
+
+        .post-card {
+            display: flex;
+            gap: 0.75rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .post-card:last-child { border-bottom: none; }
+
+        .post-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: #2a2a2a;
+        }
+
+        .post-avatar-placeholder {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #2a2a2a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #555;
+            font-size: 0.8rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .post-body { flex: 1; min-width: 0; }
+
+        .post-meta {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .post-author {
+            font-size: 0.88rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .post-time {
+            font-size: 0.75rem;
+            color: #555;
+            flex-shrink: 0;
+        }
+
+        .post-content {
+            font-size: 0.9rem;
+            color: #ccc;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .reply-btn {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            color: #555; font-size: 0.78rem; font-weight: 600;
+            text-decoration: none; margin-top: 0.5rem;
+        }
+        .reply-btn:active { color: #4f9eff; }
+
+        .request-card {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 0.85rem 1rem;
+        }
+
+        .request-info { flex: 1; min-width: 0; }
+
+        .request-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .request-email {
+            font-size: 0.72rem;
+            color: #555;
+        }
+
+        .request-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+
+        .btn-accept {
+            background: #4f9eff;
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.35rem 0.7rem;
+            cursor: pointer;
+        }
+
+        .btn-decline {
+            background: none;
+            border: 1px solid #2a2a2a;
+            border-radius: 6px;
+            color: #888;
+            font-size: 0.75rem;
+            padding: 0.35rem 0.7rem;
+            cursor: pointer;
+        }
+
+        .empty-feed {
+            text-align: center;
+            padding: 2rem 0;
+            color: #444;
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+
+        nav {
+            display: flex;
+            background: #111;
+            border-top: 1px solid #222;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        nav button {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 0.75rem 0.5rem;
+            background: none;
+            border: none;
+            color: #555;
+            font-size: 0.7rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: color 0.15s;
+        }
+
+        nav button.active { color: #4f9eff; }
+
+        nav button svg {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ── Month activity calendar ── */
+        .cal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+        }
+
+        .cal-nav {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: #111;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .cal-nav svg {
+            width: 15px;
+            height: 15px;
+            stroke: #777;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .cal-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .cal-today-link {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #4f9eff;
+            text-decoration: none;
+            margin-left: 0.4rem;
+        }
+
+        .cal-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            margin-bottom: 4px;
+        }
+
+        .cal-weekdays span {
+            text-align: center;
+            font-size: 0.58rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            color: #555;
+        }
+
+        .cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+
+        .cal-day {
+            background: #111;
+            border: none;
+            border-radius: 10px;
+            padding: 0.4rem 0 0.35rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .cal-day.future .cal-num { color: #3d3d3d; }
+
+        .cal-day.today .cal-num { color: #4f9eff; }
+
+        .cal-day.selected { background: #1c2b40; }
+
+        .cal-day.outside { background: transparent; }
+        .cal-day.outside .cal-num { color: #3a3a3a; }
+
+        .cal-num {
+            font-size: 0.72rem;
+            font-weight: 600;
+            line-height: 1.25;
+            color: #ccc;
+        }
+
+        .cal-dots {
+            display: flex;
+            gap: 2px;
+            min-height: 5px;
+        }
+
+        .cal-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            display: block;
+        }
+
+        .cal-dot.main { background: #4ade80; }
+        .cal-dot.aux { background: #fb923c; }
+        .cal-dot.cals { background: #4f9eff; }
+        .cal-dot.weight { background: #a78bfa; }
+
+        .cal-detail {
+            background: #111;
+            border-radius: 10px;
+            padding: 0.65rem 0.8rem 0.6rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+        }
+
+        .cal-detail-date {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #555;
+        }
+
+        .cal-empty {
+            font-size: 0.8rem;
+            color: #444;
+            padding-bottom: 0.1rem;
+        }
+
+        .cal-item {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+        }
+
+        .cal-item-icon {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .cal-item-icon.main { stroke: #4ade80; }
+        .cal-item-icon.aux { stroke: #fb923c; }
+        .cal-item-icon.cals { stroke: #4f9eff; }
+        .cal-item-icon.weight { stroke: #a78bfa; }
+
+        .cal-item-title {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #ddd;
+            flex-shrink: 0;
+        }
+
+        .cal-item-detail {
+            font-size: 0.75rem;
+            color: #666;
+            margin-left: auto;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+
+    <section class="tab-content active" id="tab-home">
+        <div class="greeting">
+            Hey, <span><%= user.displayName ? user.displayName.split(' ')[0] : 'there' %></span>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-value"><%= totalSessions %></div>
+                <div class="stat-label">Sessions logged</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value"><%= currentWeight ? currentWeight + ' lbs' : '—' %></div>
+                <div class="stat-label">Body weight</div>
+            </div>
+        </div>
+
+        <!-- Month activity calendar -->
+        <div class="chart-card" id="month-calendar">
+            <div class="cal-header">
+                <a href="/?mo=<%= calendar.prevMo %>#tab-home" class="cal-nav" aria-label="Previous month">
+                    <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+                </a>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+                    <div style="display:flex;align-items:baseline;">
+                        <span class="chart-title">Activity</span>
+                        <% if (!calendar.isCurrentMonth) { %>
+                            <a href="/#tab-home" class="cal-today-link">Today</a>
+                        <% } %>
+                    </div>
+                    <span class="cal-label"><%= calendar.label %></span>
+                </div>
+                <a href="/?mo=<%= calendar.nextMo %>#tab-home" class="cal-nav" aria-label="Next month">
+                    <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+                </a>
+            </div>
+
+            <div class="cal-weekdays">
+                <% calendar.weekdays.forEach(l => { %><span><%= l %></span><% }) %>
+            </div>
+
+            <div class="cal-grid">
+                <% calendar.days.forEach(d => { %>
+                <button type="button"
+                        id="cal-day-<%= d.iso %>"
+                        class="cal-day<%= d.inMonth ? '' : ' outside' %><%= d.isToday ? ' today' : '' %><%= d.isFuture ? ' future' : '' %><%= calendar.selectedIso === d.iso ? ' selected' : '' %>"
+                        onclick="toggleCalDay('<%= d.iso %>')">
+                    <span class="cal-num"><%= d.dayNum %></span>
+                    <span class="cal-dots">
+                        <% d.items.slice(0, 3).forEach(it => { %><i class="cal-dot <%= it.kind %>"></i><% }) %>
+                    </span>
+                </button>
+                <% }) %>
+            </div>
+
+            <% calendar.days.forEach(d => { %>
+            <div id="cal-detail-<%= d.iso %>" class="cal-detail"
+                 style="display:<%= calendar.selectedIso === d.iso ? 'block' : 'none' %>;">
+                <div class="cal-detail-date">
+                    <%= d.isToday ? 'Today · ' : '' %><%= d.detailDate %>
+                </div>
+                <% if (d.items.length === 0) { %>
+                    <div class="cal-empty">No activity logged.</div>
+                <% } else { %>
+                    <% d.items.forEach(it => {
+                           const iconPath = it.kind === 'main'
+                               ? '<path d="M6.5 6.5v11"/><path d="M17.5 6.5v11"/><path d="M3 9.5v5"/><path d="M21 9.5v5"/><path d="M6.5 12h11"/>'
+                               : it.kind === 'aux'
+                               ? '<circle cx="12" cy="12" r="9"/><path d="M12 8v8"/><path d="M8 12h8"/>'
+                               : it.kind === 'cals'
+                               ? '<path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>'
+                               : '<path d="M3 12h4l3-9 4 18 3-9h4"/>';
+                    %>
+                    <div class="cal-item">
+                        <svg class="cal-item-icon <%= it.kind %>" viewBox="0 0 24 24"><%- iconPath %></svg>
+                        <span class="cal-item-title"><%= it.title %></span>
+                        <% if (it.detail) { %><span class="cal-item-detail"><%= it.detail %></span><% } %>
+                    </div>
+                    <% }) %>
+                <% } %>
+            </div>
+            <% }) %>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-title">Training Max Progression</div>
+            <% if (chartDatasets.length > 0) { %>
+                <div class="chart-wrap">
+                    <canvas id="progressChart"></canvas>
+                </div>
+                <div class="chart-legend" id="chartLegend"></div>
+            <% } else { %>
+                <div class="empty-chart">
+                    <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    <p>Complete a workout to see your progress</p>
+                </div>
+            <% } %>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-title">Daily Calories (30 days)</div>
+            <% if (calChartData.length > 0) { %>
+                <div class="chart-wrap">
+                    <canvas id="calChart"></canvas>
+                </div>
+            <% } else { %>
+                <div class="empty-chart">
+                    <svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/></svg>
+                    <p>Log some food to see your calorie history</p>
+                </div>
+            <% } %>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-title">Body Weight (90 days)</div>
+            <% if (weightChartData.length > 0) { %>
+                <div class="chart-wrap">
+                    <canvas id="weightChart"></canvas>
+                </div>
+            <% } else { %>
+                <div class="empty-chart">
+                    <svg viewBox="0 0 24 24"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>
+                    <p>Log your weight to track it over time</p>
+                </div>
+            <% } %>
+        </div>
+    </section>
+
+    <section class="tab-content" id="tab-workouts">
+        <div style="font-size:1.75rem;font-weight:800;letter-spacing:-0.5px;margin-bottom:1rem;">Workouts</div>
+        <div style="color:#888;font-size:0.9rem;margin-bottom:0.75rem;">Select a lift to start your workout.</div>
+
+        <% coreWorkouts.forEach(w => { %>
+        <% if (weekLabels[w.id]) { %>
+        <!-- Configured lift: POST directly to create/resume session -->
+        <form action="/group/create" method="post" style="margin-bottom:0.3rem;" onsubmit="showWorkoutLoader()">
+            <input type="hidden" name="liftId" value="<%= w.id %>">
+            <button type="submit" class="workout-row"
+                    style="width:100%;background:none;border:none;text-align:left;cursor:pointer;color:inherit;">
+                <div style="display:flex;flex-direction:column;gap:2px;">
+                    <span style="font-size:0.95rem;font-weight:500;"><%= w.name %></span>
+                    <span style="font-size:0.75rem;color:#4f9eff;font-weight:600;"><%= weekLabels[w.id] %></span>
+                </div>
+                <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#555;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;">
+                    <path d="M9 18l6-6-6-6"/>
+                </svg>
+            </button>
+        </form>
+        <% } else { %>
+        <!-- Unconfigured lift: tap to expand TM input -->
+        <div style="margin-bottom:0.3rem;">
+            <button type="button" onclick="toggleHostTM(<%= w.id %>)" class="workout-row"
+                    style="width:100%;background:none;border:none;text-align:left;cursor:pointer;color:inherit;">
+                <div style="display:flex;flex-direction:column;gap:2px;">
+                    <span style="font-size:0.95rem;font-weight:500;"><%= w.name %></span>
+                    <span style="font-size:0.75rem;color:#444;">Not started</span>
+                </div>
+                <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#555;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;">
+                    <path d="M9 18l6-6-6-6"/>
+                </svg>
+            </button>
+            <form id="host-tm-<%= w.id %>" action="/group/create" method="post"
+                  style="display:none;background:#1a1a1a;border-radius:0 0 10px 10px;padding:0.75rem;margin-top:-2px;"
+                  onsubmit="showWorkoutLoader()">
+                <input type="hidden" name="liftId" value="<%= w.id %>">
+                <div style="font-size:0.75rem;color:#555;margin-bottom:0.5rem;">Training max for <%= w.name %>:</div>
+                <div style="display:flex;gap:0.5rem;align-items:center;">
+                    <input type="number" name="trainingMax" placeholder="e.g. 185" step="any" min="45" required
+                           style="background:#111;border:1px solid #2a2a2a;border-radius:8px;color:#fff;font-size:0.95rem;font-weight:700;padding:0.4rem 0.65rem;outline:none;width:130px;">
+                    <span style="font-size:0.8rem;color:#555;flex-shrink:0;">lbs</span>
+                    <button type="submit"
+                            style="flex:1;background:#4f9eff;border:none;border-radius:8px;color:#fff;font-size:0.88rem;font-weight:700;padding:0.45rem;cursor:pointer;">
+                        Start →
+                    </button>
+                </div>
+            </form>
+        </div>
+        <% } %>
+        <% }) %>
+
+        <% if (coreWorkouts.length === 0) { %>
+            <p style="text-align:center;margin-top:2rem;color:#555;font-size:0.9rem;">Add your first lift in the Profile tab.</p>
+        <% } %>
+
+        <!-- Join a friend's room -->
+        <% if (groupsEnabled) { %>
+        <a href="/group/rooms" style="display:flex;align-items:center;gap:1rem;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:14px;padding:1.1rem 1rem;margin-top:1rem;text-decoration:none;color:inherit;">
+            <div style="width:42px;height:42px;border-radius:10px;background:#1a1e2e;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">👥</div>
+            <div>
+                <div style="font-size:0.95rem;font-weight:700;">Join a Friend's Room</div>
+                <div style="font-size:0.78rem;color:#555;margin-top:2px;">See who's hosting right now</div>
+            </div>
+        </a>
+        <% } %>
+    </section>
+
+    <section class="tab-content" id="tab-profile">
+        <div style="font-size:1.75rem;font-weight:800;letter-spacing:-0.5px;">Profile</div>
+
+        <div class="card" style="display:flex;align-items:center;gap:1rem;">
+            <% if (user.pictureUrl) { %>
+                <img src="<%= user.pictureUrl %>" alt="avatar"
+                     style="width:52px;height:52px;border-radius:50%;object-fit:cover;"/>
+            <% } else { %>
+                <div style="width:52px;height:52px;border-radius:50%;background:#2a2a2a;display:flex;align-items:center;justify-content:center;font-weight:700;color:#555;">
+                    <%= user.displayName.charAt(0).toUpperCase() %>
+                </div>
+            <% } %>
+            <div>
+                <div style="font-weight:600;font-size:1rem;"><%= user.displayName %></div>
+                <div style="font-size:0.8rem;color:#555;"><%= user.userId %></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="font-size:0.75rem;color:#555;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.4rem;">Sessions logged</div>
+            <div style="font-size:1.5rem;font-weight:800;"><%= totalSessions %></div>
+        </div>
+
+        <div class="section-heading">Body weight</div>
+
+        <div id="weight-display-wrap">
+        <% if (currentWeight) { %>
+            <div class="card" style="display:flex;align-items:baseline;gap:0.4rem;">
+                <span style="font-size:1.75rem;font-weight:800;letter-spacing:-1px;"><%= currentWeight %></span>
+                <span style="font-size:0.85rem;color:#555;">lbs &nbsp;·&nbsp; last logged</span>
+            </div>
+        <% } %>
+        </div>
+
+        <form class="add-form"
+              hx-post="/profile/weight" hx-target="#weight-display-wrap" hx-swap="innerHTML"
+              hx-on::after-request="this.reset()">
+            <input type="number" name="weightLbs" step="0.1" min="50" max="999"
+                   placeholder="<%= currentWeight ? 'Overwrites today\'s entry (lbs)' : 'Log your weight (lbs)' %>"
+                   required/>
+            <button type="submit">Log</button>
+        </form>
+
+        <form hx-post="/profile/privacy" hx-target="#privacy-status" hx-swap="outerHTML">
+            <button type="submit"
+                    style="width:100%;display:flex;align-items:center;justify-content:space-between;
+                           padding:0.85rem 1rem;background:#1a1a1a;border:1px solid #2a2a2a;
+                           border-radius:12px;color:#fff;font-size:0.9rem;cursor:pointer;margin-bottom:0.5rem;">
+                <span>Show weight to friends</span>
+                <span id="privacy-status" style="font-size:0.75rem;font-weight:700;color:<%= hideWeight ? '#555' : '#4f9eff' %>;">
+                    <%= hideWeight ? 'OFF' : 'ON' %>
+                </span>
+            </button>
+        </form>
+
+        <div class="section-heading">My lifts</div>
+
+        <div id="lifts-list">
+        <% coreWorkouts.forEach(w => { %>
+            <%- include('partials/lift-card', { w }) %>
+        <% }) %>
+        </div>
+
+        <form class="add-form"
+              hx-post="/profile/lifts" hx-target="#lifts-list" hx-swap="beforeend"
+              hx-on::after-request="this.reset()">
+            <input type="text" name="name" placeholder="Add a lift" required maxlength="60"/>
+            <button type="submit">Add</button>
+        </form>
+
+        <% if (isAdmin) { %>
+        <a href="/admin"
+           style="display:block;width:100%;padding:0.85rem;background:#1a1a2a;border:1px solid #2a2a4a;
+                  color:#4f9eff;border-radius:12px;font-size:0.95rem;font-weight:600;cursor:pointer;
+                  text-align:center;text-decoration:none;">
+            Admin
+        </a>
+        <% } %>
+
+        <form action="/logout" method="post" style="margin-top:0.5rem;">
+            <button type="submit"
+                    style="width:100%;padding:0.85rem;background:#1a1a1a;border:1px solid #2a2a2a;
+                           color:#e05252;border-radius:12px;font-size:0.95rem;font-weight:600;cursor:pointer;">
+                Sign out
+            </button>
+        </form>
+
+        <div style="text-align:center;margin-top:1.5rem;font-size:0.72rem;color:#333;">v<%= appVersion %></div>
+    </section>
+
+    <section class="tab-content" id="tab-social">
+        <div style="font-size:1.75rem;font-weight:800;letter-spacing:-0.5px;">Social</div>
+
+        <!-- sub-tab switcher -->
+        <div style="display:flex;gap:0.4rem;background:#111;border-radius:12px;padding:0.3rem;">
+            <button id="subtab-btn-thread" onclick="switchSubTab('thread')"
+                    style="flex:1;padding:0.45rem 0;border:none;border-radius:9px;font-size:0.82rem;
+                           font-weight:700;cursor:pointer;background:#1e1e1e;color:#fff;transition:background 0.15s;">
+                Thread
+            </button>
+            <button id="subtab-btn-friends" onclick="switchSubTab('friends')"
+                    style="flex:1;padding:0.45rem 0;border:none;border-radius:9px;font-size:0.82rem;
+                           font-weight:700;cursor:pointer;background:transparent;color:#555;transition:background 0.15s;">
+                Friends<% if (pendingRequests.length > 0) { %> <span style="background:#e05252;color:#fff;border-radius:99px;font-size:0.65rem;padding:0.1rem 0.4rem;"><%= pendingRequests.length %></span><% } %>
+            </button>
+        </div>
+
+        <!-- Thread sub-tab -->
+        <div id="subtab-thread" class="social-thread">
+            <div class="thread-feed">
+                <% if (feedPosts.length === 0) { %>
+                    <div class="empty-feed">
+                        <div>No posts yet.</div>
+                        <div style="color:#333;margin-top:0.25rem;">Add friends to see their posts here.</div>
+                    </div>
+                <% } %>
+
+                <% feedPosts.forEach(post => { %>
+                    <div class="post-card">
+                        <% if (post.authorId !== user.userId) { %>
+                            <a href="/user/<%= post.authorId %>" style="display:block;flex-shrink:0;">
+                        <% } %>
+                        <% if (post.authorPicture) { %>
+                            <img src="<%= post.authorPicture %>" class="post-avatar" alt="" style="<%= post.authorId !== user.userId ? 'cursor:pointer;' : '' %>"/>
+                        <% } else { %>
+                            <div class="post-avatar-placeholder" style="<%= post.authorId !== user.userId ? 'cursor:pointer;' : '' %>"><%= post.authorName.charAt(0).toUpperCase() %></div>
+                        <% } %>
+                        <% if (post.authorId !== user.userId) { %>
+                            </a>
+                        <% } %>
+                        <div class="post-body">
+                            <div class="post-meta">
+                                <span class="post-author"><%= post.authorName %></span>
+                                <span class="post-time"><%= post.timeAgo %></span>
+                            </div>
+                            <% if (post.content) { %>
+                                <div class="post-content"><%= post.content %></div>
+                            <% } %>
+                            <% if (post.imageUrl) { %>
+                                <img src="<%= post.imageUrl %>" alt=""
+                                     onclick="openLightbox('<%= post.imageUrl %>')"
+                                     style="width:100%;height:auto;max-height:min(70vh,600px);object-fit:contain;
+                                            background:#000;border-radius:10px;margin-top:0.5rem;cursor:zoom-in;display:block;"/>
+                            <% } %>
+                            <a href="/social/post/<%= post.id %>" class="reply-btn">
+                                <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                </svg>
+                                <% if (post.replies.length > 0) { %>
+                                    <%= post.replies.length %> <%= post.replies.length === 1 ? 'reply' : 'replies' %>
+                                <% } else { %>
+                                    Reply
+                                <% } %>
+                            </a>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+
+            <div class="post-composer">
+                <form action="/social/post" method="post" enctype="multipart/form-data" id="postForm">
+                    <div id="imagePreview" style="display:none;margin-bottom:0.4rem;">
+                        <img id="previewImg" src="" alt=""
+                             style="width:100%;height:auto;max-height:180px;object-fit:contain;background:#000;border-radius:8px;"/>
+                        <button type="button" onclick="clearImage()"
+                                style="background:none;border:none;color:#e05252;font-size:0.75rem;
+                                       cursor:pointer;margin-top:0.2rem;">Remove image</button>
+                    </div>
+                    <div class="composer-row">
+                        <input type="file" name="image" id="actualImageInput" style="display:none;" accept="image/jpeg">
+                        <label style="cursor:pointer;flex-shrink:0;display:flex;align-items:center;">
+                            <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#555;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                                <path d="M21 15l-5-5L5 21"/>
+                            </svg>
+                            <input type="file" id="imageInput"
+                                   accept="image/jpeg,image/png,image/gif,image/webp"
+                                   style="display:none;" onchange="previewImage(this)"/>
+                        </label>
+                        <label style="cursor:pointer;flex-shrink:0;display:flex;align-items:center;">
+                            <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#555;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                                <circle cx="12" cy="13" r="4"/>
+                            </svg>
+                            <input type="file" id="cameraInput" accept="image/*" capture="environment"
+                                   style="display:none;" onchange="previewImage(this)"/>
+                        </label>
+                        <textarea name="content" placeholder="Post something..." maxlength="280" rows="1"></textarea>
+                        <button type="submit" class="btn-post">Post</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Friends sub-tab -->
+        <div id="subtab-friends" style="display:none;" class="social-friends-panel">
+            <% if (pendingRequests.length > 0) { %>
+                <div>
+                    <div class="section-heading">Friend requests</div>
+                    <% pendingRequests.forEach(req => { %>
+                        <div class="request-card">
+                            <% if (req.requesterPicture) { %>
+                                <img src="<%= req.requesterPicture %>" class="post-avatar" alt=""/>
+                            <% } else { %>
+                                <div class="post-avatar-placeholder"><%= req.requesterName.charAt(0).toUpperCase() %></div>
+                            <% } %>
+                            <div class="request-info">
+                                <div class="request-name"><%= req.requesterName %></div>
+                                <div class="request-email"><%= req.requesterEmail %></div>
+                            </div>
+                            <div class="request-actions">
+                                <form action="/social/friends/accept/<%= req.friendshipId %>" method="post" style="margin:0;">
+                                    <button type="submit" class="btn-accept">Accept</button>
+                                </form>
+                                <form action="/social/friends/reject/<%= req.friendshipId %>" method="post" style="margin:0;">
+                                    <button type="submit" class="btn-decline">Decline</button>
+                                </form>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            <% } %>
+
+            <div>
+                <div class="section-heading">Add a friend</div>
+                <div style="font-size:0.82rem;color:#555;margin-bottom:0.5rem;">Share this link — anyone who opens it gets added instantly.</div>
+                <div style="display:flex;gap:0.5rem;align-items:center;">
+                    <input type="text" id="inviteLinkInput" value="<%= inviteLink %>" readonly
+                           style="flex:1;background:#111;border:1px solid #2a2a2a;border-radius:8px;
+                                  color:#888;font-size:0.78rem;padding:0.55rem 0.75rem;outline:none;"/>
+                    <button onclick="copyInviteLink()" id="copyBtn"
+                            style="background:#1a2a1a;color:#4ade80;border:none;border-radius:8px;
+                                   padding:0.55rem 0.9rem;font-size:0.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">
+                        Copy
+                    </button>
+                    <form action="/social/invite/reset" method="post" style="margin:0;"
+                          onsubmit="return confirm('Generate a new invite link? The old one will stop working.')">
+                        <button type="submit"
+                                style="background:none;border:1px solid #2a2a2a;border-radius:8px;
+                                       color:#555;padding:0.55rem 0.7rem;font-size:0.8rem;cursor:pointer;white-space:nowrap;">
+                            Reset
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <% if (friends.length > 0) { %>
+            <div>
+                <div class="section-heading">Friends (<%= friends.length %>)</div>
+                <% friends.forEach(f => { %>
+                <div class="request-card" style="cursor:pointer;"
+                     onclick="location.href='/user/<%= f.userId %>'">
+                    <% if (f.pictureUrl) { %>
+                        <img src="<%= f.pictureUrl %>" class="post-avatar" alt=""/>
+                    <% } else { %>
+                        <div class="post-avatar-placeholder"><%= f.name.charAt(0).toUpperCase() %></div>
+                    <% } %>
+                    <div class="request-info">
+                        <div class="request-name"><%= f.name %></div>
+                    </div>
+                    <form action="/social/friends/remove/<%= f.friendshipId %>" method="post" style="margin:0;"
+                          onclick="event.stopPropagation()">
+                        <button type="submit" class="btn-decline"
+                                onclick="return confirm('Remove <%= f.name %> as a friend?')">Remove</button>
+                    </form>
+                </div>
+                <% }) %>
+            </div>
+            <% } else { %>
+            <div class="empty-feed">
+                <div>No friends yet.</div>
+                <div style="color:#333;margin-top:0.25rem;">Share your invite link to get started.</div>
+            </div>
+            <% } %>
+        </div>
+    </section>
+
+    <section class="tab-content" id="tab-cals">
+        <div style="font-size:1.75rem;font-weight:800;letter-spacing:-0.5px;">Calories</div>
+
+        <!-- sub-tab switcher -->
+        <div style="display:flex;gap:0.4rem;background:#111;border-radius:12px;padding:0.3rem;">
+            <button id="cals-tab-today" onclick="switchCalsTab('today')"
+                    style="flex:1;padding:0.45rem 0;border:none;border-radius:9px;font-size:0.82rem;
+                           font-weight:700;cursor:pointer;background:#1e1e1e;color:#fff;transition:background 0.15s;">
+                Today
+            </button>
+            <button id="cals-tab-history" onclick="switchCalsTab('history')"
+                    style="flex:1;padding:0.45rem 0;border:none;border-radius:9px;font-size:0.82rem;
+                           font-weight:700;cursor:pointer;background:transparent;color:#555;transition:background 0.15s;">
+                History
+            </button>
+        </div>
+
+        <div id="cals-today">
+
+        <% if (calsError) { %>
+        <div id="cals-error-banner"
+             style="background:#2a1a1a;border:1px solid #5a2a2a;border-radius:12px;
+                    padding:0.8rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:0.75rem;">
+            <div style="display:flex;align-items:center;gap:0.6rem;">
+                <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#f87171;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+                </svg>
+                <span style="font-size:0.85rem;color:#f87171;">AI analysis failed — try again or use manual entry.</span>
+            </div>
+            <button onclick="document.getElementById('cals-error-banner').remove()"
+                    style="background:none;border:none;color:#f87171;font-size:1.1rem;cursor:pointer;padding:0;line-height:1;">✕</button>
+        </div>
+        <% } %>
+
+        <div class="card">
+            <div style="display:flex;align-items:baseline;gap:0.5rem;margin-bottom:<%= (proteinTotal > 0 || carbsTotal > 0) ? '0.6rem' : '0' %>;">
+                <span style="font-size:2.5rem;font-weight:800;letter-spacing:-1px;"><%= calTotal %></span>
+                <span style="font-size:0.9rem;color:#555;">kcal today</span>
+            </div>
+            <% if (proteinTotal > 0 || carbsTotal > 0) { %>
+            <div style="display:flex;gap:1rem;">
+                <% if (proteinTotal > 0) { %>
+                <div style="display:flex;align-items:baseline;gap:0.3rem;">
+                    <span style="font-size:1.1rem;font-weight:700;color:#4f9eff;"><%= proteinTotal %></span>
+                    <span style="font-size:0.75rem;color:#555;">g protein</span>
+                </div>
+                <% } %>
+                <% if (carbsTotal > 0) { %>
+                <div style="display:flex;align-items:baseline;gap:0.3rem;">
+                    <span style="font-size:1.1rem;font-weight:700;color:#f59e0b;"><%= carbsTotal %></span>
+                    <span style="font-size:0.75rem;color:#555;">g carbs</span>
+                </div>
+                <% } %>
+            </div>
+            <% } %>
+        </div>
+
+        <div class="post-composer">
+            <form id="calsComposerForm" action="/cals/log" method="post" enctype="multipart/form-data"
+                  onsubmit="document.getElementById('cals-loader').style.display='flex'">
+                <input type="file" name="image" id="calsImageInput" style="display:none;"
+                       accept="image/jpeg,image/png,image/webp"/>
+                <div id="calsImagePreview" style="display:none;margin-bottom:0.4rem;">
+                    <img id="calsPreviewImg" src="" alt=""
+                         style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;"/>
+                    <button type="button" onclick="clearCalsImage()"
+                            style="background:none;border:none;color:#e05252;font-size:0.75rem;
+                                   cursor:pointer;margin-top:0.2rem;">Remove image</button>
+                </div>
+                <div class="composer-row">
+                    <label style="cursor:pointer;flex-shrink:0;display:flex;align-items:center;">
+                        <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#555;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                            <path d="M21 15l-5-5L5 21"/>
+                        </svg>
+                        <input type="file" id="calsGalleryInput" accept="image/jpeg,image/png,image/webp"
+                               style="display:none;" onchange="calsPickImage(this)"/>
+                    </label>
+                    <label style="cursor:pointer;flex-shrink:0;display:flex;align-items:center;">
+                        <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#555;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                            <circle cx="12" cy="13" r="4"/>
+                        </svg>
+                        <input type="file" id="calsCameraInput" accept="image/*" capture="environment"
+                               style="display:none;" onchange="calsPickImage(this)"/>
+                    </label>
+                    <textarea name="context" id="calsTextarea" placeholder="What did you eat?"
+                              maxlength="500" rows="1" oninput="updateCalsButton()"></textarea>
+                    <input type="number" name="calories" id="calsCalInput" placeholder="kcal"
+                           min="1" max="9999" oninput="updateCalsButton()" class="cal-num-input"/>
+                    <button type="submit" id="calsSubmitBtn" disabled class="btn-log">Estimate</button>
+                </div>
+            </form>
+        </div>
+
+        <% if (calEntries.length > 0) { %>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;">
+            <div class="section-heading" style="margin:0;">Today's log</div>
+            <div style="font-size:0.8rem;color:#4ade80;font-weight:700;"><%= calTotal %> kcal total</div>
+        </div>
+        <div style="background:#1a1a1a;border-radius:12px;overflow:hidden;">
+        <% calEntries.forEach((entry, i) => { %>
+            <% const breakdown = entry.breakdown ? JSON.parse(entry.breakdown) : null; %>
+            <% if (i > 0) { %>
+            <div style="height:1px;background:#222;margin:0 0.85rem;"></div>
+            <% } %>
+            <!-- summary row -->
+            <div onclick="toggleCalEntry(<%= entry.id %>)"
+                 style="padding:0.75rem 0.85rem;display:flex;align-items:center;gap:0.65rem;cursor:pointer;">
+                <% if (entry.imageUrl) { %>
+                <button onclick="event.stopPropagation();openLightbox('<%= entry.imageUrl %>')"
+                        style="background:#222;border:1px solid #333;border-radius:8px;
+                               padding:0.4rem;cursor:pointer;display:flex;align-items:center;
+                               justify-content:center;flex-shrink:0;">
+                    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:#777;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                </button>
+                <% } %>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:0.72rem;color:#555;">
+                        <%= entry.createdAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) %>
+                    </div>
+                    <div style="font-size:0.9rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                        <%= entry.description %>
+                    </div>
+                    <div style="font-size:0.78rem;margin-top:0.1rem;display:flex;gap:0.6rem;flex-wrap:wrap;">
+                        <span><span style="color:#4ade80;font-weight:700;"><%= entry.calories %></span> <span style="color:#555;">kcal</span></span>
+                        <% if (entry.proteinG) { %><span><span style="color:#4f9eff;font-weight:700;"><%= entry.proteinG %>g</span> <span style="color:#555;">protein</span></span><% } %>
+                        <% if (entry.carbsG) { %><span><span style="color:#f59e0b;font-weight:700;"><%= entry.carbsG %>g</span> <span style="color:#555;">carbs</span></span><% } %>
+                    </div>
+                </div>
+                <svg id="cal-chevron-<%= entry.id %>" viewBox="0 0 24 24"
+                     style="width:14px;height:14px;stroke:#444;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;transition:transform 0.2s;">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </div>
+
+            <!-- expanded detail + edit -->
+            <div id="cal-detail-<%= entry.id %>" style="display:none;padding:0 0.85rem 0.85rem;">
+                <% if (breakdown && breakdown.length > 0) { %>
+                <div style="background:#111;border-radius:8px;padding:0.6rem 0.75rem;margin-bottom:0.6rem;">
+                    <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#444;margin-bottom:0.4rem;">Breakdown</div>
+                    <% breakdown.forEach(item => { %>
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:0.25rem 0;border-bottom:1px solid #1a1a1a;">
+                        <span style="font-size:0.82rem;color:#ccc;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:0.5rem;"><%= item.item %></span>
+                        <div style="display:flex;gap:0.6rem;font-size:0.75rem;flex-shrink:0;">
+                            <span style="color:#4ade80;"><%= item.calories %> kcal</span>
+                            <% if (item.proteinG != null) { %><span style="color:#4f9eff;"><%= item.proteinG %>g P</span><% } %>
+                            <% if (item.carbsG != null) { %><span style="color:#f59e0b;"><%= item.carbsG %>g C</span><% } %>
+                        </div>
+                    </div>
+                    <% }) %>
+                </div>
+                <% } %>
+                <div style="background:#111;border-radius:8px;padding:0.6rem 0.75rem;">
+                    <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#444;margin-bottom:0.5rem;">Edit</div>
+                    <input type="text" id="cal-desc-<%= entry.id %>" value="<%= entry.description %>"
+                           style="width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;
+                                  color:#fff;font-size:0.85rem;padding:0.4rem 0.6rem;outline:none;margin-bottom:0.5rem;box-sizing:border-box;"/>
+                    <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
+                        <div style="flex:1;">
+                            <div style="font-size:0.68rem;color:#555;margin-bottom:0.2rem;">kcal</div>
+                            <input type="number" id="cal-kcal-<%= entry.id %>" value="<%= entry.calories %>"
+                                   style="width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;
+                                          color:#4ade80;font-size:0.85rem;padding:0.4rem 0.5rem;outline:none;"/>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-size:0.68rem;color:#555;margin-bottom:0.2rem;">protein (g)</div>
+                            <input type="number" id="cal-protein-<%= entry.id %>" value="<%= entry.proteinG ?? '' %>"
+                                   style="width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;
+                                          color:#4f9eff;font-size:0.85rem;padding:0.4rem 0.5rem;outline:none;"/>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-size:0.68rem;color:#555;margin-bottom:0.2rem;">carbs (g)</div>
+                            <input type="number" id="cal-carbs-<%= entry.id %>" value="<%= entry.carbsG ?? '' %>"
+                                   style="width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;
+                                          color:#f59e0b;font-size:0.85rem;padding:0.4rem 0.5rem;outline:none;"/>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:0.5rem;">
+                        <button onclick="saveCalEntry(<%= entry.id %>)"
+                                style="flex:1;background:#1a2a1a;border:1px solid #2a4a2a;border-radius:8px;
+                                       color:#4ade80;font-size:0.82rem;font-weight:700;padding:0.5rem;cursor:pointer;">
+                            Save
+                        </button>
+                        <form action="/cals/delete/<%= entry.id %>" method="post" style="margin:0;flex:1;" onclick="event.stopPropagation()">
+                            <button type="submit" onclick="return confirm('Delete this entry?')"
+                                    style="width:100%;background:#2a1a1a;border:1px solid #3a2a2a;border-radius:8px;
+                                           color:#f87171;font-size:0.82rem;font-weight:600;padding:0.5rem;cursor:pointer;">
+                                Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        <% }) %>
+        </div>
+        <% } %>
+
+        </div><!-- /#cals-today -->
+
+        <!-- History sub-tab -->
+        <div id="cals-history" style="display:none;">
+            <% if (calHistoryDays.length === 0) { %>
+            <div style="text-align:center;color:#444;font-size:0.9rem;padding:3rem 0;">
+                No history yet. Start logging to see past days here.
+            </div>
+            <% } else { %>
+            <% calHistoryDays.forEach(day => { %>
+            <div style="background:#1a1a1a;border-radius:12px;overflow:hidden;margin-bottom:0.5rem;">
+                <!-- day header -->
+                <div onclick="toggleHistoryDay('<%= day.date %>')"
+                     style="padding:0.85rem;display:flex;align-items:center;gap:0.65rem;cursor:pointer;">
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:0.88rem;font-weight:700;"><%= day.displayDate %></div>
+                        <div style="font-size:0.78rem;margin-top:0.15rem;display:flex;gap:0.6rem;flex-wrap:wrap;">
+                            <span><span style="color:#4ade80;font-weight:700;"><%= day.total %></span> <span style="color:#555;">kcal</span></span>
+                            <% if (day.proteinTotal > 0) { %><span><span style="color:#4f9eff;font-weight:700;"><%= day.proteinTotal %>g</span> <span style="color:#555;">protein</span></span><% } %>
+                            <% if (day.carbsTotal > 0) { %><span><span style="color:#f59e0b;font-weight:700;"><%= day.carbsTotal %>g</span> <span style="color:#555;">carbs</span></span><% } %>
+                        </div>
+                    </div>
+                    <svg id="hist-chevron-<%= day.date %>" viewBox="0 0 24 24"
+                         style="width:14px;height:14px;stroke:#444;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;transition:transform 0.2s;">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                </div>
+                <!-- individual entries -->
+                <div id="hist-day-<%= day.date %>" style="display:none;">
+                    <% day.entries.forEach((entry, i) => { %>
+                    <div style="border-top:1px solid #222;padding:0.6rem 0.85rem;display:flex;align-items:center;gap:0.65rem;">
+                        <% if (entry.imageUrl) { %>
+                        <button onclick="event.stopPropagation();openLightbox('<%= entry.imageUrl %>')"
+                                style="background:#222;border:1px solid #333;border-radius:8px;
+                                       padding:0.4rem;cursor:pointer;display:flex;align-items:center;
+                                       justify-content:center;flex-shrink:0;">
+                            <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:#777;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                                <circle cx="12" cy="13" r="4"/>
+                            </svg>
+                        </button>
+                        <% } %>
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-size:0.7rem;color:#555;">
+                                <%= entry.createdAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) %>
+                            </div>
+                            <div style="font-size:0.88rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                <%= entry.description %>
+                            </div>
+                            <div style="font-size:0.75rem;margin-top:0.1rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+                                <span><span style="color:#4ade80;font-weight:700;"><%= entry.calories %></span> <span style="color:#555;">kcal</span></span>
+                                <% if (entry.proteinG) { %><span><span style="color:#4f9eff;font-weight:700;"><%= entry.proteinG %>g</span> <span style="color:#555;">protein</span></span><% } %>
+                                <% if (entry.carbsG) { %><span><span style="color:#f59e0b;font-weight:700;"><%= entry.carbsG %>g</span> <span style="color:#555;">carbs</span></span><% } %>
+                            </div>
+                        </div>
+                    </div>
+                    <% }) %>
+                </div>
+            </div>
+            <% }) %>
+            <% } %>
+        </div><!-- /#cals-history -->
+
+    </section>
+
+    <%- include('partials/bottom-nav', { mode: 'tabs', current: 'home', workoutHref: activeSessionId ? '/group/' + activeSessionId : null }) %>
+
+    <script>
+        function switchSubTab(name) {
+            const thread = document.getElementById('subtab-thread');
+            const friends = document.getElementById('subtab-friends');
+            const btnThread = document.getElementById('subtab-btn-thread');
+            const btnFriends = document.getElementById('subtab-btn-friends');
+            if (name === 'thread') {
+                thread.style.display = 'flex';
+                friends.style.display = 'none';
+                btnThread.style.background = '#1e1e1e';
+                btnThread.style.color = '#fff';
+                btnFriends.style.background = 'transparent';
+                btnFriends.style.color = '#555';
+            } else {
+                thread.style.display = 'none';
+                friends.style.display = 'flex';
+                friends.style.flexDirection = 'column';
+                btnFriends.style.background = '#1e1e1e';
+                btnFriends.style.color = '#fff';
+                btnThread.style.background = 'transparent';
+                btnThread.style.color = '#555';
+            }
+        }
+
+        function copyInviteLink() {
+            const input = document.getElementById('inviteLinkInput');
+            navigator.clipboard.writeText(input.value).then(() => {
+                const btn = document.getElementById('copyBtn');
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = 'Copy', 2000);
+            });
+        }
+
+        function switchTab(name, btn) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + name).classList.add('active');
+            btn.classList.add('active');
+            history.replaceState(null, '', '#tab-' + name);
+        }
+
+        const ACTIVE_SESSION_ID = <%- JSON.stringify(activeSessionId) %>;
+
+        const hash = window.location.hash;
+        const hashTab = hash.replace('#tab-', '');
+        if (hashTab === 'workouts' && ACTIVE_SESSION_ID) {
+            location.replace('/group/' + ACTIVE_SESSION_ID);
+        } else if (['home', 'profile', 'social', 'workouts', 'cals'].includes(hashTab)) {
+            const btn = document.querySelector(`nav button[aria-label="${hashTab.charAt(0).toUpperCase() + hashTab.slice(1)}"]`);
+            if (btn) switchTab(hashTab, btn);
+        } else if (hash === '#social-friends') {
+            const btn = document.querySelector('nav button[aria-label="Social"]');
+            if (btn) switchTab('social', btn);
+            switchSubTab('friends');
+        }
+
+        const rawDatasets = <%- JSON.stringify(chartDatasets) %>;
+
+        if (rawDatasets.length > 0) {
+            const ctx = document.getElementById('progressChart').getContext('2d');
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: rawDatasets.map(ds => ({
+                        label: ds.label,
+                        data: ds.points.map(p => ({ x: new Date(p.x).getTime(), y: p.y })),
+                        borderColor: ds.color,
+                        backgroundColor: ds.color + '22',
+                        borderWidth: 2.5,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: ds.color,
+                        tension: 0.35,
+                        fill: false,
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'nearest', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1a1a1a',
+                            titleColor: '#888',
+                            bodyColor: '#fff',
+                            borderColor: '#2a2a2a',
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                title: items => {
+                                    const d = new Date(items[0].parsed.x);
+                                    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                                },
+                                label: item => ` ${item.dataset.label}: ${item.parsed.y} reps`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            grid: { color: '#1e1e1e' },
+                            ticks: {
+                                color: '#555',
+                                maxTicksLimit: 5,
+                                callback: val => new Date(val).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                            },
+                            border: { color: '#2a2a2a' }
+                        },
+                        y: {
+                            grid: { color: '#1e1e1e' },
+                            ticks: { color: '#555', stepSize: 1 },
+                            border: { color: '#2a2a2a' },
+                            title: { display: true, text: 'Training Max (lbs)', color: '#444', font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+
+            const legend = document.getElementById('chartLegend');
+            rawDatasets.forEach(ds => {
+                const item = document.createElement('div');
+                item.className = 'legend-item';
+                item.innerHTML = `<span class="legend-dot" style="background:${ds.color}"></span>${ds.label}`;
+                legend.appendChild(item);
+            });
+        }
+
+        const calData = <%- JSON.stringify(calChartData) %>;
+        const weightData = <%- JSON.stringify(weightChartData) %>;
+
+        if (weightData.length > 0) {
+            const wCtx = document.getElementById('weightChart').getContext('2d');
+            new Chart(wCtx, {
+                type: 'line',
+                data: {
+                    labels: weightData.map(d => d.date),
+                    datasets: [{
+                        data: weightData.map(d => d.weight),
+                        borderColor: '#a78bfa',
+                        backgroundColor: '#a78bfa18',
+                        borderWidth: 2,
+                        pointRadius: weightData.length < 15 ? 4 : 2,
+                        pointBackgroundColor: '#a78bfa',
+                        tension: 0.3,
+                        fill: true,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1a1a1a',
+                            titleColor: '#888',
+                            bodyColor: '#fff',
+                            borderColor: '#2a2a2a',
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                title: items => {
+                                    const d = new Date(items[0].label + 'T12:00:00');
+                                    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                },
+                                label: item => ` ${item.parsed.y} lbs`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#1e1e1e' },
+                            ticks: {
+                                color: '#555',
+                                maxTicksLimit: 6,
+                                callback: (_, i) => {
+                                    const d = new Date(weightData[i].date + 'T12:00:00');
+                                    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                }
+                            },
+                            border: { color: '#2a2a2a' }
+                        },
+                        y: {
+                            grid: { color: '#1e1e1e' },
+                            ticks: { color: '#555' },
+                            border: { color: '#2a2a2a' },
+                            title: { display: true, text: 'lbs', color: '#444', font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        if (calData.length > 0) {
+            const calCtx = document.getElementById('calChart').getContext('2d');
+            new Chart(calCtx, {
+                type: 'bar',
+                data: {
+                    labels: calData.map(d => d.date),
+                    datasets: [{
+                        data: calData.map(d => d.total),
+                        backgroundColor: '#4ade8044',
+                        borderColor: '#4ade80',
+                        borderWidth: 2,
+                        borderRadius: 4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1a1a1a',
+                            titleColor: '#888',
+                            bodyColor: '#fff',
+                            borderColor: '#2a2a2a',
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                title: items => {
+                                    const d = new Date(items[0].label + 'T12:00:00');
+                                    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                },
+                                label: item => ` ${item.parsed.y} kcal`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#1e1e1e' },
+                            ticks: {
+                                color: '#555',
+                                maxTicksLimit: 6,
+                                callback: (_, i) => {
+                                    const d = new Date(calData[i].date + 'T12:00:00');
+                                    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                }
+                            },
+                            border: { color: '#2a2a2a' }
+                        },
+                        y: {
+                            grid: { color: '#1e1e1e' },
+                            ticks: { color: '#555' },
+                            border: { color: '#2a2a2a' },
+                            title: { display: true, text: 'kcal', color: '#444', font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function previewImage(input) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            const MAX_W = 1200;
+            const QUALITY = 0.82;
+            const img = new Image();
+            const url = URL.createObjectURL(file);
+            img.onload = function() {
+                URL.revokeObjectURL(url);
+                const scale = Math.min(1, MAX_W / img.width);
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.round(img.width * scale);
+                canvas.height = Math.round(img.height * scale);
+                canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                canvas.toBlob(blob => {
+                    const compressed = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
+                    const dt = new DataTransfer();
+                    dt.items.add(compressed);
+                    document.getElementById('actualImageInput').files = dt.files;
+                    document.getElementById('previewImg').src = canvas.toDataURL('image/jpeg', QUALITY);
+                    document.getElementById('imagePreview').style.display = 'block';
+                }, 'image/jpeg', QUALITY);
+            };
+            img.src = url;
+        }
+
+        function clearImage() {
+            document.getElementById('imageInput').value = '';
+            document.getElementById('cameraInput').value = '';
+            document.getElementById('actualImageInput').value = '';
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('previewImg').src = '';
+        }
+
+        function showWorkoutLoader() {
+            document.getElementById('workout-loader').style.display = 'flex';
+        }
+
+        function calsPickImage(input) {
+            const file = input.files && input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                document.getElementById('calsPreviewImg').src = e.target.result;
+                document.getElementById('calsImagePreview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            document.getElementById('calsImageInput').files = dt.files;
+            updateCalsButton();
+        }
+
+        function clearCalsImage() {
+            document.getElementById('calsPreviewImg').src = '';
+            document.getElementById('calsImagePreview').style.display = 'none';
+            document.getElementById('calsImageInput').value = '';
+            document.getElementById('calsGalleryInput').value = '';
+            document.getElementById('calsCameraInput').value = '';
+            updateCalsButton();
+        }
+
+        function toggleCalEntry(id) {
+            const detail = document.getElementById('cal-detail-' + id);
+            const chevron = document.getElementById('cal-chevron-' + id);
+            const open = detail.style.display === 'none';
+            detail.style.display = open ? 'block' : 'none';
+            chevron.style.transform = open ? 'rotate(180deg)' : '';
+        }
+
+        async function saveCalEntry(id) {
+            const description = document.getElementById('cal-desc-' + id).value.trim();
+            const calories = document.getElementById('cal-kcal-' + id).value;
+            const proteinG = document.getElementById('cal-protein-' + id).value;
+            const carbsG = document.getElementById('cal-carbs-' + id).value;
+            const btn = event.currentTarget;
+            try {
+                const res = await fetch('/cals/update/' + id, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ description, calories, proteinG, carbsG }),
+                });
+                if (res.ok) {
+                    btn.textContent = 'Saved!';
+                    btn.style.color = '#4ade80';
+                    setTimeout(() => { btn.textContent = 'Save'; btn.style.color = ''; }, 1500);
+                }
+            } catch(e) {
+                btn.textContent = 'Error';
+                setTimeout(() => { btn.textContent = 'Save'; }, 1500);
+            }
+        }
+
+        function updateCalsButton() {
+            const hasText = document.getElementById('calsTextarea').value.trim().length > 0;
+            const hasImage = !!(document.getElementById('calsImageInput').files &&
+                                document.getElementById('calsImageInput').files.length > 0);
+            const calsVal = parseInt(document.getElementById('calsCalInput').value);
+            const hasCals = !isNaN(calsVal) && calsVal > 0;
+            const hasContent = hasText || hasImage;
+            const btn = document.getElementById('calsSubmitBtn');
+            if (hasCals) {
+                btn.disabled = false;
+                btn.textContent = 'Log';
+            } else {
+                btn.disabled = !hasContent;
+                btn.textContent = 'Estimate';
+            }
+        }
+
+        document.body.addEventListener('htmx:afterSwap', function(e) {
+            const id = e.detail.target && e.detail.target.id;
+            if (id && id.startsWith('lift-card-')) {
+                const newEl = document.getElementById(id);
+                if (!newEl) return;
+                const badge = document.createElement('span');
+                badge.textContent = 'Updated';
+                badge.style.cssText = 'color:#4ade80;font-size:0.75rem;font-weight:600;margin-left:0.5rem;';
+                const nameEl = newEl.querySelector('span');
+                nameEl.after(badge);
+                setTimeout(() => badge.remove(), 1500);
+            }
+        });
+
+        function openLightbox(src) {
+            const lb = document.getElementById('lightbox');
+            document.getElementById('lightboxImg').src = src;
+            lb.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        function switchCalsTab(tab) {
+            const isToday = tab === 'today';
+            document.getElementById('cals-today').style.display = isToday ? 'block' : 'none';
+            document.getElementById('cals-history').style.display = isToday ? 'none' : 'block';
+            document.getElementById('cals-tab-today').style.background = isToday ? '#1e1e1e' : 'transparent';
+            document.getElementById('cals-tab-today').style.color = isToday ? '#fff' : '#555';
+            document.getElementById('cals-tab-history').style.background = isToday ? 'transparent' : '#1e1e1e';
+            document.getElementById('cals-tab-history').style.color = isToday ? '#555' : '#fff';
+        }
+
+        function toggleCalDay(iso) {
+            const det = document.getElementById('cal-detail-' + iso);
+            const btn = document.getElementById('cal-day-' + iso);
+            const wasOpen = det.style.display !== 'none';
+            document.querySelectorAll('.cal-detail').forEach(e => e.style.display = 'none');
+            document.querySelectorAll('.cal-day.selected').forEach(e => e.classList.remove('selected'));
+            if (!wasOpen) {
+                det.style.display = 'block';
+                btn.classList.add('selected');
+                det.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        function toggleHistoryDay(date) {
+            const detail = document.getElementById('hist-day-' + date);
+            const chevron = document.getElementById('hist-chevron-' + date);
+            const open = detail.style.display === 'none';
+            detail.style.display = open ? 'block' : 'none';
+            chevron.style.transform = open ? 'rotate(180deg)' : '';
+        }
+
+        function toggleHostTM(liftId) {
+            const form = document.getElementById(`host-tm-${liftId}`);
+            const isHidden = form.style.display === 'none';
+            // Collapse all others first
+            document.querySelectorAll('[id^="host-tm-"]').forEach(f => f.style.display = 'none');
+            form.style.display = isHidden ? 'block' : 'none';
+            if (isHidden) form.querySelector('input[type="number"]').focus();
+        }
+    </script>
+
+    <div id="workout-loader"
+         style="display:none;position:fixed;inset:0;background:#0f0f0f;z-index:9998;
+                flex-direction:column;align-items:center;justify-content:center;gap:1rem;">
+        <div style="width:36px;height:36px;border:3px solid #2a2a2a;border-top-color:#4f9eff;
+                    border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+        <div style="color:#555;font-size:0.85rem;">Building your workout…</div>
+    </div>
+    <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+
+    <div id="cals-loader"
+         style="display:none;position:fixed;inset:0;background:#0f0f0f;z-index:9998;
+                flex-direction:column;align-items:center;justify-content:center;gap:1rem;">
+        <div style="width:36px;height:36px;border:3px solid #2a2a2a;border-top-color:#4ade80;
+                    border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+        <div style="color:#555;font-size:0.85rem;">Analyzing your meal…</div>
+    </div>
+
+    <div id="lightbox" onclick="closeLightbox()"
+         style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;
+                align-items:center;justify-content:center;cursor:zoom-out;">
+        <img id="lightboxImg" src="" alt=""
+             style="max-width:95vw;max-height:95vh;object-fit:contain;border-radius:6px;"/>
+    </div>
+    <script>document.addEventListener('touchmove', function(e) { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });</script>
+
+</body>
+</html>
