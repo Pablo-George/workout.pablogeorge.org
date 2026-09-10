@@ -8,6 +8,7 @@ Personal workout tracking app built with Node.js, Express, Prisma (SQLite), and 
 - **AI auxiliary lifts** — Gemini generates 3 accessory exercises per core lift with weight recommendations based on your training max
 - **Calorie tracking** — log food via camera (AI estimates calories from photo) or manual entry; 30-day history chart on the home screen
 - **Social feed** — post text and photos, add friends via shareable invite link
+- **Workout music** — connect Spotify or Apple Music, auto-start a selected playlist, publish playlists, show live listening to friends, and share a PR with its song
 - **Progress charts** — training max progression and daily calorie history powered by Chart.js
 
 ## Stack
@@ -44,6 +45,16 @@ Runs on `http://localhost:3000` by default. Set `PORT` to override.
 | `SESSION_SECRET` | Long random string for session signing |
 | `GEMINI_API_KEY` | Google AI Studio API key |
 | `DATABASE_URL` | Prisma DB URL (default: `file:./data/workoutapp.db`) |
+| `MUSIC_ENABLED` | Set to `true` to expose music integrations; defaults to off |
+| `MUSIC_TOKEN_ENCRYPTION_KEY` | Long random secret used to encrypt provider tokens at rest |
+| `SPOTIFY_CLIENT_ID` | Spotify Web API application client ID (optional) |
+| `SPOTIFY_CLIENT_SECRET` | Spotify Web API application client secret (optional) |
+| `SPOTIFY_CALLBACK_URL` | Exact allowlisted callback, e.g. `https://workout.example.com/music/spotify/callback` |
+| `APPLE_MUSIC_TEAM_ID` | Apple Developer team ID (optional) |
+| `APPLE_MUSIC_KEY_ID` | MusicKit private key ID (optional) |
+| `APPLE_MUSIC_PRIVATE_KEY` | MusicKit `.p8` private key; literal newlines or `\\n` are supported |
+
+Music is disabled by default, so the app can ship without provider credentials. To enable it later, set `MUSIC_ENABLED=true` and configure at least one provider. Spotify remote playback requires Premium and an active Spotify device. Apple Music requires an Apple Developer Program MusicKit key and an active Apple Music subscription.
 
 ## Deployment
 

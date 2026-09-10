@@ -64,6 +64,14 @@
             display: flex; align-items: center; justify-content: center;
             font-weight: 700; font-size: 1.4rem; color: #555;
         }
+        .now-playing { display:flex;gap:0.8rem;align-items:center;border-color:#31543d;background:#131d16; }
+        .music-art { width:54px;height:54px;border-radius:8px;object-fit:cover;background:#292929;flex-shrink:0; }
+        .live { display:inline-flex;align-items:center;gap:0.35rem;color:#4ade80;font-size:0.67rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em; }
+        .live::before { content:"";width:6px;height:6px;border-radius:50%;background:#4ade80;box-shadow:0 0 8px #4ade80; }
+        .playlist { display:flex;align-items:center;gap:0.75rem;color:inherit;text-decoration:none; }
+        .playlist-copy { min-width:0;flex:1; }
+        .playlist-name { font-size:0.92rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+        .playlist-meta { color:#777;font-size:0.75rem;margin-top:3px; }
     </style>
 </head>
 <body>
@@ -83,6 +91,32 @@
         <% } %>
         <div style="font-size:1.25rem;font-weight:800;"><%= profile.displayName %></div>
     </div>
+
+    <% if (nowPlaying) { %>
+        <div class="section-heading">Live workout</div>
+        <a class="card now-playing" href="<%= nowPlaying.externalUrl || '#' %>" <%= nowPlaying.externalUrl ? 'target="_blank" rel="noopener"' : '' %>>
+            <% if (nowPlaying.artworkUrl) { %><img class="music-art" src="<%= nowPlaying.artworkUrl %>" alt=""/><% } else { %><div class="music-art" style="display:flex;align-items:center;justify-content:center;">♫</div><% } %>
+            <div style="min-width:0;">
+                <div class="live">Working out · <%= nowPlaying.liftName %></div>
+                <div class="playlist-name" style="margin-top:4px;"><%= nowPlaying.title %></div>
+                <div class="playlist-meta"><%= nowPlaying.artist %> · <%= nowPlaying.provider === 'SPOTIFY' ? 'Spotify' : 'Apple Music' %></div>
+            </div>
+        </a>
+    <% } %>
+
+    <% if (publishedPlaylists.length > 0) { %>
+        <div class="section-heading">Workout playlists</div>
+        <% publishedPlaylists.forEach(playlist => { %>
+            <a class="card playlist" href="<%= playlist.externalUrl || '#' %>" <%= playlist.externalUrl ? 'target="_blank" rel="noopener"' : '' %>>
+                <% if (playlist.artworkUrl) { %><img class="music-art" src="<%= playlist.artworkUrl %>" alt=""/><% } else { %><div class="music-art" style="display:flex;align-items:center;justify-content:center;">♫</div><% } %>
+                <div class="playlist-copy">
+                    <div class="playlist-name"><%= playlist.name %></div>
+                    <div class="playlist-meta"><%= playlist.provider === 'SPOTIFY' ? 'Spotify' : 'Apple Music' %> · Published playlist</div>
+                </div>
+                <span style="color:#555;">↗</span>
+            </a>
+        <% }) %>
+    <% } %>
 
     <% if (!hideWeight && currentWeight) { %>
         <div class="section-heading">Body weight</div>

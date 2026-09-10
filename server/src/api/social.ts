@@ -4,7 +4,7 @@ import { currentUser, requireAuth } from "../middleware/auth.js";
 import { badRequest, forbidden, handler, intParam, notFound, sendData } from "../lib/respond.js";
 import { uploadImageField } from "../lib/upload.js";
 import { uploadImage } from "../services/imageStorageService.js";
-import { getFeed, getFriends, getPendingRequests, getThread } from "../services/socialService.js";
+import { getFeed, getFriends, getPendingRequests, getThread, sharePersonalRecord } from "../services/socialService.js";
 
 const router = Router();
 
@@ -40,6 +40,19 @@ router.post(
     });
 
     sendData(res, { id: post.id, createdAt: post.createdAt }, 201);
+  }),
+);
+
+router.post(
+  "/personal-records/:workoutLogId/share",
+  requireAuth,
+  handler(async (req, res) => {
+    const post = await sharePersonalRecord(
+      currentUser(req).userId,
+      intParam(req.params.workoutLogId, "workoutLogId"),
+    );
+    if (!post) throw notFound("Personal record not found");
+    sendData(res, { postId: post.id }, 201);
   }),
 );
 

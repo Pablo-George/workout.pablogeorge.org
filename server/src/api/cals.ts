@@ -6,10 +6,9 @@ import { badRequest, handler, intParam, notFound, sendData } from "../lib/respon
 import { uploadImageField } from "../lib/upload.js";
 import { estimateCalories, estimateCaloriesFromText } from "../services/calService.js";
 import { uploadImage } from "../services/imageStorageService.js";
+import { resolveLocalDate } from "../lib/dates.js";
 
 const router = Router();
-
-const today = () => new Date().toISOString().split("T")[0];
 
 function isoDaysAgo(days: number): string {
   const d = new Date();
@@ -59,7 +58,10 @@ router.get(
   requireAuth,
   handler(async (req, res) => {
     const { userId } = currentUser(req);
-    const day = today();
+    // The client passes its own local calendar day (the server's UTC day can
+    // be a day off around midnight), so "today's" bucket lines up with what
+    // the user actually considers today.
+    const day = resolveLocalDate(req.query?.date);
 
     const entries = await prisma.calorieEntry.findMany({
       where: { userId, loggedOn: { gte: isoDaysAgo(29) } },
@@ -139,7 +141,7 @@ router.post(
         carbsG,
         breakdown,
         imageUrl,
-        loggedOn: today(),
+        loggedOn: resolveLocalDate(req.body?.loggedOn),
       },
     });
 

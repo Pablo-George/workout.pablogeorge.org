@@ -1,4 +1,6 @@
 import { prisma } from "../app.js";
+import { resolveLocalDate } from "../lib/dates.js";
+import { currentTrack } from "./musicService.js";
 
 interface SetDef {
   pct: number;
@@ -93,30 +95,38 @@ export async function getConfig(userId: string, liftId: number) {
 }
 
 /** Records the training max at this point in time, which is what the
- *  progression chart on the home screen plots. */
-async function logTrainingMax(userId: string, liftId: number, trainingMax: number) {
+ *  progression chart on the home screen plots. `loggedOn`, when given, should
+ *  be the caller's local calendar day — the server's own UTC day can be off
+ *  by one around midnight and would otherwise mis-date the chart point. */
+async function logTrainingMax(userId: string, liftId: number, trainingMax: number, loggedOn?: string) {
   await prisma.trainingMaxLog.create({
-    data: { userId, liftId, trainingMax, loggedOn: new Date().toISOString().split("T")[0] },
+    data: { userId, liftId, trainingMax, loggedOn: resolveLocalDate(loggedOn) },
   });
 }
 
-export async function createConfig(userId: string, lift: { id: number; name: string }, trainingMax: number) {
+export async function createConfig(
+  userId: string,
+  lift: { id: number; name: string },
+  trainingMax: number,
+  loggedOn?: string
+) {
   const config = await prisma.userLiftConfig.create({
     data: { userId, liftId: lift.id, trainingMax, currentWeek: 1 },
   });
-  await logTrainingMax(userId, lift.id, trainingMax);
+  await logTrainingMax(userId, lift.id, trainingMax, loggedOn);
   return config;
 }
 
 export async function updateTrainingMax(
   config: { id: number; userId: string; liftId: number },
-  newMax: number
+  newMax: number,
+  loggedOn?: string
 ) {
   await prisma.userLiftConfig.update({
     where: { id: config.id },
     data: { trainingMax: newMax },
   });
-  await logTrainingMax(config.userId, config.liftId, newMax);
+  await logTrainingMax(config.userId, config.liftId, newMax, loggedOn);
 }
 
 export async function getWeekLabels(userId: string) {
@@ -158,25 +168,73 @@ export async function buildPlan(
   };
 }
 
+/** After the week 3 ("5/3/1 Week") AMRAP set, the training max auto-progresses
+ *  based on how many reps were hit: >4 reps is a strong set (+10), >1 is a
+ *  solid set (+5), a missed rep (0) backs it off (-5), anything else (a
+ *  single rep) holds the training max steady. */
+function trainingMaxIncrement(week: number, amrapReps: number): number {
+  if (week !== 3) return 0;
+  if (amrapReps > 4) return 10;
+  if (amrapReps > 1) return 5;
+  if (amrapReps === 0) return -5;
+  return 0;
+}
+
 export async function completeWorkout(
-  config: { id: number; userId: string; liftId: number; currentWeek: number },
-  amrapReps: number
+  config: { id: number; userId: string; liftId: number; currentWeek: number; trainingMax: number },
+  amrapReps: number,
+  completedOn?: string
 ) {
-  await prisma.workoutLog.create({
+  const topSet = PROGRAM[config.currentWeek - 1].find((set) => set.amrap)!;
+  const topSetWeight = roundUpTo5(config.trainingMax * topSet.pct);
+  const estimatedOneRepMax = Math.round(topSetWeight * (1 + amrapReps / 30) * 10) / 10;
+  const previousBest = await prisma.workoutLog.findFirst({
+    where: { userId: config.userId, liftId: config.liftId, estimatedOneRepMax: { not: null } },
+    orderBy: { estimatedOneRepMax: "desc" },
+  });
+  const isPr = previousBest?.estimatedOneRepMax == null || estimatedOneRepMax > previousBest.estimatedOneRepMax;
+  const track = await currentTrack(config.userId);
+  const lift = await prisma.coreWorkout.findUnique({ where: { id: config.liftId } });
+
+  const workoutLog = await prisma.workoutLog.create({
     data: {
       userId: config.userId,
       liftId: config.liftId,
       week: config.currentWeek,
       amrapReps,
-      completedOn: new Date().toISOString().split("T")[0],
+      completedOn: resolveLocalDate(completedOn),
+      topSetWeight,
+      estimatedOneRepMax,
+      isPr,
+      trackTitle: track?.title ?? null,
+      trackArtist: track?.artist ?? null,
+      trackArtworkUrl: track?.artworkUrl ?? null,
+      trackExternalUrl: track?.externalUrl ?? null,
+      trackProvider: track?.provider ?? null,
     },
   });
 
+
   const next = (config.currentWeek % 4) + 1;
+  const increment = trainingMaxIncrement(config.currentWeek, amrapReps);
+  const newTrainingMax = config.trainingMax + increment;
+
   await prisma.userLiftConfig.update({
     where: { id: config.id },
-    data: { currentWeek: next },
+    data: { currentWeek: next, trainingMax: newTrainingMax },
   });
+
+  if (increment !== 0) {
+    await logTrainingMax(config.userId, config.liftId, newTrainingMax, completedOn);
+  }
+
+  return {
+    trainingMaxDelta: increment,
+    newTrainingMax,
+    workoutLogId: workoutLog.id,
+    isPr,
+    pr: isPr && lift ? { liftName: lift.name, weight: topSetWeight, reps: amrapReps, track } : null,
+  };
 }
 
 export async function countLogs(userId: string) {

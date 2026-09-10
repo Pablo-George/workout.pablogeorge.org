@@ -4,7 +4,6 @@ const isHTMX = (req: Request) => req.headers["hx-request"] === "true";
 import { ensureAuth } from "../middleware/auth.js";
 import { prisma } from "../app.js";
 import { createConfig, getConfig, updateTrainingMax, completeWorkout } from "../services/workoutService.js";
-import { generateGuideImage } from "../services/guideService.js";
 
 const router = Router();
 
@@ -20,7 +19,7 @@ router.post("/workout/:liftId/setup", ensureAuth, async (req, res) => {
   const lift = await prisma.coreWorkout.findUnique({ where: { id: liftId } });
   if (!lift) return res.redirect("/");
 
-  await createConfig(user.userId, lift, trainingMax);
+  await createConfig(user.userId, lift, trainingMax, req.body.loggedOn);
   await prisma.auxLift.deleteMany({ where: { userId: user.userId, liftId } });
   res.redirect(`/workout/${liftId}`);
 });
@@ -56,9 +55,9 @@ router.post("/workout/:liftId/update-tm", ensureAuth, async (req, res) => {
   if (lift) {
     const config = await getConfig(user.userId, liftId);
     if (config) {
-      await updateTrainingMax(config, trainingMax);
+      await updateTrainingMax(config, trainingMax, req.body.loggedOn);
     } else {
-      await createConfig(user.userId, lift, trainingMax);
+      await createConfig(user.userId, lift, trainingMax, req.body.loggedOn);
     }
     await prisma.auxLift.deleteMany({ where: { userId: user.userId, liftId } });
   }
@@ -81,23 +80,6 @@ router.post("/workout/:liftId/complete", ensureAuth, async (req, res) => {
   await prisma.auxLift.deleteMany({ where: { userId: user.userId, liftId } });
 
   res.redirect("/");
-});
-
-router.get("/workout/guide/:liftName", ensureAuth, async (req, res) => {
-  const liftName = req.params.liftName.trim();
-  const cacheKey = liftName.toLowerCase();
-
-  const existing = await prisma.exerciseGuide.findUnique({ where: { liftName: cacheKey } });
-  if (existing) return res.json({ imageUrl: existing.imageUrl });
-
-  try {
-    const imageUrl = await generateGuideImage(liftName);
-    await prisma.exerciseGuide.create({ data: { liftName: cacheKey, imageUrl } });
-    res.json({ imageUrl });
-  } catch (err) {
-    console.error("Guide generation failed:", err);
-    res.status(500).json({ error: "Failed to generate guide" });
-  }
 });
 
 export default router;

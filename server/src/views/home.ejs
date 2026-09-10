@@ -7,6 +7,7 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏋️</text></svg>"/>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://unpkg.com/htmx.org@2.0.3/dist/htmx.min.js"></script>
+    <% if (music.configured.appleMusic) { %><script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js"></script><% } %>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -138,6 +139,22 @@
             border-radius: 12px;
             padding: 1.1rem 1.2rem;
         }
+
+        .music-provider-row { display:flex;gap:0.55rem;flex-wrap:wrap;margin-top:0.7rem; }
+        .music-btn { display:inline-flex;align-items:center;justify-content:center;border:1px solid #303030;border-radius:9px;padding:0.55rem 0.75rem;color:#ddd;font-size:0.78rem;font-weight:700;text-decoration:none;cursor:pointer; }
+        .music-btn.spotify { background:#12291b;color:#1ed760;border-color:#1d5531; }
+        .music-btn.apple { background:#31151d;color:#fa586a;border-color:#67303d; }
+        .playlist-row { display:grid;grid-template-columns:42px 1fr auto;gap:0.7rem;align-items:center;padding:0.65rem 0;border-top:1px solid #252525; }
+        .playlist-art { width:42px;height:42px;border-radius:7px;object-fit:cover;background:#292929; }
+        .playlist-title { font-size:0.86rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+        .playlist-provider { color:#666;font-size:0.7rem;margin-top:2px; }
+        .playlist-actions { display:flex;gap:0.35rem; }
+        .mini-btn { border:1px solid #333;border-radius:7px;color:#888;padding:0.35rem 0.45rem;font-size:0.68rem;font-weight:700; }
+        .mini-btn.active { color:#4ade80;border-color:#31543d;background:#18251c; }
+        .track-share { display:flex;gap:0.65rem;align-items:center;background:#121212;border:1px solid #292929;border-radius:10px;padding:0.6rem;margin-top:0.55rem;text-decoration:none; }
+        .track-share img { width:44px;height:44px;border-radius:6px;object-fit:cover; }
+        .track-share-title { font-size:0.82rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+        .track-share-artist { font-size:0.72rem;color:#777;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
 
         .workout-row {
             display: flex;
@@ -653,6 +670,109 @@
             margin-left: auto;
             text-align: right;
         }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            padding: 0.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-btn svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .stat-card.clickable { cursor: pointer; }
+        .stat-card.clickable:active { opacity: 0.7; }
+
+        /* ── Centered modal (body weight) ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9998;
+            background: rgba(0,0,0,0.7);
+            align-items: center;
+            justify-content: center;
+            padding: 1.25rem;
+        }
+
+        .modal-overlay.show { display: flex; }
+
+        .modal-card {
+            background: #171717;
+            border-radius: 18px;
+            padding: 1.5rem;
+            max-width: 360px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            border: 1px solid #2a2a2a;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title { font-size: 1.05rem; font-weight: 800; }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 1.4rem;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+        }
+
+        /* ── Full-screen settings page ── */
+        .settings-page {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #0f0f0f;
+            z-index: 9998;
+            flex-direction: column;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .settings-page.show { display: flex; }
+
+        .settings-page-header {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: #0f0f0f;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.9rem 1rem;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .settings-page-body {
+            padding: 1.25rem 1rem 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -667,7 +787,7 @@
                 <div class="stat-value"><%= totalSessions %></div>
                 <div class="stat-label">Sessions logged</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card clickable" onclick="openWeightModal()" role="button" tabindex="0">
                 <div class="stat-value"><%= currentWeight ? currentWeight + ' lbs' : '—' %></div>
                 <div class="stat-label">Body weight</div>
             </div>
@@ -837,7 +957,7 @@
         <% }) %>
 
         <% if (coreWorkouts.length === 0) { %>
-            <p style="text-align:center;margin-top:2rem;color:#555;font-size:0.9rem;">Add your first lift in the Profile tab.</p>
+            <p style="text-align:center;margin-top:2rem;color:#555;font-size:0.9rem;">Add your first lift in Profile → Settings.</p>
         <% } %>
 
         <!-- Join a friend's room -->
@@ -853,7 +973,15 @@
     </section>
 
     <section class="tab-content" id="tab-profile">
-        <div style="font-size:1.75rem;font-weight:800;letter-spacing:-0.5px;">Profile</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-size:1.75rem;font-weight:800;letter-spacing:-0.5px;">Profile</div>
+            <button type="button" class="icon-btn" onclick="openSettings()" aria-label="Settings">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+            </button>
+        </div>
 
         <div class="card" style="display:flex;align-items:center;gap:1rem;">
             <% if (user.pictureUrl) { %>
@@ -875,52 +1003,45 @@
             <div style="font-size:1.5rem;font-weight:800;"><%= totalSessions %></div>
         </div>
 
-        <div class="section-heading">Body weight</div>
-
-        <div id="weight-display-wrap">
-        <% if (currentWeight) { %>
-            <div class="card" style="display:flex;align-items:baseline;gap:0.4rem;">
-                <span style="font-size:1.75rem;font-weight:800;letter-spacing:-1px;"><%= currentWeight %></span>
-                <span style="font-size:0.85rem;color:#555;">lbs &nbsp;·&nbsp; last logged</span>
+        <% if (music.enabled) { %>
+        <div class="card" id="music-settings-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+                <div>
+                    <div style="font-size:0.75rem;color:#555;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;">Workout music</div>
+                    <div style="font-size:0.82rem;color:#777;margin-top:0.2rem;">Pick one playlist to start with your workout.</div>
+                </div>
+                <span style="font-size:1.2rem;">♫</span>
             </div>
+            <div class="music-provider-row">
+                <% if (music.configured.spotify && !music.connected.includes('SPOTIFY')) { %>
+                    <a href="/music/spotify/connect" class="music-btn spotify">Connect Spotify</a>
+                <% } else if (music.connected.includes('SPOTIFY')) { %>
+                    <button class="music-btn spotify" onclick="syncMusic('spotify')">Spotify connected · Sync</button>
+                <% } %>
+                <% if (music.configured.appleMusic && !music.connected.includes('APPLE_MUSIC')) { %>
+                    <button class="music-btn apple" onclick="connectAppleMusic()">Connect Apple Music</button>
+                <% } else if (music.connected.includes('APPLE_MUSIC')) { %>
+                    <button class="music-btn apple" onclick="syncMusic('apple_music')">Apple Music connected · Sync</button>
+                <% } %>
+                <% if (!music.configured.spotify && !music.configured.appleMusic) { %>
+                    <span style="font-size:0.78rem;color:#555;">Add provider credentials to enable connections.</span>
+                <% } %>
+            </div>
+            <% music.playlists.forEach(playlist => { %>
+            <div class="playlist-row">
+                <% if (playlist.artworkUrl) { %><img class="playlist-art" src="<%= playlist.artworkUrl %>" alt=""/><% } else { %><div class="playlist-art" style="display:flex;align-items:center;justify-content:center;">♫</div><% } %>
+                <div style="min-width:0;">
+                    <div class="playlist-title"><%= playlist.name %></div>
+                    <div class="playlist-provider"><%= playlist.provider === 'SPOTIFY' ? 'Spotify' : 'Apple Music' %></div>
+                </div>
+                <div class="playlist-actions">
+                    <button class="mini-btn <%= playlist.isSelected ? 'active' : '' %>" onclick="selectPlaylist(<%= playlist.id %>)"><%= playlist.isSelected ? 'Selected' : 'Use' %></button>
+                    <button class="mini-btn <%= playlist.isPublished ? 'active' : '' %>" onclick="publishPlaylist(<%= playlist.id %>, <%= !playlist.isPublished %>, this)"><%= playlist.isPublished ? 'Public' : 'Private' %></button>
+                </div>
+            </div>
+            <% }) %>
+        </div>
         <% } %>
-        </div>
-
-        <form class="add-form"
-              hx-post="/profile/weight" hx-target="#weight-display-wrap" hx-swap="innerHTML"
-              hx-on::after-request="this.reset()">
-            <input type="number" name="weightLbs" step="0.1" min="50" max="999"
-                   placeholder="<%= currentWeight ? 'Overwrites today\'s entry (lbs)' : 'Log your weight (lbs)' %>"
-                   required/>
-            <button type="submit">Log</button>
-        </form>
-
-        <form hx-post="/profile/privacy" hx-target="#privacy-status" hx-swap="outerHTML">
-            <button type="submit"
-                    style="width:100%;display:flex;align-items:center;justify-content:space-between;
-                           padding:0.85rem 1rem;background:#1a1a1a;border:1px solid #2a2a2a;
-                           border-radius:12px;color:#fff;font-size:0.9rem;cursor:pointer;margin-bottom:0.5rem;">
-                <span>Show weight to friends</span>
-                <span id="privacy-status" style="font-size:0.75rem;font-weight:700;color:<%= hideWeight ? '#555' : '#4f9eff' %>;">
-                    <%= hideWeight ? 'OFF' : 'ON' %>
-                </span>
-            </button>
-        </form>
-
-        <div class="section-heading">My lifts</div>
-
-        <div id="lifts-list">
-        <% coreWorkouts.forEach(w => { %>
-            <%- include('partials/lift-card', { w }) %>
-        <% }) %>
-        </div>
-
-        <form class="add-form"
-              hx-post="/profile/lifts" hx-target="#lifts-list" hx-swap="beforeend"
-              hx-on::after-request="this.reset()">
-            <input type="text" name="name" placeholder="Add a lift" required maxlength="60"/>
-            <button type="submit">Add</button>
-        </form>
 
         <% if (isAdmin) { %>
         <a href="/admin"
@@ -989,6 +1110,16 @@
                             </div>
                             <% if (post.content) { %>
                                 <div class="post-content"><%= post.content %></div>
+                            <% } %>
+                            <% if (post.trackTitle) { %>
+                                <a class="track-share" href="<%= post.trackExternalUrl || '#' %>" <%= post.trackExternalUrl ? 'target="_blank" rel="noopener"' : '' %>>
+                                    <% if (post.trackArtworkUrl) { %><img src="<%= post.trackArtworkUrl %>" alt=""/><% } %>
+                                    <div style="min-width:0;flex:1;">
+                                        <div style="font-size:0.65rem;color:<%= post.kind === 'PERSONAL_RECORD' ? '#4ade80' : '#777' %>;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;"><%= post.kind === 'PERSONAL_RECORD' ? 'PR soundtrack' : 'Listening to' %></div>
+                                        <div class="track-share-title"><%= post.trackTitle %></div>
+                                        <div class="track-share-artist"><%= post.trackArtist %> · <%= post.trackProvider === 'SPOTIFY' ? 'Spotify' : 'Apple Music' %></div>
+                                    </div>
+                                </a>
                             <% } %>
                             <% if (post.imageUrl) { %>
                                 <img src="<%= post.imageUrl %>" alt=""
@@ -1430,6 +1561,38 @@
             });
         }
 
+        async function musicApi(path, options = {}) {
+            const response = await fetch(path, { headers:{'Content-Type':'application/json'}, ...options });
+            if (!response.ok) throw new Error((await response.json()).error || 'Music request failed');
+            return response.status === 204 ? null : (await response.json()).data;
+        }
+        async function connectAppleMusic() {
+            try {
+                const { developerToken } = await musicApi('/api/music/apple/developer-token');
+                await MusicKit.configure({ developerToken, app:{ name:'Workout', build:'1.1.0' } });
+                const music = MusicKit.getInstance();
+                const musicUserToken = await music.authorize();
+                await musicApi('/api/music/apple/connect', { method:'POST', body:JSON.stringify({ musicUserToken }) });
+                location.reload();
+            } catch (error) { alert(error.message || 'Could not connect Apple Music'); }
+        }
+        async function syncMusic(provider) {
+            try { await musicApi(`/api/music/${provider}/sync`, { method:'POST' }); location.reload(); }
+            catch (error) { alert(error.message || 'Could not sync playlists'); }
+        }
+        async function selectPlaylist(id) {
+            try { await musicApi(`/api/music/playlists/${id}/select`, { method:'PUT' }); location.reload(); }
+            catch (error) { alert(error.message || 'Could not select playlist'); }
+        }
+        async function publishPlaylist(id, isPublished, button) {
+            try {
+                await musicApi(`/api/music/playlists/${id}/publish`, { method:'PUT', body:JSON.stringify({ isPublished }) });
+                button.textContent = isPublished ? 'Public' : 'Private';
+                button.classList.toggle('active', isPublished);
+                button.setAttribute('onclick', `publishPlaylist(${id}, ${!isPublished}, this)`);
+            } catch (error) { alert(error.message || 'Could not update playlist'); }
+        }
+
         function switchTab(name, btn) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
@@ -1851,6 +2014,93 @@
              style="max-width:95vw;max-height:95vh;object-fit:contain;border-radius:6px;"/>
     </div>
     <script>document.addEventListener('touchmove', function(e) { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });</script>
+
+    <!-- Settings page (My lifts) -->
+    <div id="settings-page" class="settings-page">
+        <div class="settings-page-header">
+            <button type="button" class="icon-btn" onclick="closeSettings()" aria-label="Back"
+                    style="color:#4f9eff;padding:0;">
+                <svg viewBox="0 0 24 24" style="width:20px;height:20px;"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <div style="font-size:0.95rem;font-weight:700;">Settings</div>
+        </div>
+        <div class="settings-page-body">
+            <div class="section-heading">My lifts</div>
+
+            <div id="lifts-list">
+            <% coreWorkouts.forEach(w => { %>
+                <%- include('partials/lift-card', { w }) %>
+            <% }) %>
+            </div>
+
+            <form class="add-form"
+                  hx-post="/profile/lifts" hx-target="#lifts-list" hx-swap="beforeend"
+                  hx-on::after-request="this.reset()">
+                <input type="text" name="name" placeholder="Add a lift" required maxlength="60"/>
+                <button type="submit">Add</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Body weight modal -->
+    <div id="weight-modal" class="modal-overlay" onclick="if (event.target === this) closeWeightModal()">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">Body weight</div>
+                <button type="button" class="modal-close" onclick="closeWeightModal()" aria-label="Close">✕</button>
+            </div>
+
+            <div id="weight-display-wrap">
+            <% if (currentWeight) { %>
+                <div class="card" style="display:flex;align-items:baseline;gap:0.4rem;">
+                    <span style="font-size:1.75rem;font-weight:800;letter-spacing:-1px;"><%= currentWeight %></span>
+                    <span style="font-size:0.85rem;color:#555;">lbs &nbsp;·&nbsp; last logged</span>
+                </div>
+            <% } %>
+            </div>
+
+            <form class="add-form"
+                  hx-post="/profile/weight" hx-target="#weight-display-wrap" hx-swap="innerHTML"
+                  hx-vals="js:{loggedOn: new Date().toLocaleDateString('en-CA')}"
+                  hx-on::after-request="this.reset()">
+                <input type="number" name="weightLbs" step="0.1" min="50" max="999"
+                       placeholder="<%= currentWeight ? 'Overwrites today\'s entry (lbs)' : 'Log your weight (lbs)' %>"
+                       required/>
+                <button type="submit">Log</button>
+            </form>
+
+            <form hx-post="/profile/privacy" hx-target="#privacy-status" hx-swap="outerHTML">
+                <button type="submit"
+                        style="width:100%;display:flex;align-items:center;justify-content:space-between;
+                               padding:0.85rem 1rem;background:#1a1a1a;border:1px solid #2a2a2a;
+                               border-radius:12px;color:#fff;font-size:0.9rem;cursor:pointer;">
+                    <span>Show weight to friends</span>
+                    <span id="privacy-status" style="font-size:0.75rem;font-weight:700;color:<%= hideWeight ? '#555' : '#4f9eff' %>;">
+                        <%= hideWeight ? 'OFF' : 'ON' %>
+                    </span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openSettings() {
+            document.getElementById('settings-page').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeSettings() {
+            document.getElementById('settings-page').classList.remove('show');
+            document.body.style.overflow = '';
+        }
+        function openWeightModal() {
+            document.getElementById('weight-modal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeWeightModal() {
+            document.getElementById('weight-modal').classList.remove('show');
+            document.body.style.overflow = '';
+        }
+    </script>
 
 </body>
 </html>

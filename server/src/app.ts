@@ -15,7 +15,8 @@ import socialRoutes from "./routes/social.js";
 import calsRoutes from "./routes/cals.js";
 import adminRoutes from "./routes/admin.js";
 import groupRoutes from "./routes/group.js";
-import { GROUP_WORKOUTS_ENABLED } from "./config/features.js";
+import musicRoutes from "./routes/music.js";
+import { GROUP_WORKOUTS_ENABLED, MUSIC_ENABLED } from "./config/features.js";
 
 // Re-exported for the EJS-era routes that still import it from here.
 // New code should import from ./db.js directly.
@@ -64,5 +65,8 @@ app.use(socialRoutes);
 app.use(calsRoutes);
 app.use(adminRoutes);
 app.use(groupRoutes);
+if (MUSIC_ENABLED) {
+  app.use(musicRoutes);
+}
 
 export default app;

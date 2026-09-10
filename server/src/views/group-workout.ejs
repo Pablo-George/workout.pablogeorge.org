@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title><%= groupsEnabled ? "Group Workout" : "Workout" %></title>
+    <% if (isMember && music?.configured?.appleMusic) { %>
+    <script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js"></script>
+    <% } %>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -173,7 +176,40 @@
         }
         .btn-back-home { display: block; text-align: center; margin-top: 1rem; color: #4f9eff; font-size: 0.9rem; font-weight: 600; text-decoration: none; }
 
-        @keyframes spin { to { transform: rotate(360deg); } }
+        /* ── Training max popup ── */
+        .tm-popup-overlay {
+            display: none; position: fixed; inset: 0; z-index: 9999;
+            background: rgba(0,0,0,0.7); align-items: center; justify-content: center; padding: 1.5rem;
+        }
+        .tm-popup-overlay.show { display: flex; }
+        .tm-popup-card {
+            background: #171717; border-radius: 20px; padding: 2rem 1.5rem;
+            max-width: 340px; width: 100%; text-align: center;
+            border: 1.5px solid #2a2a2a;
+            animation: tm-pop-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .tm-popup-card.up { border-color: #4ade8055; }
+        .tm-popup-card.down { border-color: #f8717155; }
+        @keyframes tm-pop-in { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .tm-popup-emoji { font-size: 2.75rem; line-height: 1; margin-bottom: 0.75rem; }
+        .tm-popup-title { font-size: 1.15rem; font-weight: 800; margin-bottom: 0.4rem; }
+        .tm-popup-title.up { color: #4ade80; }
+        .tm-popup-title.down { color: #f87171; }
+        .tm-popup-body { font-size: 0.9rem; color: #aaa; line-height: 1.4; margin-bottom: 1.4rem; }
+        .tm-popup-body strong { color: #fff; }
+        .btn-tm-popup {
+            width: 100%; padding: 0.9rem; background: #4f9eff; border: none; border-radius: 12px;
+            color: #fff; font-size: 0.95rem; font-weight: 700; cursor: pointer;
+        }
+        .btn-tm-popup:active { opacity: 0.8; }
+        .music-card { display:flex;align-items:center;gap:0.8rem;background:#171717;border:1px solid #292929;border-radius:14px;padding:0.8rem; }
+        .music-art { width:48px;height:48px;border-radius:8px;object-fit:cover;background:#292929;flex-shrink:0; }
+        .music-note { width:48px;height:48px;border-radius:8px;background:linear-gradient(135deg,#fa2d48,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:1.35rem;flex-shrink:0; }
+        .music-copy { min-width:0;flex:1; }
+        .music-label { color:#777;font-size:0.68rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase; }
+        .music-title { font-size:0.9rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px; }
+        .music-artist { color:#777;font-size:0.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+        .music-action { color:#4f9eff;border:1px solid #30445e;border-radius:9px;padding:0.45rem 0.6rem;font-size:0.75rem;font-weight:700; }
     </style>
 </head>
 <body>
@@ -247,16 +283,6 @@
             <div>
                 <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
                     <div class="lift-title"><%= m.liftName %></div>
-                    <% if (m.userId === myUserId) { %>
-                    <button type="button" onclick="showGuide('<%= m.liftName.replace(/'/g, "\\'") %>')"
-                            style="display:flex;align-items:center;gap:0.3rem;background:none;border:none;
-                                   color:#4f9eff;font-size:0.78rem;font-weight:600;cursor:pointer;padding:0;">
-                        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#4f9eff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;">
-                            <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
-                        </svg>
-                        How to do it
-                    </button>
-                    <% } %>
                 </div>
                 <div class="meta-row">
                     <span class="week-badge">WEEK <%= m.plan.week %> &nbsp;·&nbsp; <%= m.plan.weekLabel %></span>
@@ -265,17 +291,41 @@
             </div>
 
             <% if (m.userId === myUserId && m.status === 'ACTIVE') { %>
-            <!-- My active tab: wrap in form, AMRAP inline, Complete button at bottom -->
+            <% const selectedMusic = music.playlists.find(p => p.isSelected); %>
+            <% if (selectedMusic) { %>
+            <div class="music-card" id="workout-music-card">
+                <% if (selectedMusic.artworkUrl) { %><img class="music-art" id="music-art" src="<%= selectedMusic.artworkUrl %>" alt=""/><% } else { %><div class="music-note" id="music-art">♫</div><% } %>
+                <div class="music-copy">
+                    <div class="music-label" id="music-label">Workout playlist</div>
+                    <div class="music-title" id="music-title"><%= selectedMusic.name %></div>
+                    <div class="music-artist" id="music-artist"><%= selectedMusic.provider === 'SPOTIFY' ? 'Spotify' : 'Apple Music' %></div>
+                </div>
+                <button type="button" class="music-action" id="music-action" onclick="startWorkoutMusic(true)">Play</button>
+            </div>
+            <% } %>
+            <!-- Step 1: log the lift itself first. Aux lifts aren't shown yet
+                 so there's nothing to get distracted by before this saves. -->
             <form action="/group/<%= session.id %>/complete" method="post"
+                  onsubmit="this.loggedOn.value = new Date().toLocaleDateString('en-CA')"
                   style="display:flex;flex-direction:column;gap:1.5rem;">
+                <input type="hidden" name="loggedOn"/>
                 <%- include('partials/workout-sets', {
                     plan: m.plan, interactive: true, showAmrapInput: true, dataUser: m.userId
                 }) %>
-                <%- include('partials/workout-aux', { auxLifts: m.auxLifts }) %>
                 <button type="submit" class="btn-complete">Complete Workout</button>
             </form>
+            <% } else if (m.userId === myUserId && m.status === 'LOGGED') { %>
+            <!-- Step 2: lift is already saved — accessory work, then close out. -->
+            <%- include('partials/workout-sets', {
+                plan: m.plan, interactive: false, showAmrapInput: false, dataUser: m.userId
+            }) %>
+            <div class="my-done-badge">✓ Lift logged</div>
+            <%- include('partials/workout-aux', { auxLifts: m.auxLifts }) %>
+            <form action="/group/<%= session.id %>/close" method="post">
+                <button type="submit" class="btn-complete">Close</button>
+            </form>
             <% } else { %>
-            <!-- Other members or myself after completing -->
+            <!-- Other members, or myself after closing -->
             <%- include('partials/workout-sets', {
                 plan: m.plan,
                 interactive: m.userId === myUserId,
@@ -303,30 +353,55 @@
             Session Complete — Great workout!
         </div>
 
-        <!-- Guide modal (same as solo) -->
-        <div id="guide-modal"
-             style="display:none;position:fixed;inset:0;background:#0f0f0f;z-index:9998;
-                    flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;">
-            <div style="position:sticky;top:0;z-index:1;background:#0f0f0f;
-                        display:flex;justify-content:space-between;align-items:center;
-                        padding:0.9rem 1rem;border-bottom:1px solid #1a1a1a;">
-                <div id="guide-modal-title" style="font-size:1rem;font-weight:700;"></div>
-                <button type="button" onclick="closeGuide()"
-                        style="background:none;border:none;color:#888;font-size:1.6rem;cursor:pointer;line-height:1;padding:0;">✕</button>
-            </div>
-            <div id="guide-loading"
-                 style="display:flex;flex-direction:column;align-items:center;justify-content:center;
-                        gap:1rem;flex:1;color:#555;font-size:0.85rem;min-height:60vh;">
-                <div style="width:32px;height:32px;border:3px solid #2a2a2a;border-top-color:#4f9eff;
-                            border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-                Generating your form guide…
-            </div>
-            <img id="guide-image" src="" alt=""
-                 style="display:none;width:100%;height:auto;touch-action:pinch-zoom;"/>
-            <div id="guide-error" style="display:none;color:#f87171;font-size:0.85rem;text-align:center;padding:4rem 1rem;">
-                Could not generate guide. Try again later.
+        <!-- Training max change popup -->
+        <% if (tmPopup) { %>
+        <div id="tm-popup-overlay" class="tm-popup-overlay show">
+            <div class="tm-popup-card <%= tmPopup.delta > 0 ? 'up' : 'down' %>">
+                <div class="tm-popup-emoji"><%= tmPopup.delta > 0 ? '🎉' : '💪' %></div>
+                <div class="tm-popup-title <%= tmPopup.delta > 0 ? 'up' : 'down' %>">
+                    <%= tmPopup.delta > 0 ? 'New Training Max!' : 'Time to Reset' %>
+                </div>
+                <div class="tm-popup-body">
+                    <% if (tmPopup.delta > 0) { %>
+                        Great AMRAP set! Your <%= tmPopup.liftName %> training max just went up
+                        <strong>+<%= tmPopup.delta %> lbs</strong>, to <strong><%= tmPopup.newMax %> lbs</strong>.
+                    <% } else { %>
+                        That rep didn't land, so your <%= tmPopup.liftName %> training max backed off
+                        <strong><%= tmPopup.delta %> lbs</strong>, to <strong><%= tmPopup.newMax %> lbs</strong>.
+                        Recover up and come back stronger next cycle!
+                    <% } %>
+                </div>
+                <% if (prPopup) { %>
+                <div style="background:#142218;border:1px solid #31543d;border-radius:10px;padding:0.7rem;margin:-0.5rem 0 0.9rem;color:#4ade80;font-size:0.82rem;font-weight:700;">
+                    🏆 PR · <%= prPopup.weight %> lbs × <%= prPopup.reps %><% if (prPopup.trackTitle) { %><br><span style="color:#aaa;font-weight:500;">♫ <%= prPopup.trackTitle %> — <%= prPopup.trackArtist %></span><% } %>
+                </div>
+                <form action="/social/pr/<%= prPopup.logId %>" method="post" style="margin-bottom:0.55rem;">
+                    <input type="hidden" name="returnTo" value="/group/<%= session.id %>"/>
+                    <button type="submit" class="btn-tm-popup" style="background:#22c55e;color:#07140b;">Share PR</button>
+                </form>
+                <% } %>
+                <button type="button" class="btn-tm-popup" onclick="closeTmPopup()">Let's go</button>
             </div>
         </div>
+        <% } %>
+
+        <% if (prPopup && !tmPopup) { %>
+        <div id="pr-popup-overlay" class="tm-popup-overlay show">
+            <div class="tm-popup-card up">
+                <div class="tm-popup-emoji">🏆</div>
+                <div class="tm-popup-title up">New Personal Record!</div>
+                <div class="tm-popup-body">
+                    <strong><%= prPopup.weight %> lbs × <%= prPopup.reps %></strong> on <strong><%= prPopup.liftName %></strong>.
+                    <% if (prPopup.trackTitle) { %><br><br>Soundtracked by <strong><%= prPopup.trackTitle %></strong> — <%= prPopup.trackArtist %>.<% } %>
+                </div>
+                <form action="/social/pr/<%= prPopup.logId %>" method="post" style="margin-bottom:0.55rem;">
+                    <input type="hidden" name="returnTo" value="/group/<%= session.id %>"/>
+                    <button type="submit" class="btn-tm-popup" style="background:#22c55e;color:#07140b;">Share PR</button>
+                </form>
+                <button type="button" class="btn-tm-popup" onclick="document.getElementById('pr-popup-overlay').classList.remove('show')">Not now</button>
+            </div>
+        </div>
+        <% } %>
 
         <script>
             document.addEventListener('touchmove', function(e) { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
@@ -335,6 +410,7 @@
             const myUserId  = <%- JSON.stringify(myUserId) %>;
             const initialMemberCount = <%= members.length %>;
             const memberIndex = <%- JSON.stringify(members.map((m, i) => ({ i, userId: m.userId }))) %>;
+            const selectedMusic = <%- JSON.stringify(music.playlists.find(p => p.isSelected) ?? null) %>;
 
             // ── Set completion state ──
             const serverCompleted = <%- JSON.stringify(completedSets) %>;
@@ -351,6 +427,74 @@
                 });
             }
             applyAllStates();
+
+            function showTrack(track) {
+                if (!track) return;
+                document.getElementById('music-label').textContent = track.isPlaying ? 'Now playing' : 'Paused';
+                document.getElementById('music-title').textContent = track.title;
+                document.getElementById('music-artist').textContent = track.artist;
+                const art = document.getElementById('music-art');
+                if (track.artworkUrl && art?.tagName === 'IMG') art.src = track.artworkUrl.replace('{w}', '160').replace('{h}', '160');
+            }
+
+            async function syncAppleNowPlaying(music) {
+                const item = music.player.nowPlayingItem;
+                if (!item) return;
+                const track = {
+                    provider: 'APPLE_MUSIC', trackId: item.id, title: item.title || item.attributes?.name,
+                    artist: item.artistName || item.attributes?.artistName || 'Unknown artist',
+                    album: item.albumName || item.attributes?.albumName || null,
+                    artworkUrl: item.artworkURL || item.attributes?.artwork?.url || null,
+                    externalUrl: item.attributes?.url || null, isPlaying: music.player.isPlaying,
+                    workoutSessionId: sessionId
+                };
+                showTrack(track);
+                await fetch('/api/music/now-playing', { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(track) });
+            }
+
+            async function startWorkoutMusic(fromButton) {
+                if (!selectedMusic) return;
+                const action = document.getElementById('music-action');
+                if (action) action.textContent = 'Starting…';
+                try {
+                    const response = await fetch('/api/music/start', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ workoutSessionId: sessionId }) });
+                    const result = (await response.json()).data;
+                    if (selectedMusic.provider === 'APPLE_MUSIC') {
+                        const tokenResponse = await fetch('/api/music/apple/developer-token');
+                        const { developerToken } = (await tokenResponse.json()).data;
+                        await MusicKit.configure({ developerToken, app:{ name:'Workout', build:'1.1.0' } });
+                        const apple = MusicKit.getInstance();
+                        if (!apple.isAuthorized) await apple.authorize();
+                        await apple.setQueue({ playlist: selectedMusic.providerPlaylistId });
+                        await apple.play();
+                        await syncAppleNowPlaying(apple);
+                        setInterval(() => syncAppleNowPlaying(apple).catch(() => {}), 15000);
+                    } else if (!result.started && result.reason === 'NO_ACTIVE_DEVICE') {
+                        if (action) { action.textContent = 'Open Spotify'; action.onclick = () => window.open(selectedMusic.externalUrl, '_blank'); }
+                        document.getElementById('music-label').textContent = 'Open Spotify on a device';
+                        return;
+                    }
+                    if (action) action.style.display = 'none';
+                } catch (error) {
+                    if (action) action.textContent = 'Try again';
+                    if (!fromButton) document.getElementById('music-label').textContent = 'Tap play to start';
+                }
+            }
+
+            if (selectedMusic && !sessionStorage.getItem(`music-started-${sessionId}`)) {
+                sessionStorage.setItem(`music-started-${sessionId}`, '1');
+                startWorkoutMusic(false);
+            }
+            if (selectedMusic?.provider === 'SPOTIFY') {
+                const refreshSpotifyTrack = async () => {
+                    try {
+                        const response = await fetch(`/api/music/now-playing?workoutSessionId=${sessionId}`);
+                        showTrack((await response.json()).data);
+                    } catch (_) {}
+                };
+                refreshSpotifyTrack();
+                setInterval(refreshSpotifyTrack, 15000);
+            }
 
             // Scroll my tab into view
             document.getElementById('tab-btn-<%= myTabIndex %>')
@@ -382,47 +526,20 @@
                 }).catch(() => {});
             }
 
+            // ── Training max popup ──
+            <% if (tmPopup || prPopup) { %>
+            history.replaceState(null, '', location.pathname);
+            <% } %>
+            function closeTmPopup() {
+                document.getElementById('tm-popup-overlay')?.classList.remove('show');
+            }
+
             // ── Copy session code ──
             function copyCode() {
                 navigator.clipboard.writeText('<%= session.code %>').catch(() => {});
                 const fb = document.getElementById('copy-feedback');
                 fb.style.opacity = '1';
                 setTimeout(() => fb.style.opacity = '0', 1500);
-            }
-
-            // ── Guide modal ──
-            const vpMeta    = document.querySelector('meta[name="viewport"]');
-            const vpDefault = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
-            const vpZoom    = 'width=device-width, initial-scale=1.0';
-
-            async function showGuide(liftName) {
-                const modal   = document.getElementById('guide-modal');
-                const loading = document.getElementById('guide-loading');
-                const img     = document.getElementById('guide-image');
-                const err     = document.getElementById('guide-error');
-                document.getElementById('guide-modal-title').textContent = liftName;
-                loading.style.display = 'flex';
-                img.style.display = 'none';
-                err.style.display = 'none';
-                modal.style.display = 'flex';
-                document.body.style.overflow = 'hidden';
-                vpMeta.setAttribute('content', vpZoom);
-                try {
-                    const res  = await fetch('/workout/guide/' + encodeURIComponent(liftName));
-                    const data = await res.json();
-                    if (!res.ok || !data.imageUrl) throw new Error();
-                    img.src = data.imageUrl;
-                    img.onload = () => { loading.style.display = 'none'; img.style.display = 'block'; };
-                } catch {
-                    loading.style.display = 'none';
-                    err.style.display = 'block';
-                }
-            }
-
-            function closeGuide() {
-                document.getElementById('guide-modal').style.display = 'none';
-                document.body.style.overflow = '';
-                vpMeta.setAttribute('content', vpDefault);
             }
 
             // ── 3-second polling ──

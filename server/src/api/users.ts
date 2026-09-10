@@ -26,9 +26,15 @@ router.get(
     const profile = await prisma.userProfile.findUnique({ where: { userId: targetId } });
     if (!profile) throw notFound("Profile not found");
 
-    const [lifts, configs] = await Promise.all([
+    const [lifts, configs, publishedPlaylists, activeMembership, listening] = await Promise.all([
       prisma.coreWorkout.findMany({ where: { userId: targetId }, orderBy: { id: "asc" } }),
       prisma.userLiftConfig.findMany({ where: { userId: targetId } }),
+      prisma.musicPlaylist.findMany({ where: { userId: targetId, isPublished: true }, orderBy: { updatedAt: "desc" } }),
+      prisma.groupSessionMember.findFirst({
+        where: { userId: targetId, status: "ACTIVE", session: { status: "ACTIVE" } },
+        include: { lift: true }, orderBy: { joinedAt: "desc" },
+      }),
+      prisma.currentListening.findUnique({ where: { userId: targetId } }),
     ]);
     const configByLiftId = new Map(configs.map((c) => [c.liftId, c]));
 
@@ -54,6 +60,12 @@ router.get(
         trainingMax: configByLiftId.get(lift.id)?.trainingMax ?? null,
         currentWeek: configByLiftId.get(lift.id)?.currentWeek ?? null,
       })),
+      publishedPlaylists,
+      nowPlaying: activeMembership && listening && listening.isPlaying && Date.now() - listening.updatedAt.getTime() < 90_000
+        ? { title: listening.title, artist: listening.artist, album: listening.album,
+            artworkUrl: listening.artworkUrl, externalUrl: listening.externalUrl,
+            provider: listening.provider, liftName: activeMembership.lift.name }
+        : null,
     });
   }),
 );
