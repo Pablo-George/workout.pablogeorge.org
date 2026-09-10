@@ -1,6 +1,5 @@
 import { writeFileSync, mkdirSync } from "fs";
-import { join, dirname } from "path";
-import { fileURLToPath } from "url";
+import { join } from "path";
 import crypto from "crypto";
 
 const ALLOWED_TYPES = new Set([
@@ -17,7 +16,12 @@ const EXTENSIONS: Record<string, string> = {
   "image/webp": ".webp",
 };
 
-const UPLOADS_DIR = join(dirname(fileURLToPath(import.meta.url)), "../../data/uploads");
+// Relative to process.cwd(), matching app.ts's `express.static("./data/uploads")` —
+// not to this module's own (compiled) location. In production the process runs
+// from /app while the compiled file lives under /app/server/dist/services, so a
+// module-relative path here landed uploads in a directory nothing served or
+// persisted, and every uploaded image 404'd.
+const UPLOADS_DIR = join(process.cwd(), "data", "uploads");
 
 export async function uploadImage(file: Express.Multer.File): Promise<string> {
   if (!ALLOWED_TYPES.has(file.mimetype)) {

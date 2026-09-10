@@ -87,7 +87,7 @@ router.post(
       if (!Number.isFinite(trainingMax) || trainingMax < 45) {
         throw badRequest("Set a training max of at least 45 lbs to start");
       }
-      await createConfig(userId, lift, trainingMax);
+      await createConfig(userId, lift, trainingMax, req.body?.loggedOn);
       config = await getConfig(userId, liftId);
     }
     if (!config) throw badRequest("Could not set up this lift");
@@ -272,7 +272,7 @@ router.post(
     if (member.status === "COMPLETED") throw badRequest("Already completed");
 
     const config = await getConfig(userId, member.liftId);
-    if (config) await completeWorkout(config, amrapReps);
+    const workout = config ? await completeWorkout(config, amrapReps, req.body?.completedOn) : null;
 
     await prisma.auxLift.deleteMany({ where: { userId, liftId: member.liftId } });
     await prisma.groupSessionMember.update({
@@ -287,7 +287,7 @@ router.post(
       await clearSession(sessionId);
     }
 
-    sendData(res, { completed: true, sessionComplete });
+    sendData(res, { completed: true, sessionComplete, workout });
   }),
 );
 

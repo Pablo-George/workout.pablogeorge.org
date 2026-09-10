@@ -168,6 +168,17 @@
                 <% if (post.content) { %>
                     <div class="post-content"><%= post.content %></div>
                 <% } %>
+                <% if (post.trackTitle) { %>
+                    <a href="<%= post.trackExternalUrl || '#' %>" <%= post.trackExternalUrl ? 'target="_blank" rel="noopener"' : '' %>
+                       style="display:flex;gap:0.65rem;align-items:center;background:#121212;border:1px solid #292929;border-radius:10px;padding:0.6rem;margin-top:0.65rem;color:inherit;text-decoration:none;">
+                        <% if (post.trackArtworkUrl) { %><img src="<%= post.trackArtworkUrl %>" alt="" style="width:46px;height:46px;border-radius:6px;object-fit:cover;"/><% } %>
+                        <div style="min-width:0;">
+                            <div style="font-size:0.65rem;color:#4ade80;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;"><%= post.kind === 'PERSONAL_RECORD' ? 'PR soundtrack' : 'Listening to' %></div>
+                            <div style="font-size:0.85rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><%= post.trackTitle %></div>
+                            <div style="font-size:0.73rem;color:#777;"><%= post.trackArtist %> · <%= post.trackProvider === 'SPOTIFY' ? 'Spotify' : 'Apple Music' %></div>
+                        </div>
+                    </a>
+                <% } %>
                 <% if (post.imageUrl) { %>
                     <img src="<%= post.imageUrl %>" alt="" onclick="openLightbox('<%= post.imageUrl %>')"
                          style="width:100%;height:auto;max-height:min(70vh,600px);object-fit:contain;

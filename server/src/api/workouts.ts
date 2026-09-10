@@ -117,9 +117,9 @@ router.put(
     const lift = await requireOwnedLift(userId, liftId);
     const config = await getConfig(userId, liftId);
     if (config) {
-      await updateTrainingMax(config, trainingMax);
+      await updateTrainingMax(config, trainingMax, req.body?.loggedOn);
     } else {
-      await createConfig(userId, lift, trainingMax);
+      await createConfig(userId, lift, trainingMax, req.body?.loggedOn);
     }
     // Aux lifts are generated against a specific training max, so they no
     // longer apply once it moves.
@@ -165,11 +165,11 @@ router.post(
     const config = await getConfig(userId, liftId);
     if (!config) throw badRequest("Lift is not set up yet");
 
-    await completeWorkout(config, amrapReps);
+    const result = await completeWorkout(config, amrapReps, req.body?.completedOn);
     await prisma.auxLift.deleteMany({ where: { userId, liftId } });
 
     const updated = await getConfig(userId, liftId);
-    sendData(res, { currentWeek: updated?.currentWeek ?? 1 });
+    sendData(res, { currentWeek: updated?.currentWeek ?? 1, ...result });
   }),
 );
 

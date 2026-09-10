@@ -25,6 +25,15 @@ export type FeedReply = Author & {
 
 export type FeedPost = FeedReply & {
   imageUrl: string | null;
+  kind: string;
+  prLiftName: string | null;
+  prWeight: number | null;
+  prReps: number | null;
+  trackTitle: string | null;
+  trackArtist: string | null;
+  trackArtworkUrl: string | null;
+  trackExternalUrl: string | null;
+  trackProvider: string | null;
   replies: FeedReply[];
 };
 
@@ -106,6 +115,15 @@ export async function getFeed(userId: string): Promise<FeedPost[]> {
     ...toAuthor(post.authorId, profiles),
     content: post.content,
     imageUrl: post.imageUrl,
+    kind: post.kind,
+    prLiftName: post.prLiftName,
+    prWeight: post.prWeight,
+    prReps: post.prReps,
+    trackTitle: post.trackTitle,
+    trackArtist: post.trackArtist,
+    trackArtworkUrl: post.trackArtworkUrl,
+    trackExternalUrl: post.trackExternalUrl,
+    trackProvider: post.trackProvider,
     createdAt: post.createdAt,
     replies: post.replies.map((r) => ({
       id: r.id,
@@ -139,6 +157,15 @@ export async function getThread(postId: number, viewerId: string) {
     ...toAuthor(post.authorId, profiles),
     content: post.content,
     imageUrl: post.imageUrl,
+    kind: post.kind,
+    prLiftName: post.prLiftName,
+    prWeight: post.prWeight,
+    prReps: post.prReps,
+    trackTitle: post.trackTitle,
+    trackArtist: post.trackArtist,
+    trackArtworkUrl: post.trackArtworkUrl,
+    trackExternalUrl: post.trackExternalUrl,
+    trackProvider: post.trackProvider,
     createdAt: post.createdAt,
     replies: post.replies.map((r) => ({
       id: r.id,
@@ -180,4 +207,35 @@ export function timeAgo(dt: Date): string {
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days}d ago`;
   return dt.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+/** Publishes a PR from its immutable workout/song snapshot. Idempotent so a
+ *  double tap cannot create duplicate feed cards. */
+export async function sharePersonalRecord(userId: string, workoutLogId: number) {
+  const log = await prisma.workoutLog.findFirst({
+    where: { id: workoutLogId, userId, isPr: true },
+    include: { lift: true },
+  });
+  if (!log) return null;
+  const existing = await prisma.post.findUnique({ where: { sourceWorkoutLogId: workoutLogId } });
+  if (existing) return existing;
+  const songLine = log.trackTitle && log.trackArtist
+    ? ` while listening to ${log.trackTitle} by ${log.trackArtist}`
+    : "";
+  return prisma.post.create({
+    data: {
+      authorId: userId,
+      sourceWorkoutLogId: workoutLogId,
+      kind: "PERSONAL_RECORD",
+      content: `New PR: ${log.topSetWeight} lbs × ${log.amrapReps} on ${log.lift.name}${songLine}.`,
+      prLiftName: log.lift.name,
+      prWeight: log.topSetWeight,
+      prReps: log.amrapReps,
+      trackTitle: log.trackTitle,
+      trackArtist: log.trackArtist,
+      trackArtworkUrl: log.trackArtworkUrl,
+      trackExternalUrl: log.trackExternalUrl,
+      trackProvider: log.trackProvider,
+    },
+  });
 }

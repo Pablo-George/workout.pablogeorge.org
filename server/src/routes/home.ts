@@ -2,7 +2,9 @@ import { Router, type Request } from "express";
 import { ensureAuth } from "../middleware/auth.js";
 import { prisma } from "../app.js";
 import { buildChartDatasets, getWeekLabels, countLogs } from "../services/workoutService.js";
+import { resolveLocalDate } from "../lib/dates.js";
 import crypto from "node:crypto";
+import { musicDashboard } from "../services/musicService.js";
 
 const isHTMX = (req: Request) => req.headers["hx-request"] === "true";
 
@@ -38,7 +40,10 @@ router.get("/", ensureAuth, async (req, res) => {
   const totalSessions = await countLogs(userId);
 
   const activeMembership = await prisma.groupSessionMember.findFirst({
-    where: { userId, status: "ACTIVE", session: { status: "ACTIVE" } },
+    // LOGGED members have saved their lift but not yet closed out of the aux
+    // lifts screen — still resumable, so the "Workouts" tab should jump
+    // straight back there instead of the picker.
+    where: { userId, status: { in: ["ACTIVE", "LOGGED"] }, session: { status: "ACTIVE" } },
     orderBy: { joinedAt: "desc" },
   });
   const activeSessionId = activeMembership?.sessionId ?? null;
@@ -104,6 +109,7 @@ router.get("/", ensureAuth, async (req, res) => {
   const weightChartData = weightHistory.map((w) => ({ date: w.loggedOn, weight: w.weightLbs }));
 
   const calendar = await buildMonthCalendar(userId, req.query.mo);
+  const music = await musicDashboard(userId);
 
   res.render("home", {
     user,
@@ -126,6 +132,7 @@ router.get("/", ensureAuth, async (req, res) => {
     calHistoryDays,
     weightChartData,
     calendar,
+    music,
     calsError: req.query.cals_error === "1",
     isAdmin: process.env.ADMIN_EMAIL && user.userId === process.env.ADMIN_EMAIL,
   });
@@ -156,7 +163,9 @@ router.post("/profile/lifts/delete", ensureAuth, async (req, res) => {
 router.post("/profile/weight", ensureAuth, async (req, res) => {
   const user = req.user as any;
   const weightLbs = parseFloat(req.body.weightLbs as string);
-  const today = new Date().toISOString().split("T")[0];
+  // The browser knows the user's local calendar day; the server only knows
+  // its own (UTC) day, which can be a day off from the user's around midnight.
+  const today = resolveLocalDate(req.body.loggedOn);
   await prisma.bodyWeightLog.upsert({
     where: { userId_loggedOn: { userId: user.userId, loggedOn: today } },
     update: { weightLbs },
@@ -205,11 +214,30 @@ router.get("/user/:userId", ensureAuth, async (req, res) => {
     currentWeight = latest?.weightLbs ?? null;
   }
 
+  const [publishedPlaylists, activeMembership, listening] = await Promise.all([
+    prisma.musicPlaylist.findMany({
+      where: { userId: targetId, isPublished: true },
+      orderBy: { updatedAt: "desc" },
+    }),
+    prisma.groupSessionMember.findFirst({
+      where: { userId: targetId, status: "ACTIVE", session: { status: "ACTIVE" } },
+      include: { lift: true },
+      orderBy: { joinedAt: "desc" },
+    }),
+    prisma.currentListening.findUnique({ where: { userId: targetId } }),
+  ]);
+  const nowPlaying = activeMembership && listening && listening.isPlaying &&
+    Date.now() - listening.updatedAt.getTime() < 90_000
+    ? { ...listening, liftName: activeMembership.lift.name }
+    : null;
+
   res.render("friend-profile", {
     profile: { displayName: profile?.displayName ?? targetId, pictureUrl: profile?.pictureUrl ?? null },
     liftsWithConfig,
     currentWeight,
     hideWeight: profile?.hideWeight ?? false,
+    publishedPlaylists,
+    nowPlaying,
   });
 });
 
@@ -241,6 +269,15 @@ async function getFeed(userId: string) {
     authorPicture: profileMap[post.authorId]?.pictureUrl ?? null,
     content: post.content,
     imageUrl: post.imageUrl,
+    kind: post.kind,
+    prLiftName: post.prLiftName,
+    prWeight: post.prWeight,
+    prReps: post.prReps,
+    trackTitle: post.trackTitle,
+    trackArtist: post.trackArtist,
+    trackArtworkUrl: post.trackArtworkUrl,
+    trackExternalUrl: post.trackExternalUrl,
+    trackProvider: post.trackProvider,
     timeAgo: timeAgo(post.createdAt),
     replies: post.replies.map((r) => ({
       id: r.id,

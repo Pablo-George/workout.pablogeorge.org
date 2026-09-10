@@ -3,10 +3,9 @@ import { Router } from "express";
 import { prisma } from "../db.js";
 import { currentUser, requireAuth } from "../middleware/auth.js";
 import { badRequest, handler, sendData } from "../lib/respond.js";
+import { resolveLocalDate } from "../lib/dates.js";
 
 const router = Router();
-
-const today = () => new Date().toISOString().split("T")[0];
 
 router.post(
   "/weight",
@@ -20,7 +19,10 @@ router.post(
       throw badRequest("Weight must be between 50 and 999 lbs");
     }
 
-    const loggedOn = today();
+    // The client sends its own local calendar day, since the server's UTC
+    // day can be a day off from the user's around midnight, which was
+    // causing today's entry to silently overwrite yesterday's.
+    const loggedOn = resolveLocalDate(req.body?.loggedOn);
     await prisma.bodyWeightLog.upsert({
       where: { userId_loggedOn: { userId, loggedOn } },
       update: { weightLbs },

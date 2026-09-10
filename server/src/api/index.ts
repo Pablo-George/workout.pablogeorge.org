@@ -7,10 +7,10 @@ import workoutRoutes from "./workouts.js";
 import calsRoutes from "./cals.js";
 import socialRoutes from "./social.js";
 import usersRoutes from "./users.js";
-import { GROUP_WORKOUTS_ENABLED } from "../config/features.js";
+import { GROUP_WORKOUTS_ENABLED, MUSIC_ENABLED } from "../config/features.js";
 import groupRoutes from "./group.js";
-import guidesRoutes from "./guides.js";
 import adminRoutes from "./admin.js";
+import musicRoutes from "./music.js";
 
 const router = Router();
 
@@ -24,8 +24,10 @@ router.use("/users", usersRoutes);
 if (GROUP_WORKOUTS_ENABLED) {
   router.use("/group", groupRoutes);
 }
-router.use("/guides", guidesRoutes);
 router.use("/admin", adminRoutes);
+if (MUSIC_ENABLED) {
+  router.use("/music", musicRoutes);
+}
 
 // Unknown /api path: answer JSON rather than falling through to the SPA or an
 // EJS route, so a typo'd endpoint never comes back as a 200 page of HTML.

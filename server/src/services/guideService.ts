@@ -1,11 +1,12 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { writeFileSync, mkdirSync } from "fs";
-import { join, dirname } from "path";
-import { fileURLToPath } from "url";
+import { join } from "path";
 import crypto from "node:crypto";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const UPLOADS_DIR = join(__dirname, "../../data/uploads");
+// Relative to process.cwd(), matching app.ts's `express.static("./data/uploads")` —
+// a module-relative path here (this module's own compiled location) landed
+// uploads in a directory nothing served or persisted in production.
+const UPLOADS_DIR = join(process.cwd(), "data", "uploads");
 
 export async function generateGuideImage(liftName: string): Promise<string> {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);

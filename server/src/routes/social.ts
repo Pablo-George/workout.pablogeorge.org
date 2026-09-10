@@ -4,6 +4,7 @@ import { prisma } from "../app.js";
 import { uploadImage } from "../services/imageStorageService.js";
 import multer from "multer";
 import crypto from "node:crypto";
+import { sharePersonalRecord } from "../services/socialService.js";
 
 const router = Router();
 const upload = multer({
@@ -44,6 +45,14 @@ router.post("/social/post", ensureAuth, upload.single("image"), async (req, res)
   res.redirect("/#tab-social");
 });
 
+router.post("/social/pr/:workoutLogId", ensureAuth, async (req, res) => {
+  const user = req.user as any;
+  const workoutLogId = parseInt(req.params.workoutLogId, 10);
+  if (!isNaN(workoutLogId)) await sharePersonalRecord(user.userId, workoutLogId);
+  const returnTo = String(req.body.returnTo ?? "/#tab-social");
+  res.redirect(returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/#tab-social");
+});
+
 function timeAgo(dt: Date): string {
   const diff = Date.now() - dt.getTime();
   const mins = Math.floor(diff / 60000);
@@ -80,6 +89,12 @@ router.get("/social/post/:postId", ensureAuth, async (req, res) => {
       authorPicture: profileMap[post.authorId]?.pictureUrl ?? null,
       content: post.content,
       imageUrl: post.imageUrl,
+      kind: post.kind,
+      trackTitle: post.trackTitle,
+      trackArtist: post.trackArtist,
+      trackArtworkUrl: post.trackArtworkUrl,
+      trackExternalUrl: post.trackExternalUrl,
+      trackProvider: post.trackProvider,
       timeAgo: timeAgo(post.createdAt),
       replies: post.replies.map((r) => ({
         authorId: r.authorId,

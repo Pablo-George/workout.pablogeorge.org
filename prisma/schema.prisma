@@ -14,6 +14,10 @@ model UserProfile {
   pictureUrl  String?
   inviteToken String? @unique
   hideWeight  Boolean @default(true)
+
+  musicConnections MusicConnection[]
+  musicPlaylists   MusicPlaylist[]
+  listening        CurrentListening?
 }
 
 model CoreWorkout {
@@ -48,6 +52,14 @@ model WorkoutLog {
   week        Int
   amrapReps   Int
   completedOn String
+  topSetWeight Float?
+  estimatedOneRepMax Float?
+  isPr        Boolean @default(false)
+  trackTitle  String?
+  trackArtist String?
+  trackArtworkUrl String?
+  trackExternalUrl String?
+  trackProvider String?
   lift        CoreWorkout @relation(fields: [liftId], references: [id])
 }
 
@@ -78,6 +90,64 @@ model Post {
   parentId  Int?
   parent    Post?    @relation("PostReplies", fields: [parentId], references: [id])
   replies   Post[]   @relation("PostReplies")
+  kind      String   @default("GENERAL")
+  prLiftName String?
+  prWeight   Float?
+  prReps     Int?
+  trackTitle String?
+  trackArtist String?
+  trackArtworkUrl String?
+  trackExternalUrl String?
+  trackProvider String?
+  sourceWorkoutLogId Int? @unique
+}
+
+/// OAuth/MusicKit credentials are encrypted by musicService before storage.
+model MusicConnection {
+  id                    Int      @id @default(autoincrement())
+  userId                String
+  provider              String
+  encryptedAccessToken  String
+  encryptedRefreshToken String?
+  expiresAt             DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @default(now()) @updatedAt
+  user                   UserProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([userId, provider])
+}
+
+model MusicPlaylist {
+  id                 Int      @id @default(autoincrement())
+  userId             String
+  provider           String
+  providerPlaylistId String
+  name               String
+  artworkUrl         String?
+  externalUrl        String?
+  isSelected         Boolean  @default(false)
+  isPublished        Boolean  @default(false)
+  updatedAt          DateTime @default(now()) @updatedAt
+  user               UserProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([userId, provider, providerPlaylistId])
+  @@index([userId, isSelected])
+}
+
+/// A short-lived presence row. Consumers treat rows older than 90 seconds as stale.
+model CurrentListening {
+  userId           String   @id
+  provider         String
+  trackId          String
+  title            String
+  artist           String
+  album             String?
+  artworkUrl        String?
+  externalUrl       String?
+  isPlaying         Boolean  @default(true)
+  workoutSessionId Int?
+  updatedAt         DateTime @default(now()) @updatedAt
+  user              UserProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
 }
 
 model AuxLift {
@@ -178,5 +248,3 @@ model GroupSessionMember {
 
   @@unique([sessionId, userId])
 }
-
-

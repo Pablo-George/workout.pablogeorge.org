@@ -5,6 +5,7 @@ import { GROUP_WORKOUTS_ENABLED } from "../config/features.js";
 import { buildPlan, getConfig, createConfig, completeWorkout } from "../services/workoutService.js";
 import { getAuxLifts } from "../services/auxLiftService.js";
 import { toggleSet, getAllCompleted, clearSession } from "../services/groupState.js";
+import { musicDashboard } from "../services/musicService.js";
 
 const router = Router();
 
@@ -106,7 +107,7 @@ router.post("/group/create", ensureAuth, async (req, res) => {
   if (!config) {
     const tm = parseFloat(req.body.trainingMax);
     if (isNaN(tm) || tm < 45) return res.redirect("/");
-    await createConfig(userId, lift, tm);
+    await createConfig(userId, lift, tm, req.body.loggedOn);
     config = await getConfig(userId, liftId);
   }
   if (!config) return res.redirect("/");
@@ -182,9 +183,25 @@ router.get("/group/:sessionId", ensureAuth, async (req, res) => {
   const myTabIndex = Math.max(0, membersData.findIndex((m) => m.userId === userId));
   const myStatus = session.members.find((m) => m.userId === userId)?.status ?? "ACTIVE";
 
+  const tmDelta = parseInt(req.query.tmDelta as string, 10);
+  const tmNew = parseFloat(req.query.tmNew as string);
+  const tmPopup = !isNaN(tmDelta) && !isNaN(tmNew) && tmDelta !== 0
+    ? { delta: tmDelta, newMax: tmNew, liftName: membersData[myTabIndex]?.liftName ?? "" }
+    : null;
+  const prLogId = parseInt(req.query.prLog as string, 10);
+  const prLog = !isNaN(prLogId) ? await prisma.workoutLog.findFirst({
+    where: { id: prLogId, userId, isPr: true }, include: { lift: true },
+  }) : null;
+  const prPopup = prLog ? {
+    logId: prLog.id, liftName: prLog.lift.name, weight: prLog.topSetWeight,
+    reps: prLog.amrapReps, trackTitle: prLog.trackTitle, trackArtist: prLog.trackArtist,
+  } : null;
+  const music = await musicDashboard(userId);
+
   res.render("group-workout", {
     user, session, isMember: true, sessionEnded: false,
-    members: membersData, completedSets, myUserId: userId, myTabIndex, myStatus,
+    members: membersData, completedSets, myUserId: userId, myTabIndex, myStatus, tmPopup, prPopup,
+    music,
   });
 });
 
@@ -275,7 +292,11 @@ router.post("/group/:sessionId/leave", ensureAuth, async (req, res) => {
   res.redirect("/#tab-workouts");
 });
 
-// Complete workout for this member
+// Log the core lift for this member. Split out from closing the aux lifts
+// screen so the AMRAP number is saved right away — previously both happened
+// on the same "Complete Workout" click at the very bottom of the aux lifts
+// list, so a person who glanced at their accessory work and then walked off
+// to the gym without submitting lost the whole log.
 router.post("/group/:sessionId/complete", ensureAuth, async (req, res) => {
   const user = req.user as any;
   const userId = user.userId;
@@ -285,10 +306,39 @@ router.post("/group/:sessionId/complete", ensureAuth, async (req, res) => {
   const member = await prisma.groupSessionMember.findUnique({
     where: { sessionId_userId: { sessionId, userId } },
   });
-  if (!member || member.status === "COMPLETED") return res.redirect(`/group/${sessionId}`);
+  if (!member || member.status !== "ACTIVE") return res.redirect(`/group/${sessionId}`);
 
   const config = await getConfig(userId, member.liftId);
-  if (config) await completeWorkout(config, amrapReps);
+  const query = new URLSearchParams();
+  if (config) {
+    const { trainingMaxDelta, newTrainingMax, workoutLogId, isPr } = await completeWorkout(config, amrapReps, req.body.loggedOn);
+    if (trainingMaxDelta !== 0) {
+      query.set("tmDelta", String(trainingMaxDelta));
+      query.set("tmNew", String(newTrainingMax));
+    }
+    if (isPr) query.set("prLog", String(workoutLogId));
+  }
+
+  await prisma.groupSessionMember.update({
+    where: { sessionId_userId: { sessionId, userId } },
+    data: { status: "LOGGED" },
+  });
+
+  res.redirect(`/group/${sessionId}${query.size ? `?${query}` : ""}`);
+});
+
+// Close out this member's workout after the lift is already logged: clears
+// the generated aux lifts (so next time gets a fresh set) and marks them
+// fully done.
+router.post("/group/:sessionId/close", ensureAuth, async (req, res) => {
+  const user = req.user as any;
+  const userId = user.userId;
+  const sessionId = parseInt(req.params.sessionId);
+
+  const member = await prisma.groupSessionMember.findUnique({
+    where: { sessionId_userId: { sessionId, userId } },
+  });
+  if (!member || member.status !== "LOGGED") return res.redirect(`/group/${sessionId}`);
 
   await prisma.auxLift.deleteMany({ where: { userId, liftId: member.liftId } });
 

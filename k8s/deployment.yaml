@@ -75,6 +75,50 @@ spec:
                 secretKeyRef:
                   name: workout-secrets
                   key: ADMIN_EMAIL
+            - name: MUSIC_TOKEN_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: workout-secrets
+                  key: MUSIC_TOKEN_ENCRYPTION_KEY
+                  optional: true
+            - name: MUSIC_ENABLED
+              value: "false"
+            - name: SPOTIFY_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: workout-secrets
+                  key: SPOTIFY_CLIENT_ID
+                  optional: true
+            - name: SPOTIFY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: workout-secrets
+                  key: SPOTIFY_CLIENT_SECRET
+                  optional: true
+            - name: SPOTIFY_CALLBACK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: workout-secrets
+                  key: SPOTIFY_CALLBACK_URL
+                  optional: true
+            - name: APPLE_MUSIC_TEAM_ID
+              valueFrom:
+                secretKeyRef:
+                  name: workout-secrets
+                  key: APPLE_MUSIC_TEAM_ID
+                  optional: true
+            - name: APPLE_MUSIC_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: workout-secrets
+                  key: APPLE_MUSIC_KEY_ID
+                  optional: true
+            - name: APPLE_MUSIC_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: workout-secrets
+                  key: APPLE_MUSIC_PRIVATE_KEY
+                  optional: true
           volumeMounts:
             - name: data
               mountPath: /app/data
