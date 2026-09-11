@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Sign In</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -60,10 +60,13 @@
             flex-shrink: 0;
         }
     </style>
+    <%- include('partials/app-theme') %>
 </head>
-<body>
-    <div class="logo">Workout App</div>
-    <div class="tagline">Track your lifts. Build your strength.</div>
+<body class="login-page">
+    <div class="login-emblem"><%- include('partials/icon',{name:'lift'}) %></div>
+    <div class="eyebrow">Your personal training journal</div>
+    <h1 class="logo">Every rep.<br>More you<span>.</span></h1>
+    <div class="tagline">Track your lifts. Find your rhythm.<br>Build something stronger.</div>
 
     <a class="google-btn" href="/auth/google">
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -74,6 +77,5 @@
         </svg>
         Sign in with Google
     </a>
-    <script>document.addEventListener('touchmove', function(e) { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });</script>
 </body>
 </html>

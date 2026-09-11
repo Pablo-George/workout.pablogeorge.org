@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title><%= inviterName %> wants to be your workout buddy!</title>
 
     <!-- Open Graph / iMessage rich preview -->
@@ -74,7 +74,7 @@
         .btn-accept {
             display: block;
             width: 100%;
-            background: #4f9eff;
+            background: #fc4c02;
             color: #fff;
             border: none;
             border-radius: 12px;
@@ -86,6 +86,7 @@
         }
         .btn-accept:active { opacity: 0.85; }
     </style>
+    <%- include('partials/app-theme') %>
 </head>
 <body>
     <div class="card">

@@ -1,0 +1,21 @@
+<article class="activity-card">
+  <div class="activity-author">
+    <a href="<%= post.authorId === user.userId ? '/#tab-profile' : '/user/' + encodeURIComponent(post.authorId) %>" aria-label="View <%= post.authorName %>'s profile">
+      <% if (post.authorPicture) { %><img class="post-avatar" src="<%= post.authorPicture %>" alt=""><% } else { %><span class="post-avatar-placeholder"><%= post.authorName.charAt(0).toUpperCase() %></span><% } %>
+    </a>
+    <div class="activity-author-copy"><strong><%= post.authorName %></strong><small><%- include('icon', { name:'lift' }) %><%= post.timeAgo %> · Workout</small></div>
+    <% if (post.authorId === user.userId) { %>
+      <form action="/social/post/<%= post.id %>/delete" method="post" onsubmit="return confirm('Delete this post and its replies?')"><button class="text-action muted" type="submit" aria-label="Delete post"><%- include('icon', { name:'close' }) %></button></form>
+    <% } %>
+  </div>
+  <% if (post.kind === 'PERSONAL_RECORD') { %>
+    <h2><%= post.prLiftName %> <span class="record-tag"><%- include('icon', { name:'trophy' }) %> Personal record</span></h2>
+    <div class="activity-stats"><div><small>Top set</small><strong><%= post.prWeight %> <span>lbs</span></strong></div><div><small>Reps</small><strong><%= post.prReps %></strong></div><div><small>Training</small><strong>5/3/1</strong></div></div>
+  <% } %>
+  <% if (post.content) { %><p class="post-content"><%= post.content %></p><% } %>
+  <% if (post.imageUrl) { %><img class="activity-photo" src="<%= post.imageUrl %>" alt="Photo shared by <%= post.authorName %>" loading="lazy" tabindex="0" role="button" onclick="openLightbox(this.src)" onkeydown="if(event.key==='Enter') openLightbox(this.src)"><% } %>
+  <% if (post.trackTitle) { %>
+    <a class="track-share" href="<%= post.trackExternalUrl || '#' %>" target="_blank" rel="noopener"><% if (post.trackArtworkUrl) { %><img src="<%= post.trackArtworkUrl %>" alt=""><% } %><div><div class="track-share-title"><%= post.trackTitle %></div><div class="track-share-artist"><%= post.trackArtist %> · Workout soundtrack</div></div></a>
+  <% } %>
+  <div class="activity-actions"><a href="/social/post/<%= post.id %>"><%- include('icon', { name:'message' }) %><%= post.replies.length ? post.replies.length + (post.replies.length === 1 ? ' reply' : ' replies') : 'Comment' %></a><button type="button" data-share-url="/social/post/<%= post.id %>" onclick="shareActivity(this.dataset.shareUrl)"><%- include('icon', { name:'share' }) %>Share</button></div>
+</article>

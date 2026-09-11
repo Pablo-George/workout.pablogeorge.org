@@ -31,7 +31,7 @@ passport.use(
 
         const user = await prisma.userProfile.upsert({
           where: { userId },
-          update: { displayName, pictureUrl },
+          update: { pictureUrl },
           create: { userId, displayName, pictureUrl },
         });
 
