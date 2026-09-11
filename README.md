@@ -11,6 +11,18 @@ Personal workout tracking app built with Node.js, Express, Prisma (SQLite), and 
 - **Workout music** — connect Spotify or Apple Music, auto-start a selected playlist, publish playlists, show live listening to friends, and share a PR with its song
 - **Progress charts** — training max progression and daily calorie history powered by Chart.js
 
+## App experience
+
+The mobile interface follows the dark app references in `Reference pics/`: charcoal surfaces, orange actions, an activity feed, and floating navigation. The shared visual theme lives in `server/src/views/partials/app-theme.ejs`.
+
+- **Home:** friends' posts and personal records, weekly activity markers, and quick workout recording.
+- **You:** Progress, searchable Activities (including a personal-record filter), a Gallery of your own posted photos, and More.
+- **Progress:** a 12-week session chart, weekly AMRAP totals, records, and a calendar sheet with daily details. A streak means consecutive Monday–Sunday weeks with a logged workout; the current week can still be in progress.
+- **Create:** record a workout, publish a text/photo post, or log nutrition. Sharing uses the device share sheet with a copy-link fallback; posts retain their existing access rules.
+- **Settings:** edit your display name, manage lifts, and update body-weight privacy. Custom display names survive subsequent Google sign-ins.
+
+Run `npm test` for training-summary tests and `npm run typecheck` for TypeScript checks. These features use existing workout and post records and require no database migration.
+
 ## Stack
 
 | Layer | Tech |

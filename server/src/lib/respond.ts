@@ -1,11 +1,6 @@
 import type { NextFunction, Request, RequestHandler, Response } from "express";
 
-/**
- * Every /api response is either { data } or { error }. The old routes were
- * inconsistent about this — POST /cals/update/:id returned JSON while its
- * sibling POST /cals/delete/:id sent a 302, and the admin routes mixed
- * 403 JSON with redirects.
- */
+/** /api/music responses are either { data } or { error }. */
 
 export function sendData<T>(res: Response, data: T, status = 200): void {
   res.status(status).json({ data });
@@ -27,7 +22,6 @@ export class HttpError extends Error {
 }
 
 export const badRequest = (m = "Invalid request") => new HttpError(400, m);
-export const forbidden = (m = "Forbidden") => new HttpError(403, m);
 export const notFound = (m = "Not found") => new HttpError(404, m);
 
 /**
@@ -67,6 +61,6 @@ export function apiErrorMiddleware(
     return;
   }
 
-  console.error("[api]", err);
+  console.error("[api/music]", err);
   sendError(res, 500, "Something went wrong");
 }

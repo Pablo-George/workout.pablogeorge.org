@@ -7,7 +7,6 @@ import { mkdirSync } from "fs";
 import ConnectSqlite3 from "connect-sqlite3";
 import { APP_VERSION } from "./version.js";
 import "./config/passport.js";
-import apiRoutes from "./api/index.js";
 import authRoutes from "./routes/auth.js";
 import homeRoutes from "./routes/home.js";
 import workoutRoutes from "./routes/workout.js";
@@ -16,6 +15,8 @@ import calsRoutes from "./routes/cals.js";
 import adminRoutes from "./routes/admin.js";
 import groupRoutes from "./routes/group.js";
 import musicRoutes from "./routes/music.js";
+import musicApiRoutes from "./api/music.js";
+import { apiErrorMiddleware } from "./lib/respond.js";
 import { GROUP_WORKOUTS_ENABLED, MUSIC_ENABLED } from "./config/features.js";
 
 // Re-exported for the EJS-era routes that still import it from here.
@@ -49,9 +50,6 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Mounted before the EJS routes so /api/* can never be shadowed by them.
-app.use("/api", apiRoutes);
-
 // Feature flags exposed to all EJS views.
 app.use((_req, res, next) => {
   res.locals.groupsEnabled = GROUP_WORKOUTS_ENABLED;
@@ -67,6 +65,9 @@ app.use(adminRoutes);
 app.use(groupRoutes);
 if (MUSIC_ENABLED) {
   app.use(musicRoutes);
+  // The music widgets on the home and group-workout pages talk to this over
+  // fetch() rather than full page posts, so it stays JSON instead of EJS.
+  app.use("/api/music", musicApiRoutes, apiErrorMiddleware);
 }
 
 export default app;

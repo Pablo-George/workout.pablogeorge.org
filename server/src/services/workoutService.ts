@@ -188,11 +188,16 @@ export async function completeWorkout(
   const topSet = PROGRAM[config.currentWeek - 1].find((set) => set.amrap)!;
   const topSetWeight = roundUpTo5(config.trainingMax * topSet.pct);
   const estimatedOneRepMax = Math.round(topSetWeight * (1 + amrapReps / 30) * 10) / 10;
+  const increment = trainingMaxIncrement(config.currentWeek, amrapReps);
   const previousBest = await prisma.workoutLog.findFirst({
     where: { userId: config.userId, liftId: config.liftId, estimatedOneRepMax: { not: null } },
     orderBy: { estimatedOneRepMax: "desc" },
   });
-  const isPr = previousBest?.estimatedOneRepMax == null || estimatedOneRepMax > previousBest.estimatedOneRepMax;
+  // PR celebrations belong to the 5/3/1 test week only. Requiring a positive
+  // training-max adjustment also prevents a missed week-3 set from becoming
+  // someone's first recorded "PR" merely because no earlier estimate exists.
+  const isPr = config.currentWeek === 3 && increment > 0 &&
+    (previousBest?.estimatedOneRepMax == null || estimatedOneRepMax > previousBest.estimatedOneRepMax);
   const track = await currentTrack(config.userId);
   const lift = await prisma.coreWorkout.findUnique({ where: { id: config.liftId } });
 
@@ -216,7 +221,6 @@ export async function completeWorkout(
 
 
   const next = (config.currentWeek % 4) + 1;
-  const increment = trainingMaxIncrement(config.currentWeek, amrapReps);
   const newTrainingMax = config.trainingMax + increment;
 
   await prisma.userLiftConfig.update({

@@ -8,45 +8,47 @@ const NAV_ITEMS = [
     },
     {
         id: 'workouts',
-        label: 'Workouts',
+        label: 'Record',
         aria: 'Workouts',
-        icon: '<svg viewBox="0 0 24 24"><path d="M6 4v16M18 4v16M2 9h4M18 9h4M2 15h4M18 15h4"/></svg>',
+        icon: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6.5"/></svg>',
     },
     {
         id: 'cals',
-        label: 'Cals',
+        label: 'Nutrition',
         aria: 'Cals',
         icon: '<svg viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>',
     },
     {
         id: 'social',
-        label: 'Social',
+        label: 'Friends',
         aria: 'Social',
-        icon: '<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+        icon: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M2 21v-3a7 7 0 0 1 14 0v3M16 4a3 3 0 0 1 0 6m2 4a5 5 0 0 1 4 5v2"/></svg>',
     },
     {
         id: 'profile',
-        label: 'Profile',
+        label: 'You',
         aria: 'Profile',
         icon: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>',
     },
 ];
+const order = ['home', 'cals', 'workouts', 'social', 'profile'];
+NAV_ITEMS.sort((a,b) => order.indexOf(a.id) - order.indexOf(b.id));
 %>
-<nav>
+<nav class="app-nav" aria-label="Main navigation">
     <% if (mode === 'links') { %>
         <% NAV_ITEMS.forEach(t => { %>
         <a href="<%= t.id === 'workouts' && workoutsHref ? workoutsHref : '/#tab-' + t.id %>"
-           aria-label="<%= t.aria %>" class="<%= current === t.id ? 'active' : '' %>">
+           aria-label="<%= t.aria %>" data-tab="<%= t.id %>" class="<%= current === t.id ? 'active' : '' %>" <%- current === t.id ? 'aria-current="page"' : '' %>>
             <%- t.icon %>
             <%= t.label %>
         </a>
         <% }) %>
     <% } else { %>
         <% NAV_ITEMS.forEach(t => { %>
-        <button <%= current === t.id ? 'class="active"' : '' %>
+        <button type="button" class="<%= current === t.id ? 'active' : '' %>" data-tab="<%= t.id %>" <%- current === t.id ? 'aria-current="page"' : '' %>
                 onclick="<%- t.id === 'workouts' && workoutHref ? `location.href='${workoutHref}'` : `switchTab('${t.id}', this)` %>"
                 aria-label="<%= t.aria %>">
-            <%- t.icon %>
+            <% if(t.id === 'profile' && typeof user !== 'undefined' && user.pictureUrl) { %><img class="nav-avatar" src="<%= user.pictureUrl %>" alt=""><% } else { %><%- t.icon %><% } %>
             <%= t.label %>
         </button>
         <% }) %>

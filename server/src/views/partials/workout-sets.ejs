@@ -51,8 +51,9 @@ const _working = plan.sets.map((s, i) => ({ ...s, idx: i })).filter(s => !s.warm
                 <div class="set-plates">Each side: <strong><%= s.platesDisplay %></strong></div>
                 <% if (s.amrap && showAmrapInput) { %>
                 <div class="amrap-input-row" onclick="event.stopPropagation()">
-                    <input type="number" name="amrapReps"
-                           placeholder="0" min="1" max="99" required/>
+                    <input type="number" name="amrapReps" id="amrap-input"
+                           placeholder="0" min="1" max="99" required
+                           oninput="document.getElementById('move-to-aux-btn').disabled = !this.value"/>
                     <label>reps completed</label>
                 </div>
                 <% } %>

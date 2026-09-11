@@ -36,6 +36,20 @@ async function ensureAuxLifts(userId: string, liftId: number, liftName: string, 
   }
 }
 
+/**
+ * Kicks off aux lift generation after the response is flushed, so a session
+ * starts as soon as the core lift plan is ready instead of blocking on the
+ * AI call. By the time the user logs their AMRAP and taps "Move to
+ * Auxiliaries" a few minutes later, generation has normally already finished
+ * and been cached — the /complete route awaits ensureAuxLifts again as a
+ * fallback for the rare case it hasn't.
+ */
+function enqueueAuxLifts(userId: string, liftId: number, liftName: string, trainingMax: number): void {
+  setImmediate(() => {
+    void ensureAuxLifts(userId, liftId, liftName, trainingMax);
+  });
+}
+
 // List open friend sessions
 router.get("/group/rooms", ensureAuth, async (req, res) => {
   if (!GROUP_WORKOUTS_ENABLED) return rejectMultiplayer(req, res);
@@ -112,7 +126,7 @@ router.post("/group/create", ensureAuth, async (req, res) => {
   }
   if (!config) return res.redirect("/");
 
-  await ensureAuxLifts(userId, liftId, lift.name, config.trainingMax);
+  enqueueAuxLifts(userId, liftId, lift.name, config.trainingMax);
 
   let code = generateCode();
   let attempts = 0;
@@ -121,7 +135,16 @@ router.post("/group/create", ensureAuth, async (req, res) => {
   }
 
   const session = await prisma.groupSession.create({
-    data: { code, hostId: userId, members: { create: { userId, liftId } } },
+    data: {
+      code,
+      hostId: userId,
+      members: { create: {
+        userId,
+        liftId,
+        startedWeek: config.currentWeek,
+        startedTrainingMax: config.trainingMax,
+      } },
+    },
   });
 
   res.redirect(`/group/${session.id}`);
@@ -162,7 +185,10 @@ router.get("/group/:sessionId", ensureAuth, async (req, res) => {
   const membersData = await Promise.all(
     session.members.map(async (m) => {
       const config = await getConfig(m.userId, m.liftId);
-      const plan = config ? await buildPlan(config, m.lift) : null;
+      const sessionConfig = config && m.startedWeek && m.startedTrainingMax
+        ? { ...config, currentWeek: m.startedWeek, trainingMax: m.startedTrainingMax }
+        : config;
+      const plan = sessionConfig ? await buildPlan(sessionConfig, m.lift) : null;
       const auxLifts = await prisma.auxLift.findMany({
         where: { userId: m.userId, liftId: m.liftId },
         orderBy: { displayOrder: "asc" },
@@ -227,8 +253,16 @@ router.post("/group/:sessionId/join", ensureAuth, async (req, res) => {
   const lift = await prisma.coreWorkout.findUnique({ where: { id: liftId } });
   if (!lift) return res.redirect("/");
 
-  await ensureAuxLifts(userId, liftId, lift.name, config.trainingMax);
-  await prisma.groupSessionMember.create({ data: { sessionId, userId, liftId } });
+  enqueueAuxLifts(userId, liftId, lift.name, config.trainingMax);
+  await prisma.groupSessionMember.create({
+    data: {
+      sessionId,
+      userId,
+      liftId,
+      startedWeek: config.currentWeek,
+      startedTrainingMax: config.trainingMax,
+    },
+  });
 
   res.redirect(`/group/${sessionId}`);
 });
@@ -305,6 +339,7 @@ router.post("/group/:sessionId/complete", ensureAuth, async (req, res) => {
 
   const member = await prisma.groupSessionMember.findUnique({
     where: { sessionId_userId: { sessionId, userId } },
+    include: { lift: true },
   });
   if (!member || member.status !== "ACTIVE") return res.redirect(`/group/${sessionId}`);
 
@@ -317,6 +352,12 @@ router.post("/group/:sessionId/complete", ensureAuth, async (req, res) => {
       query.set("tmNew", String(newTrainingMax));
     }
     if (isPr) query.set("prLog", String(workoutLogId));
+
+    // Normally a no-op cache hit — generation was already kicked off in the
+    // background when the session started. This only does real work (and
+    // blocks briefly) if the user blitzed through their core sets faster
+    // than the AI call finished.
+    await ensureAuxLifts(userId, member.liftId, member.lift.name, config.trainingMax);
   }
 
   await prisma.groupSessionMember.update({
@@ -353,7 +394,7 @@ router.post("/group/:sessionId/close", ensureAuth, async (req, res) => {
     await clearSession(sessionId);
   }
 
-  res.redirect(`/group/${sessionId}`);
+  res.redirect("/#tab-workouts");
 });
 
 export default router;

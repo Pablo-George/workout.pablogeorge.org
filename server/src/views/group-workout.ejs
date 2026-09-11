@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title><%= groupsEnabled ? "Group Workout" : "Workout" %></title>
     <% if (isMember && music?.configured?.appleMusic) { %>
     <script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js"></script>
@@ -47,7 +47,7 @@
             transition: color 0.15s;
         }
         nav button.active,
-        nav a.active { color: #4f9eff; }
+        nav a.active { color: #fc4c02; }
         nav button svg,
         nav a svg {
             width: 24px;
@@ -71,12 +71,12 @@
             align-items: center;
             gap: 0.75rem;
         }
-        .back-link { color: #4f9eff; font-size: 0.9rem; font-weight: 600; text-decoration: none; flex-shrink: 0; }
+        .back-link { color: #fc4c02; font-size: 0.9rem; font-weight: 600; text-decoration: none; flex-shrink: 0; }
         .header-title { font-size: 0.9rem; font-weight: 700; flex: 1; }
         .code-chip {
             background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 20px;
             padding: 0.3rem 0.75rem; font-size: 0.82rem; font-weight: 700;
-            color: #4f9eff; letter-spacing: 0.12em; cursor: pointer; flex-shrink: 0; user-select: none;
+            color: #fc4c02; letter-spacing: 0.12em; cursor: pointer; flex-shrink: 0; user-select: none;
         }
         .copy-feedback { font-size: 0.7rem; color: #4ade80; opacity: 0; margin-left: 0.25rem; transition: opacity 0.3s; }
 
@@ -94,7 +94,7 @@
             display: flex; align-items: center; gap: 0.4rem;
             transition: color 0.15s, border-color 0.15s;
         }
-        .tab-btn.active { color: #fff; border-bottom-color: #4f9eff; }
+        .tab-btn.active { color: #fff; border-bottom-color: #fc4c02; }
         .tab-btn.mine.active { border-bottom-color: #4ade80; }
         .done-dot { display: none; width: 7px; height: 7px; background: #4ade80; border-radius: 50%; }
 
@@ -106,7 +106,7 @@
         .lift-title { font-size: 2rem; font-weight: 800; letter-spacing: -0.5px; }
         .meta-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.4rem; }
         .week-badge {
-            background: #1a2a3a; color: #4f9eff; border-radius: 20px;
+            background: #1a2a3a; color: #fc4c02; border-radius: 20px;
             padding: 0.3rem 0.8rem; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.03em;
         }
         .tm-badge { color: #555; font-size: 0.82rem; }
@@ -118,16 +118,16 @@
             background: #1a1a1a; border-radius: 14px; padding: 1.1rem 1.2rem;
             display: grid; grid-template-columns: 44px 1fr; gap: 0 0.9rem; align-items: start;
         }
-        .set-card.amrap { background: #0e1e33; border: 1.5px solid #4f9eff55; }
+        .set-card.amrap { background: #0e1e33; border: 1.5px solid #fc4c0255; }
         .set-card.interactive { cursor: pointer; user-select: none; }
         .set-card.interactive:active { opacity: 0.6; }
         .set-card.done { opacity: 0.35; text-decoration: line-through; }
         .set-pct { font-size: 0.78rem; font-weight: 700; color: #555; padding-top: 0.35rem; text-align: center; }
-        .set-card.amrap .set-pct { color: #4f9eff; }
+        .set-card.amrap .set-pct { color: #fc4c02; }
         .set-body { display: flex; flex-direction: column; gap: 0.2rem; }
         .set-weight-reps { font-size: 1.45rem; font-weight: 800; letter-spacing: -0.5px; line-height: 1.1; }
         .set-weight-reps .reps { font-size: 1rem; font-weight: 500; color: #888; }
-        .set-card.amrap .set-weight-reps .reps { color: #4f9eff; font-weight: 700; }
+        .set-card.amrap .set-weight-reps .reps { color: #fc4c02; font-weight: 700; }
         .set-plates { font-size: 0.88rem; color: #666; margin-top: 0.15rem; }
         .set-plates strong { color: #999; font-weight: 600; }
 
@@ -144,13 +144,14 @@
         }
         .amrap-input-row input::-webkit-outer-spin-button,
         .amrap-input-row input::-webkit-inner-spin-button { -webkit-appearance: none; }
-        .amrap-input-row input:focus { border-color: #4f9eff; }
+        .amrap-input-row input:focus { border-color: #fc4c02; }
         .amrap-input-row label { font-size: 0.82rem; color: #555; white-space: nowrap; }
         .btn-complete {
-            width: 100%; padding: 1.05rem; background: #4f9eff; border: none; border-radius: 14px;
+            width: 100%; padding: 1.05rem; background: #fc4c02; border: none; border-radius: 14px;
             color: #fff; font-size: 1.05rem; font-weight: 700; cursor: pointer;
         }
         .btn-complete:active { opacity: 0.8; }
+        .btn-complete:disabled { background: #2a2a2a; color: #666; cursor: not-allowed; }
         .my-done-badge { text-align: center; padding: 1.5rem; color: #4ade80; font-size: 1rem; font-weight: 700; }
         .other-done-badge { text-align: center; padding: 0.75rem; color: #4ade80; font-size: 0.85rem; font-weight: 600; }
 
@@ -171,10 +172,27 @@
             color: #fff; font-size: 0.9rem; padding: 0.65rem 0.75rem; outline: none; margin-bottom: 0.75rem;
         }
         .btn-join {
-            width: 100%; background: #4f9eff; border: none; border-radius: 8px;
+            width: 100%; background: #fc4c02; border: none; border-radius: 8px;
             color: #fff; font-size: 0.95rem; font-weight: 700; padding: 0.75rem; cursor: pointer;
         }
-        .btn-back-home { display: block; text-align: center; margin-top: 1rem; color: #4f9eff; font-size: 0.9rem; font-weight: 600; text-decoration: none; }
+        .btn-back-home { display: block; text-align: center; margin-top: 1rem; color: #fc4c02; font-size: 0.9rem; font-weight: 600; text-decoration: none; }
+
+        /* ── Aux lifts loader ── */
+        /* Aux lifts normally finish generating in the background while the
+           user is doing their core sets, so /complete returns instantly and
+           this never has time to appear. It's only a safety net for someone
+           who logs their AMRAP unusually fast. */
+        #aux-loader {
+            display: none; position: fixed; inset: 0; background: #0f0f0f; z-index: 9998;
+            flex-direction: column; align-items: center; justify-content: center; gap: 1rem;
+        }
+        #aux-loader.show { display: flex; }
+        #aux-loader .spinner {
+            width: 36px; height: 36px; border: 3px solid #2a2a2a; border-top-color: #fc4c02;
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+        }
+        #aux-loader .label { color: #555; font-size: 0.85rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         /* ── Training max popup ── */
         .tm-popup-overlay {
@@ -198,7 +216,7 @@
         .tm-popup-body { font-size: 0.9rem; color: #aaa; line-height: 1.4; margin-bottom: 1.4rem; }
         .tm-popup-body strong { color: #fff; }
         .btn-tm-popup {
-            width: 100%; padding: 0.9rem; background: #4f9eff; border: none; border-radius: 12px;
+            width: 100%; padding: 0.9rem; background: #fc4c02; border: none; border-radius: 12px;
             color: #fff; font-size: 0.95rem; font-weight: 700; cursor: pointer;
         }
         .btn-tm-popup:active { opacity: 0.8; }
@@ -209,10 +227,11 @@
         .music-label { color:#777;font-size:0.68rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase; }
         .music-title { font-size:0.9rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px; }
         .music-artist { color:#777;font-size:0.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-        .music-action { color:#4f9eff;border:1px solid #30445e;border-radius:9px;padding:0.45rem 0.6rem;font-size:0.75rem;font-weight:700; }
+        .music-action { color:#fc4c02;border:1px solid #30445e;border-radius:9px;padding:0.45rem 0.6rem;font-size:0.75rem;font-weight:700; }
     </style>
+    <%- include('partials/app-theme') %>
 </head>
-<body>
+<body class="workout-page">
 
     <div class="header">
         <% if (isMember && myStatus === 'ACTIVE') { %>
@@ -223,7 +242,10 @@
                 ← Back
             </button>
         </form>
-        <% } else { %>
+        <% } else if (!(isMember && myStatus === 'LOGGED')) { %>
+        <!-- No back link on the aux lifts screen (status LOGGED): the lift is
+             already saved there and "#tab-workouts" bounces straight back to
+             this same session, so the only way out is the Close button. -->
         <a href="/#tab-workouts" class="back-link">← Back</a>
         <% } %>
         <div class="header-title"><%= groupsEnabled ? "Group Workout" : "Workout" %></div>
@@ -306,13 +328,13 @@
             <!-- Step 1: log the lift itself first. Aux lifts aren't shown yet
                  so there's nothing to get distracted by before this saves. -->
             <form action="/group/<%= session.id %>/complete" method="post"
-                  onsubmit="this.loggedOn.value = new Date().toLocaleDateString('en-CA')"
+                  onsubmit="this.loggedOn.value = new Date().toLocaleDateString('en-CA'); document.getElementById('aux-loader').classList.add('show');"
                   style="display:flex;flex-direction:column;gap:1.5rem;">
                 <input type="hidden" name="loggedOn"/>
                 <%- include('partials/workout-sets', {
                     plan: m.plan, interactive: true, showAmrapInput: true, dataUser: m.userId
                 }) %>
-                <button type="submit" class="btn-complete">Complete Workout</button>
+                <button type="submit" class="btn-complete" id="move-to-aux-btn" disabled>Move to Auxiliaries</button>
             </form>
             <% } else if (m.userId === myUserId && m.status === 'LOGGED') { %>
             <!-- Step 2: lift is already saved — accessory work, then close out. -->
@@ -351,6 +373,11 @@
         <div class="session-done-bar" id="session-done-bar"
              style="display:<%= session.status === 'COMPLETED' ? 'block' : 'none' %>">
             Session Complete — Great workout!
+        </div>
+
+        <div id="aux-loader">
+            <div class="spinner"></div>
+            <div class="label">Creating your workout…</div>
         </div>
 
         <!-- Training max change popup -->

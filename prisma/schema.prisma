@@ -243,6 +243,9 @@ model GroupSessionMember {
   liftId    Int
   status    String       @default("ACTIVE")
   joinedAt  DateTime     @default(now())
+  /// Snapshot keeps the current workout stable after completion advances the user's config.
+  startedWeek        Int?
+  startedTrainingMax Float?
   session   GroupSession @relation(fields: [sessionId], references: [id])
   lift      CoreWorkout  @relation(fields: [liftId], references: [id])
 

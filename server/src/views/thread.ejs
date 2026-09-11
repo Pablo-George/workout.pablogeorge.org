@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Thread</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -24,7 +24,7 @@
         }
 
         header a {
-            color: #4f9eff; font-size: 0.9rem; font-weight: 600;
+            color: #fc4c02; font-size: 0.9rem; font-weight: 600;
             text-decoration: none; display: flex; align-items: center;
             gap: 4px; flex-shrink: 0;
         }
@@ -71,6 +71,7 @@
 
         .post-author { font-size: 0.9rem; font-weight: 700; }
         .post-time { font-size: 0.75rem; color: #555; flex-shrink: 0; }
+        .post-delete { margin-left:auto;color:#666;background:none;border:none;padding:0;font-size:0.72rem;cursor:pointer; }
 
         .post-content {
             font-size: 0.95rem; color: #ccc;
@@ -131,16 +132,17 @@
         }
 
         .composer textarea::placeholder { color: #444; }
-        .composer textarea:focus { border-color: #4f9eff; }
+        .composer textarea:focus { border-color: #fc4c02; }
 
         .btn-post {
-            background: #4f9eff; border: none; border-radius: 20px;
+            background: #fc4c02; border: none; border-radius: 20px;
             color: #fff; font-size: 0.85rem; font-weight: 700;
             padding: 0.5rem 1rem; cursor: pointer; flex-shrink: 0;
         }
 
         .btn-post:active { opacity: 0.8; }
     </style>
+    <%- include('partials/app-theme') %>
 </head>
 <body>
 
@@ -164,6 +166,12 @@
                 <div class="post-meta">
                     <span class="post-author"><%= post.authorName %></span>
                     <span class="post-time"><%= post.timeAgo %></span>
+                    <% if (post.authorId === user.userId) { %>
+                    <form action="/social/post/<%= post.id %>/delete" method="post" style="display:contents;"
+                          onsubmit="return confirm('Delete this post and its replies?')">
+                        <button type="submit" class="post-delete">Delete</button>
+                    </form>
+                    <% } %>
                 </div>
                 <% if (post.content) { %>
                     <div class="post-content"><%= post.content %></div>

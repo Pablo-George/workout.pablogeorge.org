@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { ensureAuth } from "../middleware/auth.js";
 import { prisma } from "../app.js";
-import { uploadImage } from "../services/imageStorageService.js";
+import { deleteImage, uploadImage } from "../services/imageStorageService.js";
 import multer from "multer";
 import crypto from "node:crypto";
 import { sharePersonalRecord } from "../services/socialService.js";
@@ -51,6 +51,22 @@ router.post("/social/pr/:workoutLogId", ensureAuth, async (req, res) => {
   if (!isNaN(workoutLogId)) await sharePersonalRecord(user.userId, workoutLogId);
   const returnTo = String(req.body.returnTo ?? "/#tab-social");
   res.redirect(returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/#tab-social");
+});
+
+router.post("/social/post/:postId/delete", ensureAuth, async (req, res) => {
+  const user = req.user as any;
+  const postId = parseInt(req.params.postId, 10);
+  if (!isNaN(postId)) {
+    const post = await prisma.post.findUnique({ where: { id: postId } });
+    if (post && post.authorId === user.userId && post.parentId === null) {
+      await prisma.$transaction([
+        prisma.post.deleteMany({ where: { parentId: postId } }),
+        prisma.post.delete({ where: { id: postId } }),
+      ]);
+      await deleteImage(post.imageUrl);
+    }
+  }
+  res.redirect("/#tab-social");
 });
 
 function timeAgo(dt: Date): string {

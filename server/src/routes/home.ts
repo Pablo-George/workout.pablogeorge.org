@@ -5,6 +5,7 @@ import { buildChartDatasets, getWeekLabels, countLogs } from "../services/workou
 import { resolveLocalDate } from "../lib/dates.js";
 import crypto from "node:crypto";
 import { musicDashboard } from "../services/musicService.js";
+import { buildTrainingSummary } from "../services/trainingSummary.js";
 
 const isHTMX = (req: Request) => req.headers["hx-request"] === "true";
 
@@ -110,6 +111,26 @@ router.get("/", ensureAuth, async (req, res) => {
 
   const calendar = await buildMonthCalendar(userId, req.query.mo);
   const music = await musicDashboard(userId);
+  const [activityLogs, myPosts] = await Promise.all([
+    prisma.workoutLog.findMany({ where: { userId }, include: { lift: true }, orderBy: [{ completedOn: "desc" }, { id: "desc" }] }),
+    prisma.post.findMany({ where: { authorId: userId, parentId: null }, orderBy: { createdAt: "desc" } }),
+  ]);
+  const training = buildTrainingSummary(activityLogs);
+
+  // Mirrors the "Live workout" block on the friend-profile page (GET
+  // /user/:userId below) so the profile tab matches what a friend sees.
+  const [liveMembership, listening] = await Promise.all([
+    prisma.groupSessionMember.findFirst({
+      where: { userId, status: "ACTIVE", session: { status: "ACTIVE" } },
+      include: { lift: true },
+      orderBy: { joinedAt: "desc" },
+    }),
+    prisma.currentListening.findUnique({ where: { userId } }),
+  ]);
+  const nowPlaying = liveMembership && listening && listening.isPlaying &&
+    Date.now() - listening.updatedAt.getTime() < 90_000
+    ? { ...listening, liftName: liveMembership.lift.name }
+    : null;
 
   res.render("home", {
     user,
@@ -133,9 +154,20 @@ router.get("/", ensureAuth, async (req, res) => {
     weightChartData,
     calendar,
     music,
+    nowPlaying,
+    training,
+    activityLogs,
+    myPosts,
     calsError: req.query.cals_error === "1",
     isAdmin: process.env.ADMIN_EMAIL && user.userId === process.env.ADMIN_EMAIL,
   });
+});
+
+router.post("/profile/name", ensureAuth, async (req, res) => {
+  const displayName = typeof req.body.displayName === "string" ? req.body.displayName.trim() : "";
+  if (!displayName || displayName.length > 80) return res.status(400).send("Enter a name between 1 and 80 characters.");
+  await prisma.userProfile.update({ where: { userId: (req.user as any).userId }, data: { displayName } });
+  res.redirect("/#tab-profile");
 });
 
 router.post("/profile/lifts", ensureAuth, async (req, res) => {

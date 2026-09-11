@@ -1,0 +1,101 @@
+<dialog id="create-dialog" class="app-dialog" aria-labelledby="create-title">
+  <div class="dialog-header"><h2 id="create-title">Make your next move</h2><button class="round-action" onclick="this.closest('dialog').close()" aria-label="Close"><%- include('icon',{name:'close'}) %></button></div>
+  <div class="dialog-body">
+    <button class="more-link" onclick="this.closest('dialog').close();startWorkout()"><%- include('icon',{name:'lift'}) %><span>Record a workout<small>Follow your 5/3/1 program</small></span><%- include('icon',{name:'chevron'}) %></button>
+    <button class="more-link" onclick="this.closest('dialog').close();openComposer()"><%- include('icon',{name:'photo'}) %><span>Create a post<small>Share a thought, photo, or milestone</small></span><%- include('icon',{name:'chevron'}) %></button>
+    <button class="more-link" onclick="this.closest('dialog').close();switchTab('cals')"><%- include('icon',{name:'plus'}) %><span>Log nutrition<small>Fuel your next session</small></span><%- include('icon',{name:'chevron'}) %></button>
+  </div>
+</dialog>
+<dialog id="notifications-dialog" class="app-dialog" aria-labelledby="notifications-title">
+  <div class="dialog-header"><h2 id="notifications-title">Notifications</h2><button class="round-action" onclick="this.closest('dialog').close()" aria-label="Close"><%- include('icon',{name:'close'}) %></button></div>
+  <div class="dialog-body">
+    <% if(pendingRequests.length) { %><p>You have <%= pendingRequests.length %> pending friend <%= pendingRequests.length === 1 ? 'request' : 'requests' %>.</p><button class="text-action" onclick="this.closest('dialog').close();switchTab('social')">View requests →</button>
+    <% } else { %><div class="empty-state"><%- include('icon',{name:'bell'}) %><h2>You’re all caught up.</h2><p>New friend requests will appear here.</p></div><% } %>
+  </div>
+</dialog>
+<dialog id="my-posts-dialog" class="app-dialog" aria-labelledby="my-posts-title">
+  <div class="dialog-header"><h2 id="my-posts-title">Your posts</h2><button class="round-action" onclick="this.closest('dialog').close()" aria-label="Close"><%- include('icon',{name:'close'}) %></button></div>
+  <div class="dialog-body"><% if(!myPosts.length) { %><p class="muted">Your shared moments will appear here.</p><% } %><% myPosts.forEach(p => { %><a class="more-link" href="/social/post/<%= p.id %>"><%- include('icon',{name:p.imageUrl ? 'photo' : 'message'}) %><span><%= p.content || p.prLiftName || 'Photo post' %><small><%= p.createdAt.toLocaleDateString('en-US') %></small></span><%- include('icon',{name:'chevron'}) %></a><% }) %></div>
+</dialog>
+<div id="app-toast" class="toast" role="status" hidden></div>
+<script>
+  let activityFilter = 'all';
+  let toastTimeout;
+  function showToast(message) {
+    const toast = document.getElementById('app-toast');
+    toast.textContent = message;
+    toast.hidden = false;
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => toast.hidden = true, 4000);
+  }
+  async function shareActivity(path) {
+    const url = new URL(path, location.origin).href;
+    try {
+      if (navigator.share) await navigator.share({title:'Workout',url});
+      else { await navigator.clipboard.writeText(url); showToast('Link copied. Shared posts are visible to your friends.'); }
+    } catch (error) {
+      if (error.name !== 'AbortError') window.prompt('Copy this link to share',url);
+    }
+  }
+  function shareProfile() { shareActivity(document.getElementById('inviteLinkInput').value); }
+  function startWorkout() {
+    if (ACTIVE_SESSION_ID) location.href = '/group/' + ACTIVE_SESSION_ID;
+    else switchTab('workouts');
+  }
+  function openComposer() {
+    document.getElementById('composer-dialog').showModal();
+    document.querySelector('#postForm textarea').focus();
+  }
+  function openCalendar() {
+    switchTab('profile');
+    switchProfileSubTab('dashboard');
+    document.getElementById('calendar-dialog').showModal();
+    history.replaceState(null,'',location.pathname + location.search + '#tab-profile-calendar');
+  }
+  function openActivitySearch() {
+    switchTab('profile');
+    switchProfileSubTab('activities');
+    document.getElementById('activity-search').focus();
+  }
+  function setActivityFilter(value,button) {
+    activityFilter = value;
+    document.querySelectorAll('[data-filter]').forEach(b => { b.classList.toggle('active',b===button); b.setAttribute('aria-pressed',String(b===button)); });
+    filterActivities();
+  }
+  function filterActivities() {
+    const query = document.getElementById('activity-search').value.trim().toLowerCase();
+    let count = 0;
+    document.querySelectorAll('.training-log').forEach(card => {
+      card.hidden = !card.dataset.search.includes(query) || (activityFilter === 'pr' && card.dataset.pr !== 'true');
+      if (!card.hidden) count++;
+    });
+    document.getElementById('activity-empty').hidden = count > 0;
+  }
+  function filterFriends(value) {
+    let count = 0;
+    document.querySelectorAll('.friend-result').forEach(card => {
+      card.hidden = !card.dataset.name.includes(value.trim().toLowerCase());
+      if (!card.hidden) count++;
+    });
+    document.getElementById('friends-no-results').hidden = !value.trim() || count > 0;
+  }
+  document.querySelectorAll('.app-dialog').forEach(dialog => {
+    dialog.addEventListener('click',event => {
+      if(event.target !== dialog) return;
+      const rect = dialog.getBoundingClientRect();
+      if(event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
+    });
+  });
+  document.getElementById('calendar-dialog').addEventListener('close',() => {
+    if(location.hash === '#tab-profile-calendar') history.replaceState(null,'',location.pathname + location.search + '#tab-profile-dashboard');
+  });
+  document.getElementById('postForm').addEventListener('submit',event => {
+    if(!event.currentTarget.elements.content.value.trim() && !document.getElementById('actualImageInput').files.length) {
+      event.preventDefault(); showToast('Add a thought or a photo before publishing.');
+    }
+  });
+  document.addEventListener('keydown',event => {
+    if(event.key === 'Escape') { closeSettings(); closeWeightModal(); closeLightbox(); }
+  });
+  if(location.hash === '#tab-profile-calendar') openCalendar();
+</script>
