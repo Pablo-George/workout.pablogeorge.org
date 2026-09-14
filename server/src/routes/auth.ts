@@ -1,10 +1,11 @@
 import { Router } from "express";
 import passport from "passport";
+import { APPLE_SIGNIN_ENABLED } from "../config/features.js";
 
 const router = Router();
 
 router.get("/login", (req, res) => {
-  res.render("login");
+  res.render("login", { appleSigninEnabled: APPLE_SIGNIN_ENABLED });
 });
 
 router.get(
@@ -21,6 +22,21 @@ router.get(
     res.redirect(returnTo);
   }
 );
+
+if (APPLE_SIGNIN_ENABLED) {
+  router.get("/auth/apple", passport.authenticate("apple"));
+
+  // Apple posts back here (response_mode: "form_post"), not a GET redirect.
+  router.post(
+    "/auth/apple/callback",
+    passport.authenticate("apple", { failureRedirect: "/login" }),
+    (req, res) => {
+      const returnTo = (req.session as any).returnTo || "/";
+      delete (req.session as any).returnTo;
+      res.redirect(returnTo);
+    }
+  );
+}
 
 router.post("/logout", (req, res, next) => {
   req.logout((err) => {

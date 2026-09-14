@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Thread</title>
+    <%- include('partials/pwa-head') %>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -24,7 +25,7 @@
         }
 
         header a {
-            color: #fc4c02; font-size: 0.9rem; font-weight: 600;
+            color: #4169E1; font-size: 0.9rem; font-weight: 600;
             text-decoration: none; display: flex; align-items: center;
             gap: 4px; flex-shrink: 0;
         }
@@ -132,10 +133,10 @@
         }
 
         .composer textarea::placeholder { color: #444; }
-        .composer textarea:focus { border-color: #fc4c02; }
+        .composer textarea:focus { border-color: #4169E1; }
 
         .btn-post {
-            background: #fc4c02; border: none; border-radius: 20px;
+            background: #4169E1; border: none; border-radius: 20px;
             color: #fff; font-size: 0.85rem; font-weight: 700;
             padding: 0.5rem 1rem; cursor: pointer; flex-shrink: 0;
         }

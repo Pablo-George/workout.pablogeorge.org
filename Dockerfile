@@ -15,8 +15,9 @@ WORKDIR /app
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/server/dist ./server/dist
 COPY --from=build /app/prisma ./prisma
-# tsc does not process EJS, so the remaining templates are copied verbatim.
+# tsc does not process EJS or static assets, so these are copied verbatim.
 COPY server/src/views ./server/dist/views
+COPY server/src/public ./server/dist/public
 ENV NODE_ENV=production
 EXPOSE 8080
 CMD ["sh", "-c", "sqlite3 /app/data/workoutapp.db 'DELETE FROM BodyWeightLog WHERE id NOT IN (SELECT MAX(id) FROM BodyWeightLog GROUP BY userId, loggedOn);' 2>/dev/null || true && npx prisma db push --accept-data-loss && node server/dist/index.js"]

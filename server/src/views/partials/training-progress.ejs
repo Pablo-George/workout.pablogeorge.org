@@ -6,9 +6,9 @@
   <% const maxSessions = Math.max(4, ...training.weeks.map(w => w.count)); const points = training.weeks.map((w,i) => ({ x:10+i*40, y:130-w.count/maxSessions*115 })); %>
   <svg class="weekly-chart" viewBox="0 0 460 150" role="img" aria-label="Workouts over the past 12 weeks: <%= training.weeks.map(w => w.count).join(', ') %>">
     <% [15,72.5,130].forEach(y => { %><line x1="10" y1="<%= y %>" x2="450" y2="<%= y %>" stroke="#393933" stroke-width="1"/><% }) %>
-    <path d="M <%= points.map(p => p.x + ',' + p.y).join(' L ') %> L 450,130 L 10,130 Z" fill="#fc4c0210"/>
-    <polyline points="<%= points.map(p => p.x + ',' + p.y).join(' ') %>" fill="none" stroke="#fc4c02" stroke-width="3"/>
-    <% points.forEach((p,i) => { %><circle cx="<%= p.x %>" cy="<%= p.y %>" r="4" fill="<%= i === 11 ? '#fc4c02' : '#141413' %>" stroke="#fc4c02" stroke-width="2"><title>Week of <%= training.weeks[i].start %>: <%= training.weeks[i].count %> sessions</title></circle><% }) %>
+    <path d="M <%= points.map(p => p.x + ',' + p.y).join(' L ') %> L 450,130 L 10,130 Z" fill="#4169E110"/>
+    <polyline points="<%= points.map(p => p.x + ',' + p.y).join(' ') %>" fill="none" stroke="#4169E1" stroke-width="3"/>
+    <% points.forEach((p,i) => { %><circle cx="<%= p.x %>" cy="<%= p.y %>" r="4" fill="<%= i === 11 ? '#4169E1' : '#141413' %>" stroke="#4169E1" stroke-width="2"><title>Week of <%= training.weeks[i].start %>: <%= training.weeks[i].count %> sessions</title></circle><% }) %>
   </svg>
   <div class="chart-endpoints"><span><%= new Date(training.weeks[0].start + 'T12:00:00Z').toLocaleDateString('en-US',{month:'short',day:'numeric',timeZone:'UTC'}) %></span><span>This week</span></div>
 </div>

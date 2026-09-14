@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Workout App</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏋️</text></svg>"/>
+    <title>WORKOUT</title>
+    <%- include('partials/pwa-head') %>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://unpkg.com/htmx.org@2.0.3/dist/htmx.min.js"></script>
     <% if (music.configured.appleMusic) { %><script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js"></script><% } %>
@@ -17,7 +17,7 @@
             --lt-surface: #1A1A1A;
             --lt-ink: #FFFFFF;
             --lt-ink-muted: #8A8A8E;
-            --lt-accent: #FC4C02;
+            --lt-accent: #4169E1;
             --lt-line: #2A2A2A;
         }
 
@@ -52,7 +52,7 @@
             letter-spacing: -0.5px;
         }
 
-        .greeting span { color: #fc4c02; }
+        .greeting span { color: #4169E1; }
 
         .stats-row {
             display: grid;
@@ -265,8 +265,8 @@
         #tab-home .empty-feed { color: var(--lt-ink-muted); }
         #tab-home .empty-feed div:last-child { color: #555; }
 
-        /* PR post: a small orange badge, not a giant orange number — Strava
-           keeps stat values in plain bold white and reserves orange for
+        /* PR post: a small accent badge, not a giant accent-colored number — Strava
+           keeps stat values in plain bold white and reserves the accent for
            interactive/branded elements (pills, badges, active states). */
         #tab-home .pr-badge-row { display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; margin: 0.35rem 0 0.15rem; }
         #tab-home .pr-badge {
@@ -334,10 +334,10 @@
             outline: none;
         }
 
-        .add-form input:focus { border-color: #fc4c02; }
+        .add-form input:focus { border-color: #4169E1; }
 
         .add-form button {
-            background: #fc4c02;
+            background: #4169E1;
             border: none;
             border-radius: 8px;
             color: #fff;
@@ -423,7 +423,7 @@
         }
 
         .btn-post {
-            background: #fc4c02;
+            background: #4169E1;
             border: none;
             border-radius: 20px;
             color: #fff;
@@ -540,7 +540,7 @@
             color: #555; font-size: 0.78rem; font-weight: 600;
             text-decoration: none; margin-top: 0.5rem;
         }
-        .reply-btn:active { color: #fc4c02; }
+        .reply-btn:active { color: #4169E1; }
 
         .request-card {
             display: flex;
@@ -569,7 +569,7 @@
         .request-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
 
         .btn-accept {
-            background: #fc4c02;
+            background: #4169E1;
             border: none;
             border-radius: 6px;
             color: #fff;
@@ -620,7 +620,7 @@
             transition: color 0.15s;
         }
 
-        nav button.active { color: #fc4c02; }
+        nav button.active { color: #4169E1; }
 
         nav button svg {
             width: 24px;
@@ -670,7 +670,7 @@
         .cal-today-link {
             font-size: 0.7rem;
             font-weight: 700;
-            color: #fc4c02;
+            color: #4169E1;
             text-decoration: none;
             margin-left: 0.4rem;
         }
@@ -711,7 +711,7 @@
 
         .cal-day.future .cal-num { color: #3d3d3d; }
 
-        .cal-day.today .cal-num { color: #fc4c02; }
+        .cal-day.today .cal-num { color: #4169E1; }
 
         .cal-day.selected { background: #1c2b40; }
 
@@ -740,7 +740,7 @@
 
         .cal-dot.main { background: #4ade80; }
         .cal-dot.aux { background: #fb923c; }
-        .cal-dot.cals { background: #fc4c02; }
+        .cal-dot.cals { background: #4169E1; }
         .cal-dot.weight { background: #a78bfa; }
 
         .cal-detail {
@@ -784,7 +784,7 @@
 
         .cal-item-icon.main { stroke: #4ade80; }
         .cal-item-icon.aux { stroke: #fb923c; }
-        .cal-item-icon.cals { stroke: #fc4c02; }
+        .cal-item-icon.cals { stroke: #4169E1; }
         .cal-item-icon.weight { stroke: #a78bfa; }
 
         .cal-item-title {
@@ -984,7 +984,7 @@
                     style="width:100%;background:none;border:none;text-align:left;cursor:pointer;color:inherit;">
                 <div style="display:flex;flex-direction:column;gap:2px;">
                     <span style="font-size:0.95rem;font-weight:500;"><%= w.name %></span>
-                    <span style="font-size:0.75rem;color:#fc4c02;font-weight:600;"><%= weekLabels[w.id] %></span>
+                    <span style="font-size:0.75rem;color:#4169E1;font-weight:600;"><%= weekLabels[w.id] %></span>
                 </div>
                 <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#555;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;">
                     <path d="M9 18l6-6-6-6"/>
@@ -1013,7 +1013,7 @@
                            style="background:#111;border:1px solid #2a2a2a;border-radius:8px;color:#fff;font-size:0.95rem;font-weight:700;padding:0.4rem 0.65rem;outline:none;width:130px;">
                     <span style="font-size:0.8rem;color:#555;flex-shrink:0;">lbs</span>
                     <button type="submit"
-                            style="flex:1;background:#fc4c02;border:none;border-radius:8px;color:#fff;font-size:0.88rem;font-weight:700;padding:0.45rem;cursor:pointer;">
+                            style="flex:1;background:#4169E1;border:none;border-radius:8px;color:#fff;font-size:0.88rem;font-weight:700;padding:0.45rem;cursor:pointer;">
                         Start →
                     </button>
                 </div>
@@ -1465,7 +1465,7 @@
                     </div>
                     <div style="font-size:0.78rem;margin-top:0.1rem;display:flex;gap:0.6rem;flex-wrap:wrap;">
                         <span><span style="color:#4ade80;font-weight:700;"><%= entry.calories %></span> <span style="color:#555;">kcal</span></span>
-                        <% if (entry.proteinG) { %><span><span style="color:#fc4c02;font-weight:700;"><%= entry.proteinG %>g</span> <span style="color:#555;">protein</span></span><% } %>
+                        <% if (entry.proteinG) { %><span><span style="color:#4169E1;font-weight:700;"><%= entry.proteinG %>g</span> <span style="color:#555;">protein</span></span><% } %>
                         <% if (entry.carbsG) { %><span><span style="color:#f59e0b;font-weight:700;"><%= entry.carbsG %>g</span> <span style="color:#555;">carbs</span></span><% } %>
                     </div>
                 </div>
@@ -1485,7 +1485,7 @@
                         <span style="font-size:0.82rem;color:#ccc;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:0.5rem;"><%= item.item %></span>
                         <div style="display:flex;gap:0.6rem;font-size:0.75rem;flex-shrink:0;">
                             <span style="color:#4ade80;"><%= item.calories %> kcal</span>
-                            <% if (item.proteinG != null) { %><span style="color:#fc4c02;"><%= item.proteinG %>g P</span><% } %>
+                            <% if (item.proteinG != null) { %><span style="color:#4169E1;"><%= item.proteinG %>g P</span><% } %>
                             <% if (item.carbsG != null) { %><span style="color:#f59e0b;"><%= item.carbsG %>g C</span><% } %>
                         </div>
                     </div>
@@ -1508,7 +1508,7 @@
                             <div style="font-size:0.68rem;color:#555;margin-bottom:0.2rem;">protein (g)</div>
                             <input type="number" id="cal-protein-<%= entry.id %>" value="<%= entry.proteinG ?? '' %>"
                                    style="width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;
-                                          color:#fc4c02;font-size:0.85rem;padding:0.4rem 0.5rem;outline:none;"/>
+                                          color:#4169E1;font-size:0.85rem;padding:0.4rem 0.5rem;outline:none;"/>
                         </div>
                         <div style="flex:1;">
                             <div style="font-size:0.68rem;color:#555;margin-bottom:0.2rem;">carbs (g)</div>
@@ -1556,7 +1556,7 @@
                         <div style="font-size:0.88rem;font-weight:700;"><%= day.displayDate %></div>
                         <div style="font-size:0.78rem;margin-top:0.15rem;display:flex;gap:0.6rem;flex-wrap:wrap;">
                             <span><span style="color:#4ade80;font-weight:700;"><%= day.total %></span> <span style="color:#555;">kcal</span></span>
-                            <% if (day.proteinTotal > 0) { %><span><span style="color:#fc4c02;font-weight:700;"><%= day.proteinTotal %>g</span> <span style="color:#555;">protein</span></span><% } %>
+                            <% if (day.proteinTotal > 0) { %><span><span style="color:#4169E1;font-weight:700;"><%= day.proteinTotal %>g</span> <span style="color:#555;">protein</span></span><% } %>
                             <% if (day.carbsTotal > 0) { %><span><span style="color:#f59e0b;font-weight:700;"><%= day.carbsTotal %>g</span> <span style="color:#555;">carbs</span></span><% } %>
                         </div>
                     </div>
@@ -1589,7 +1589,7 @@
                             </div>
                             <div style="font-size:0.75rem;margin-top:0.1rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
                                 <span><span style="color:#4ade80;font-weight:700;"><%= entry.calories %></span> <span style="color:#555;">kcal</span></span>
-                                <% if (entry.proteinG) { %><span><span style="color:#fc4c02;font-weight:700;"><%= entry.proteinG %>g</span> <span style="color:#555;">protein</span></span><% } %>
+                                <% if (entry.proteinG) { %><span><span style="color:#4169E1;font-weight:700;"><%= entry.proteinG %>g</span> <span style="color:#555;">protein</span></span><% } %>
                                 <% if (entry.carbsG) { %><span><span style="color:#f59e0b;font-weight:700;"><%= entry.carbsG %>g</span> <span style="color:#555;">carbs</span></span><% } %>
                             </div>
                         </div>
@@ -2102,7 +2102,7 @@
     <div id="settings-page" class="settings-page">
         <div class="settings-page-header">
             <button type="button" class="icon-btn" onclick="closeSettings()" aria-label="Back"
-                    style="color:#fc4c02;padding:0;">
+                    style="color:#4169E1;padding:0;">
                 <svg viewBox="0 0 24 24" style="width:20px;height:20px;"><path d="M15 18l-6-6 6-6"/></svg>
             </button>
             <div style="font-size:0.95rem;font-weight:700;">Settings</div>
@@ -2170,7 +2170,7 @@
             <% if (isAdmin) { %>
             <a href="/admin"
                style="display:block;width:100%;padding:0.85rem;background:#1a1a2a;border:1px solid #2a2a4a;
-                      color:#fc4c02;border-radius:12px;font-size:0.95rem;font-weight:600;cursor:pointer;
+                      color:#4169E1;border-radius:12px;font-size:0.95rem;font-weight:600;cursor:pointer;
                       text-align:center;text-decoration:none;">
                 Admin
             </a>
@@ -2221,7 +2221,7 @@
                                padding:0.85rem 1rem;background:#1a1a1a;border:1px solid #2a2a2a;
                                border-radius:12px;color:#fff;font-size:0.9rem;cursor:pointer;">
                     <span>Show weight to friends</span>
-                    <span id="privacy-status" style="font-size:0.75rem;font-weight:700;color:<%= hideWeight ? '#555' : '#fc4c02' %>;">
+                    <span id="privacy-status" style="font-size:0.75rem;font-weight:700;color:<%= hideWeight ? '#555' : '#4169E1' %>;">
                         <%= hideWeight ? 'OFF' : 'ON' %>
                     </span>
                 </button>

@@ -38,3 +38,11 @@ build/
 
 # Windows
 *:Zone.Identifier
+
+# iOS / Xcode (Capacitor)
+ios/App/Pods/
+ios/App/build/
+ios/App/DerivedData/
+ios/App/*.xcuserstate
+ios/**/xcuserdata/
+ios/App/App/public/

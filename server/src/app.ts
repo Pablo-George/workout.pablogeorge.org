@@ -35,6 +35,7 @@ app.set("view engine", "ejs");
 app.set("views", join(__dirname, "views"));
 app.locals.appVersion = APP_VERSION;
 
+app.use(express.static(join(__dirname, "public")));
 app.use("/uploads", express.static(join("./data/uploads")));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
