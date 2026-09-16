@@ -14,6 +14,7 @@ model UserProfile {
   pictureUrl  String?
   inviteToken String? @unique
   hideWeight  Boolean @default(true)
+  goalWeightLbs    Float?
 
   musicConnections MusicConnection[]
   musicPlaylists   MusicPlaylist[]
@@ -197,6 +198,34 @@ model ExerciseGuide {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+}
+
+model CalisthenicsExercise {
+  id           Int      @id @default(autoincrement())
+  userId       String
+  name         String
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  logs CalisthenicsLog[]
+
+  @@unique([userId, name])
+}
+
+/// One row per exercise per day — `reps` is the day's running total, built up
+/// by adding sets throughout the day (or overwritten directly to fix a typo).
+model CalisthenicsLog {
+  id          Int                  @id @default(autoincrement())
+  userId      String
+  exerciseId  Int
+  reps        Int
+  completedOn String
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @default(now()) @updatedAt
+  exercise    CalisthenicsExercise @relation(fields: [exerciseId], references: [id])
+
+  @@unique([exerciseId, completedOn])
+  @@index([userId, completedOn])
 }
 
 model Friendship {

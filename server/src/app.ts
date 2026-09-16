@@ -12,6 +12,7 @@ import homeRoutes from "./routes/home.js";
 import workoutRoutes from "./routes/workout.js";
 import socialRoutes from "./routes/social.js";
 import calsRoutes from "./routes/cals.js";
+import calisthenicsRoutes from "./routes/calisthenics.js";
 import adminRoutes from "./routes/admin.js";
 import groupRoutes from "./routes/group.js";
 import musicRoutes from "./routes/music.js";
@@ -62,6 +63,7 @@ app.use(homeRoutes);
 app.use(workoutRoutes);
 app.use(socialRoutes);
 app.use(calsRoutes);
+app.use(calisthenicsRoutes);
 app.use(adminRoutes);
 app.use(groupRoutes);
 if (MUSIC_ENABLED) {

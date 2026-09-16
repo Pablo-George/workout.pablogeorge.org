@@ -245,7 +245,7 @@ export async function countLogs(userId: string) {
   return prisma.workoutLog.count({ where: { userId } });
 }
 
-const CHART_COLORS = [
+export const CHART_COLORS = [
   "#4f9eff", "#4ade80", "#fb923c", "#a78bfa", "#f472b6",
 ];
 

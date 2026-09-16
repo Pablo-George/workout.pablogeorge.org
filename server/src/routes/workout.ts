@@ -63,6 +63,7 @@ router.post("/workout/:liftId/update-tm", ensureAuth, async (req, res) => {
   }
 
   if (isHTMX(req)) {
+    res.set("HX-Trigger", "charts-updated");
     const config = await getConfig(user.userId, liftId);
     return res.render("partials/lift-card", { w: { id: liftId, name: lift?.name ?? "", trainingMax, currentWeek: config?.currentWeek ?? 1 } });
   }

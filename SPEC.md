@@ -64,6 +64,25 @@ Constraint: `(userId, liftId)` unique.
 | `weightLbs` | Float | |
 | `loggedOn` | String | YYYY-MM-DD |
 
+### CalisthenicsExercise
+| Field | Type | Notes |
+|---|---|---|
+| `id` | Int (PK) | |
+| `userId` | String | Owner |
+| `name` | String | e.g. "Push-ups", "Squats", "Sit-ups" — users can add their own |
+| `displayOrder` | Int | |
+
+Constraint: `(userId, name)` unique. Defaults (Push-ups, Squats, Sit-ups) are auto-created on first visit, same as the default lifts.
+
+### CalisthenicsLog
+| Field | Type | Notes |
+|---|---|---|
+| `id` | Int (PK) | |
+| `userId` | String | |
+| `exerciseId` | Int (FK) | |
+| `reps` | Int | Reps completed in one set |
+| `completedOn` | String | YYYY-MM-DD |
+
 ### Post
 | Field | Type | Notes |
 |---|---|---|
@@ -103,6 +122,7 @@ Constraint: `(requesterId, addresseeId)` unique.
 | POST | `/profile/lifts` | Create a new lift |
 | POST | `/profile/lifts/delete` | Delete a lift |
 | POST | `/profile/weight` | Log body weight |
+| POST | `/profile/goals` | Set goal weight |
 
 ### Workout (all protected)
 | Method | Path | Description |
@@ -111,6 +131,14 @@ Constraint: `(requesterId, addresseeId)` unique.
 | POST | `/workout/:liftId/setup` | Initialize lift with a training max |
 | POST | `/workout/:liftId/update-tm` | Update training max |
 | POST | `/workout/:liftId/complete` | Log completed workout, advance week |
+
+### Calisthenics (all protected)
+| Method | Path | Description |
+|---|---|---|
+| POST | `/calisthenics/exercises` | Add a new exercise |
+| POST | `/calisthenics/exercises/delete` | Delete an exercise and its logs |
+| POST | `/calisthenics/log` | Log a set (reps) for an exercise, today |
+| POST | `/calisthenics/log/delete/:id` | Delete a single logged set |
 
 ### Social (all protected)
 | Method | Path | Description |
@@ -170,24 +198,37 @@ When a user first visits `/`, the app auto-creates four lifts: **Bench Press**, 
 3. App updates `UserLiftConfig.trainingMax` and creates a new `TrainingMaxLog`.
 4. All future planned weights reflect the updated max.
 
-### 6. Log Body Weight
+### 6. Track Calisthenics
+1. On first visit, three default exercises (Push-ups, Squats, Sit-ups) are auto-created, shown in the Record tab below the lift list.
+2. User enters a rep count and taps "Log" to record one set for today; the card's running total updates immediately.
+3. User can remove an individual logged set, or remove an exercise entirely (deleting its logs too).
+4. User can add custom exercises via the "Add an exercise" field.
+
+### 7. Log Body Weight
 1. User submits weight on the home dashboard profile tab.
 2. App creates a `BodyWeightLog` with today's date.
 3. Latest weight is shown on the dashboard.
 
-### 7. Create a Post
+### 8. Set a Weight & Calorie Goal
+1. User sets a goal weight (lbs) from the "Weight Goal" card in the dashboard's Progress tab (`UserProfile.goalWeightLbs`).
+2. The card shows the user's weigh-in trend (linear regression over the trailing 90 days of `BodyWeightLog` entries) and, when trending toward the goal, a projected time-to-goal in months/weeks.
+3. It also shows today's estimated calories burned, the trailing-14-day average net calories (eaten via `CalorieEntry` minus estimated burned), a secondary calorie-based projection as a cross-check, and a suggested daily calorie intake.
+4. The suggested intake is auto-calculated (not user-entered) from current weight, goal direction, and the trailing-14-day average of estimated exercise burn — a bodyweight-based maintenance estimate, then a standard deficit (goal below current) or surplus (goal above current), floored at a safe minimum.
+5. Calories burned have no wearable data source yet, so they're estimated from standard MET values, the user's logged bodyweight, and an assumed duration per logged set of work (see `goalService.buildGoalSummary` / `getCaloriesBurnedByDay`). Apple Fitness/HealthKit integration is planned to replace this with real duration and heart-rate data.
+
+### 9. Create a Post
 1. User submits text and/or an image (JPEG, PNG, GIF, WebP; max 10 MB).
 2. If an image is attached, it is uploaded to S3 and the public URL is stored.
 3. A `Post` record is created.
 4. Post appears on the user's own feed and their friends' feeds.
 
-### 8. Friend Requests
+### 10. Friend Requests
 1. **Send:** User enters a friend's email. App creates a `Friendship` with `PENDING` status.
    - Blocked if: self-request, or a relationship already exists.
 2. **Accept:** Addressee clicks accept → status updated to `ACCEPTED`.
 3. **Reject/Cancel:** Either party can delete the record.
 
-### 9. Social Feed
+### 11. Social Feed
 - Displays up to 50 most recent posts from the user and their accepted friends.
 - Each post shows: author avatar, name, "time ago" timestamp, text, and image (if any).
 
@@ -204,6 +245,10 @@ When a user first visits `/`, the app auto-creates four lifts: **Bench Press**, 
 - `buildChartDatasets(userId)` — training max history per lift for charts
 - `getWeekLabels(userId)` — current week label per lift (e.g. "Week 2 · 3s Week")
 - `countLogs(userId)` — total completed workouts
+
+### goalService
+- `buildGoalSummary(userId)` — goal weight/calorie targets, current weight, weigh-in trend, and weight/calorie-based projections to goal
+- `getCaloriesBurnedByDay(userId, fromISO, toISO)` — estimated calories burned per day from MET values × logged bodyweight, across main lifts, aux lifts, and calisthenics
 
 ### imageStorageService
 - `uploadImage(file)` — validates type, uploads to S3, returns public URL

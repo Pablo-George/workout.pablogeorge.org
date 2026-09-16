@@ -1,0 +1,91 @@
+<%
+/* Variables:
+   goal – GoalSummary (see server/src/services/goalService.ts)
+*/
+function formatMonths(months) {
+  if (months < 1) {
+    const weeks = Math.max(1, Math.round(months * 4.345));
+    return `~${weeks} week${weeks === 1 ? '' : 's'}`;
+  }
+  const rounded = Math.round(months);
+  return `~${rounded} month${rounded === 1 ? '' : 's'}`;
+}
+const hasGoal = goal.goalWeightLbs != null;
+const diff = hasGoal && goal.currentWeight != null ? goal.goalWeightLbs - goal.currentWeight : null;
+%>
+<div class="chart-card" id="goal-card-wrap" hx-get="/profile/goals/card" hx-trigger="charts-updated from:body" hx-target="this" hx-swap="outerHTML">
+    <div class="chart-title">Weight Goal</div>
+
+    <% if (!hasGoal) { %>
+        <p class="muted" style="font-size:0.85rem;margin:0.4rem 0 0.8rem;">Set a goal weight to see your trend and a projected timeline.</p>
+    <% } else { %>
+        <div style="display:flex;align-items:baseline;gap:0.5rem;margin:0.4rem 0 0.6rem;">
+            <span style="font-size:1.75rem;font-weight:800;letter-spacing:-1px;"><%= goal.currentWeight ?? '—' %></span>
+            <span style="font-size:0.85rem;color:var(--lt-ink-muted);">lbs now</span>
+            <span style="color:var(--lt-ink-muted);">→</span>
+            <span style="font-size:1.15rem;font-weight:700;"><%= goal.goalWeightLbs %></span>
+            <span style="font-size:0.85rem;color:var(--lt-ink-muted);">lbs goal</span>
+        </div>
+
+        <% if (diff != null && Math.abs(diff) < 0.15) { %>
+            <p style="font-size:0.85rem;color:#4ade80;font-weight:600;margin:0 0 0.6rem;">You're at your goal weight.</p>
+        <% } else if (goal.insufficientWeightData) { %>
+            <p class="muted" style="font-size:0.85rem;margin:0 0 0.6rem;">Log a few more weigh-ins (spread over at least a week) to see your trend.</p>
+        <% } else if (goal.trend) { %>
+            <p style="font-size:0.85rem;margin:0 0 0.3rem;">
+                Trending <strong><%= Math.abs(goal.trend.lbsPerWeek).toFixed(1) %> lbs/week</strong>
+                <%= goal.trend.lbsPerWeek < 0 ? 'down' : goal.trend.lbsPerWeek > 0 ? 'up' : '' %>
+            </p>
+            <% if (goal.weighInsProjectionMonths != null) { %>
+                <p style="font-size:0.85rem;margin:0 0 0.6rem;">At this pace: <strong><%= formatMonths(goal.weighInsProjectionMonths) %></strong> to goal</p>
+            <% } else { %>
+                <p class="muted" style="font-size:0.85rem;margin:0 0 0.6rem;">Your recent trend isn't heading toward your goal yet.</p>
+            <% } %>
+        <% } %>
+    <% } %>
+
+    <div style="display:flex;gap:1.2rem;margin:0.2rem 0 0.7rem;flex-wrap:wrap;">
+        <div>
+            <div style="font-size:0.7rem;color:var(--lt-ink-muted);text-transform:uppercase;letter-spacing:0.04em;">Burned today (est.)</div>
+            <div style="font-size:1rem;font-weight:700;"><%= goal.todayCaloriesBurned.toLocaleString('en-US') %> kcal</div>
+        </div>
+        <% if (goal.avgNetCaloriesPerDay != null) { %>
+        <div>
+            <div style="font-size:0.7rem;color:var(--lt-ink-muted);text-transform:uppercase;letter-spacing:0.04em;">Avg. net / day (14d)</div>
+            <div style="font-size:1rem;font-weight:700;"><%= goal.avgNetCaloriesPerDay > 0 ? '+' : '' %><%= goal.avgNetCaloriesPerDay.toLocaleString('en-US') %> kcal</div>
+        </div>
+        <% } %>
+        <% if (goal.dailyCalorieGoal != null) { %>
+        <div>
+            <div style="font-size:0.7rem;color:var(--lt-ink-muted);text-transform:uppercase;letter-spacing:0.04em;">Suggested intake</div>
+            <div style="font-size:1rem;font-weight:700;"><%= goal.dailyCalorieGoal.toLocaleString('en-US') %> kcal</div>
+        </div>
+        <% } %>
+    </div>
+
+    <% if (hasGoal && goal.dailyCalorieGoal != null) { %>
+        <p class="muted" style="font-size:0.78rem;margin:0 0 0.4rem;">Suggested intake is auto-calculated from your current weight, goal direction, and recent logged activity — adjust as you go.</p>
+    <% } %>
+    <% if (hasGoal && goal.calorieProjectionMonths != null) { %>
+        <p class="muted" style="font-size:0.78rem;margin:0 0 0.7rem;">Based on logged calories alone: <%= formatMonths(goal.calorieProjectionMonths) %> to goal.</p>
+    <% } %>
+
+    <button type="button" class="text-action" onclick="toggleGoalEdit()" style="padding:0;">
+        <%= hasGoal ? 'Edit goal' : 'Set a goal' %>
+    </button>
+
+    <form id="goal-edit-form" hidden
+          hx-post="/profile/goals" hx-target="#goal-card-wrap" hx-swap="outerHTML"
+          style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.6rem;">
+        <label style="font-size:0.78rem;color:var(--lt-ink-muted);">Goal weight (lbs)
+            <input type="number" name="goalWeightLbs" step="0.1" min="50" max="999"
+                   value="<%= goal.goalWeightLbs ?? '' %>" placeholder="e.g. 170"
+                   style="display:block;width:100%;margin-top:0.2rem;"/>
+        </label>
+        <p class="muted" style="font-size:0.75rem;margin:0;">Daily calorie intake is suggested automatically — no need to set it.</p>
+        <div style="display:flex;gap:0.5rem;">
+            <button type="submit">Save</button>
+            <button type="button" class="text-action" onclick="toggleGoalEdit()">Cancel</button>
+        </div>
+    </form>
+</div>

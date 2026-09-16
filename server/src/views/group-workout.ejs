@@ -195,21 +195,29 @@
         #aux-loader .label { color: #555; font-size: 0.85rem; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ── Training max popup ── */
+        /* ── Training max popup ──
+           display stays flex always (it's fixed-position) so opacity/transform
+           can transition on both open AND close — display:none can't animate. */
         .tm-popup-overlay {
-            display: none; position: fixed; inset: 0; z-index: 9999;
+            display: flex; position: fixed; inset: 0; z-index: 9999;
             background: rgba(0,0,0,0.7); align-items: center; justify-content: center; padding: 1.5rem;
+            opacity: 0; visibility: hidden; pointer-events: none;
+            transition: opacity 0.25s ease, visibility 0s linear 0.25s;
         }
-        .tm-popup-overlay.show { display: flex; }
+        .tm-popup-overlay.show {
+            opacity: 1; visibility: visible; pointer-events: auto;
+            transition: opacity 0.25s ease, visibility 0s linear 0s;
+        }
         .tm-popup-card {
             background: #171717; border-radius: 20px; padding: 2rem 1.5rem;
             max-width: 340px; width: 100%; text-align: center;
             border: 1.5px solid #2a2a2a;
-            animation: tm-pop-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform: translateY(24px) scale(0.9);
+            transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
+        .tm-popup-overlay.show .tm-popup-card { transform: translateY(0) scale(1); }
         .tm-popup-card.up { border-color: #4ade8055; }
         .tm-popup-card.down { border-color: #f8717155; }
-        @keyframes tm-pop-in { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .tm-popup-emoji { font-size: 2.75rem; line-height: 1; margin-bottom: 0.75rem; }
         .tm-popup-title { font-size: 1.15rem; font-weight: 800; margin-bottom: 0.4rem; }
         .tm-popup-title.up { color: #4ade80; }
@@ -383,7 +391,7 @@
 
         <!-- Training max change popup -->
         <% if (tmPopup) { %>
-        <div id="tm-popup-overlay" class="tm-popup-overlay show">
+        <div id="tm-popup-overlay" class="tm-popup-overlay">
             <div class="tm-popup-card <%= tmPopup.delta > 0 ? 'up' : 'down' %>">
                 <div class="tm-popup-emoji"><%= tmPopup.delta > 0 ? '🎉' : '💪' %></div>
                 <div class="tm-popup-title <%= tmPopup.delta > 0 ? 'up' : 'down' %>">
@@ -414,7 +422,7 @@
         <% } %>
 
         <% if (prPopup && !tmPopup) { %>
-        <div id="pr-popup-overlay" class="tm-popup-overlay show">
+        <div id="pr-popup-overlay" class="tm-popup-overlay">
             <div class="tm-popup-card up">
                 <div class="tm-popup-emoji">🏆</div>
                 <div class="tm-popup-title up">New Personal Record!</div>
@@ -557,6 +565,16 @@
             // ── Training max popup ──
             <% if (tmPopup || prPopup) { %>
             history.replaceState(null, '', location.pathname);
+            // Rendered without .show so the slide-in transition has a closed
+            // state to animate from; double rAF makes sure that first (closed)
+            // frame actually paints before .show gets added.
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                const overlay = document.getElementById('tm-popup-overlay') || document.getElementById('pr-popup-overlay');
+                overlay?.classList.add('show');
+                <% if ((tmPopup && tmPopup.delta > 0) || prPopup) { %>
+                setTimeout(() => fireConfetti(window.innerWidth / 2, window.innerHeight * 0.35, 48), 150);
+                <% } %>
+            }));
             <% } %>
             function closeTmPopup() {
                 document.getElementById('tm-popup-overlay')?.classList.remove('show');

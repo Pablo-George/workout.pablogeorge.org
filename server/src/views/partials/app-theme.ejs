@@ -8,6 +8,28 @@
   button,a { touch-action:manipulation; }
   button { cursor:pointer; }
   :focus-visible { outline:2px solid var(--lt-accent); outline-offset:4px; }
+
+  /* Tactile press feedback, app-wide: a bouncy ease-out on release feels
+     springier than a plain linear scale, without needing per-element JS. */
+  button, .app-nav a, .round-action, .workout-row, .stat-card.clickable,
+  .filter-chip, .mini-btn, .primary-action, .outline-action, .more-link,
+  .music-btn, .playlist-actions .mini-btn {
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  button:active, .app-nav a:active, .round-action:active, .workout-row:active,
+  .stat-card.clickable:active, .filter-chip:active, .mini-btn:active,
+  .primary-action:active, .outline-action:active, .more-link:active,
+  .music-btn:active {
+    transform: scale(0.94);
+  }
+
+  /* Reusable entrance/attention keyframes — applied by individual pages to
+     the elements that make sense for them. */
+  @keyframes fadeInUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes numberPop { 0% { transform:scale(1); } 45% { transform:scale(1.22); } 100% { transform:scale(1); } }
+  @keyframes flicker { 0%,100% { transform:scale(1) rotate(0deg); } 25% { transform:scale(1.05) rotate(-2deg); } 50% { transform:scale(0.97) rotate(1deg); } 75% { transform:scale(1.03) rotate(-1deg); } }
+  .pop { animation: numberPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .streak-flame.has-streak .ui-icon { animation: flicker 2.4s ease-in-out infinite; transform-origin: 50% 85%; }
   input,textarea { min-width:0; }
   a { color:inherit; }
   .ui-icon { width:25px; height:25px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
@@ -138,7 +160,11 @@
   #composer-dialog .btn-post { margin-left:auto; padding:11px 22px; background:var(--lt-accent); }
   #composer-dialog .composer-row label { padding:10px; }
   #composer-dialog .composer-row label svg { stroke:var(--lt-accent)!important; width:25px!important; height:25px!important; }
-  .app-home .settings-page { left:50%; transform:translateX(-50%); width:100%; max-width:760px; right:auto; background:var(--lt-bg); }
+  /* left:50% centers the column; the slide-in/out itself still needs its own
+     translateX (composed with the centering one, not replacing it), so the
+     closed/open transform values here layer +100%/0 on top of the -50%. */
+  .app-home .settings-page { left:50%; transform:translateX(50%); width:100%; max-width:760px; right:auto; background:var(--lt-bg); }
+  .app-home .settings-page.show { transform:translateX(-50%); }
   .app-home .settings-page-header { background:var(--lt-bg); padding:18px 20px; }
   .app-home .settings-page-body { padding:24px 20px; }
   .app-home .settings-page .card { border-radius:16px; }
@@ -207,9 +233,35 @@
   .workout-page .set-card.amrap,.workout-page .week-badge { background:#2b1c13; }
   .workout-page .section-label,.workout-page .tm-badge,.workout-page .set-pct,.workout-page .set-plates { color:var(--lt-ink-muted); }
   .workout-page .session-done-bar { bottom:calc(94px + env(safe-area-inset-bottom)); }
+  .confetti-piece { position:fixed; width:8px; height:8px; border-radius:2px; pointer-events:none; z-index:99999; animation:confettiFall 1s cubic-bezier(0.15,0.9,0.3,1) forwards; will-change:transform,opacity; }
+  @keyframes confettiFall { 0% { transform:translate(0,0) rotate(0deg); opacity:1; } 100% { transform:translate(var(--dx),calc(var(--dy) + 260px)) rotate(var(--rot)); opacity:0; } }
   [hidden] { display:none!important; }
   @media (max-width:420px) { .app-toolbar { gap:8px; padding:14px 16px; } .round-action { width:39px; height:39px; } .app-wordmark { font-size:19px; } .streak-body { gap:12px; } .streak-body p { font-size:13px; } .streak-body .primary-action { font-size:12px; padding:9px 12px; } .activity-stats strong { font-size:21px; } }
   @media (max-width:600px) { #calendar-dialog { margin:auto auto 0; width:100%; border-radius:22px 22px 0 0; padding-bottom:env(safe-area-inset-bottom); } #composer-dialog { width:100%; max-height:100dvh; height:100dvh; border:0; border-radius:0; } }
   @media (min-width:900px) { .app-home .app-toolbar { padding:22px 28px; } .app-home .streak-banner { padding:10px 28px 24px; } .activity-card { padding:26px 28px 0; } .activity-photo { width:calc(100% + 56px); margin:0 -28px; } .profile-panel { padding:24px; } .profile-identity,.profile-connections,.profile-buttons { padding-left:28px; padding-right:28px; } }
   @media (prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto!important; transition:none!important; animation:none!important; } }
 </style>
+<script>
+  // Small dependency-free confetti burst, shared across pages (PR/training-max
+  // popups, calisthenics milestones, ...). Skips entirely under reduced motion
+  // rather than firing pieces that would freeze on-screen with no fade-out.
+  function fireConfetti(x, y, count) {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const colors = ['#4169E1', '#4ade80', '#fb923c', '#a78bfa', '#f472b6', '#facc15'];
+    const n = count || 28;
+    for (let i = 0; i < n; i++) {
+      const el = document.createElement('span');
+      el.className = 'confetti-piece';
+      const angle = (Math.PI * 2 * i) / n + Math.random() * 0.5;
+      const distance = 60 + Math.random() * 110;
+      const dx = Math.cos(angle) * distance;
+      const dy = Math.sin(angle) * distance - 60;
+      const rot = (Math.random() * 720 - 360) + 'deg';
+      el.style.cssText = `left:${x}px;top:${y}px;background:${colors[i % colors.length]};` +
+        `--dx:${dx}px;--dy:${dy}px;--rot:${rot};`;
+      document.body.appendChild(el);
+      el.addEventListener('animationend', () => el.remove());
+      setTimeout(() => el.remove(), 1500); // failsafe if animationend never fires
+    }
+  }
+</script>

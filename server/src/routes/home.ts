@@ -1,7 +1,8 @@
 import { Router, type Request } from "express";
 import { ensureAuth } from "../middleware/auth.js";
 import { prisma } from "../app.js";
-import { buildChartDatasets, getWeekLabels, countLogs } from "../services/workoutService.js";
+import { buildChartDatasets, getWeekLabels, countLogs, CHART_COLORS } from "../services/workoutService.js";
+import { buildGoalSummary } from "../services/goalService.js";
 import { resolveLocalDate } from "../lib/dates.js";
 import crypto from "node:crypto";
 import { musicDashboard } from "../services/musicService.js";
@@ -35,6 +36,9 @@ router.get("/", ensureAuth, async (req, res) => {
       currentWeek: config?.currentWeek ?? null,
     };
   });
+
+  const calisthenicsExercises = await getCalisthenicsExercises(userId);
+  const calisthenicsChartData = await getCalisthenicsChartData(calisthenicsExercises.map((c) => c.exercise));
 
   const weekLabels = await getWeekLabels(userId);
   const chartDatasets = await buildChartDatasets(userId);
@@ -109,6 +113,7 @@ router.get("/", ensureAuth, async (req, res) => {
   });
   const weightChartData = weightHistory.map((w) => ({ date: w.loggedOn, weight: w.weightLbs }));
 
+  const goal = await buildGoalSummary(userId);
   const calendar = await buildMonthCalendar(userId, req.query.mo);
   const music = await musicDashboard(userId);
   const [activityLogs, myPosts] = await Promise.all([
@@ -140,6 +145,7 @@ router.get("/", ensureAuth, async (req, res) => {
     totalSessions,
     activeSessionId,
     currentWeight: latestWeight?.weightLbs ?? null,
+    currentWeightDate: latestWeight ? formatLoggedOn(latestWeight.loggedOn) : null,
     hideWeight,
     feedPosts,
     pendingRequests,
@@ -153,14 +159,35 @@ router.get("/", ensureAuth, async (req, res) => {
     calHistoryDays,
     weightChartData,
     calendar,
+    goal,
     music,
     nowPlaying,
     training,
     activityLogs,
     myPosts,
+    calisthenicsExercises,
+    calisthenicsChartData,
     calsError: req.query.cals_error === "1",
     isAdmin: process.env.ADMIN_EMAIL && user.userId === process.env.ADMIN_EMAIL,
   });
+});
+
+// Backs the client-side chart refresh (see refreshDashboardCharts() in
+// home.ejs): fired after any HTMX action that changes chart-relevant data
+// (weight, calisthenics, training max) so the Dashboard charts can update
+// without a full page reload.
+router.get("/dashboard/charts", ensureAuth, async (req, res) => {
+  const userId = (req.user as any).userId;
+
+  const [chartDatasets, calChartData, weightChartData, exercises] = await Promise.all([
+    buildChartDatasets(userId),
+    getCalChartData(userId),
+    getWeightChartData(userId),
+    prisma.calisthenicsExercise.findMany({ where: { userId }, orderBy: { displayOrder: "asc" } }),
+  ]);
+  const calisthenicsChartData = await getCalisthenicsChartData(exercises);
+
+  res.json({ chartDatasets, calChartData, weightChartData, calisthenicsChartData });
 });
 
 router.post("/profile/name", ensureAuth, async (req, res) => {
@@ -188,7 +215,10 @@ router.post("/profile/lifts/delete", ensureAuth, async (req, res) => {
   await prisma.workoutLog.deleteMany({ where: { liftId: id } });
   await prisma.trainingMaxLog.deleteMany({ where: { liftId: id } });
   await prisma.coreWorkout.delete({ where: { id } });
-  if (isHTMX(req)) return res.send("");
+  if (isHTMX(req)) {
+    res.set("HX-Trigger", "charts-updated");
+    return res.send("");
+  }
   res.redirect("/#tab-profile");
 });
 
@@ -203,11 +233,14 @@ router.post("/profile/weight", ensureAuth, async (req, res) => {
     update: { weightLbs },
     create: { userId: user.userId, weightLbs, loggedOn: today },
   });
-  if (isHTMX(req)) return res.send(`
+  if (isHTMX(req)) {
+    res.set("HX-Trigger", "charts-updated");
+    return res.send(`
     <div class="card" style="display:flex;align-items:baseline;gap:0.4rem;">
       <span style="font-size:1.75rem;font-weight:800;letter-spacing:-1px;">${weightLbs}</span>
-      <span style="font-size:0.85rem;color:#555;">lbs &nbsp;·&nbsp; last logged</span>
+      <span style="font-size:0.85rem;color:#555;">lbs &nbsp;·&nbsp; logged ${formatLoggedOn(today)}</span>
     </div>`);
+  }
   res.redirect("/#tab-profile");
 });
 
@@ -217,6 +250,33 @@ router.post("/profile/privacy", ensureAuth, async (req, res) => {
   const hideWeight = !current?.hideWeight;
   await prisma.userProfile.update({ where: { userId: user.userId }, data: { hideWeight } });
   if (isHTMX(req)) return res.send(`<span id="privacy-status" style="font-size:0.75rem;font-weight:700;color:${hideWeight ? "#555" : "#4f9eff"};">${hideWeight ? "OFF" : "ON"}</span>`);
+  res.redirect("/#tab-profile");
+});
+
+// Backs the goal card's own HTMX refresh (hx-trigger="charts-updated
+// from:body" on the card itself) — same idea as /dashboard/charts but for a
+// server-rendered fragment instead of chart JSON, since the goal card is
+// plain HTML. Initial render is inline (see the `goal` local above).
+router.get("/profile/goals/card", ensureAuth, async (req, res) => {
+  const goal = await buildGoalSummary((req.user as any).userId);
+  res.render("partials/goal-card", { goal });
+});
+
+router.post("/profile/goals", ensureAuth, async (req, res) => {
+  const user = req.user as any;
+  const rawWeight = (req.body.goalWeightLbs as string)?.trim();
+  const parsedWeight = rawWeight ? parseFloat(rawWeight) : NaN;
+
+  await prisma.userProfile.update({
+    where: { userId: user.userId },
+    data: { goalWeightLbs: !isNaN(parsedWeight) ? parsedWeight : null },
+  });
+
+  if (isHTMX(req)) {
+    res.set("HX-Trigger", "charts-updated");
+    const goal = await buildGoalSummary(user.userId);
+    return res.render("partials/goal-card", { goal });
+  }
   res.redirect("/#tab-profile");
 });
 
@@ -272,6 +332,81 @@ router.get("/user/:userId", ensureAuth, async (req, res) => {
     nowPlaying,
   });
 });
+
+async function getCalisthenicsExercises(userId: string) {
+  const existing = await prisma.calisthenicsExercise.count({ where: { userId } });
+  if (existing === 0) {
+    const defaults = ["Push-ups", "Squats", "Sit-ups"];
+    for (let i = 0; i < defaults.length; i++) {
+      await prisma.calisthenicsExercise.create({ data: { name: defaults[i], userId, displayOrder: i } });
+    }
+  }
+
+  const exercises = await prisma.calisthenicsExercise.findMany({
+    where: { userId },
+    orderBy: { displayOrder: "asc" },
+  });
+  const today = new Date().toISOString().split("T")[0];
+  const todayLogs = await prisma.calisthenicsLog.findMany({
+    where: { completedOn: today, exerciseId: { in: exercises.map((e) => e.id) } },
+  });
+  const totalByExercise = new Map(todayLogs.map((l) => [l.exerciseId, l.reps]));
+
+  return exercises.map((exercise) => ({ exercise, todayTotal: totalByExercise.get(exercise.id) ?? 0 }));
+}
+
+async function getWeightChartData(userId: string) {
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 89);
+  const weightHistory = await prisma.bodyWeightLog.findMany({
+    where: { userId, loggedOn: { gte: ninetyDaysAgo.toISOString().split("T")[0] } },
+    orderBy: { loggedOn: "asc" },
+  });
+  return weightHistory.map((w) => ({ date: w.loggedOn, weight: w.weightLbs }));
+}
+
+async function getCalChartData(userId: string) {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
+  const calHistory = await prisma.calorieEntry.findMany({
+    where: { userId, loggedOn: { gte: thirtyDaysAgo.toISOString().split("T")[0] } },
+    orderBy: { loggedOn: "asc" },
+  });
+  const calByDay: Record<string, number> = {};
+  for (const entry of calHistory) {
+    calByDay[entry.loggedOn] = (calByDay[entry.loggedOn] ?? 0) + entry.calories;
+  }
+  return Object.entries(calByDay).map(([date, total]) => ({ date, total }));
+}
+
+async function getCalisthenicsChartData(exercises: { id: number; name: string }[]) {
+  if (exercises.length === 0) return [];
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
+  const logs = await prisma.calisthenicsLog.findMany({
+    where: {
+      exerciseId: { in: exercises.map((e) => e.id) },
+      completedOn: { gte: thirtyDaysAgo.toISOString().split("T")[0] },
+    },
+    orderBy: { completedOn: "asc" },
+  });
+
+  const byExercise = new Map<number, { x: string; y: number }[]>();
+  for (const log of logs) {
+    const points = byExercise.get(log.exerciseId) ?? [];
+    points.push({ x: log.completedOn, y: log.reps });
+    byExercise.set(log.exerciseId, points);
+  }
+
+  return exercises
+    .filter((e) => (byExercise.get(e.id) ?? []).length > 0)
+    .map((exercise, i) => ({
+      label: exercise.name,
+      color: CHART_COLORS[i % CHART_COLORS.length],
+      points: byExercise.get(exercise.id) ?? [],
+    }));
+}
 
 async function getFeed(userId: string) {
   const friendIds = await getFriendIds(userId);
@@ -388,6 +523,16 @@ async function getOrCreateInviteToken(userId: string) {
   const token = crypto.randomBytes(16).toString("hex");
   await prisma.userProfile.update({ where: { userId }, data: { inviteToken: token } });
   return token;
+}
+
+function formatLoggedOn(dateStr: string): string {
+  const today = new Date().toISOString().split("T")[0];
+  if (dateStr === today) return "today";
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (dateStr === yesterday.toISOString().split("T")[0]) return "yesterday";
+  const date = new Date(dateStr + "T12:00:00Z");
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 }
 
 function formatCalDate(dateStr: string, today: string): string {

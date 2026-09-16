@@ -89,6 +89,7 @@
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
+            animation: fadeInUp 0.3s ease-out;
         }
 
         .chart-title {
@@ -148,6 +149,7 @@
             background: #1a1a1a;
             border-radius: 12px;
             padding: 1.1rem 1.2rem;
+            animation: fadeInUp 0.3s ease-out;
         }
 
         .music-provider-row { display:flex;gap:0.55rem;flex-wrap:wrap;margin-top:0.7rem; }
@@ -173,6 +175,7 @@
             padding: 0.9rem 1.1rem;
             background: #1a1a1a;
             border-radius: 10px;
+            animation: fadeInUp 0.3s ease-out;
         }
 
         .section-heading {
@@ -187,6 +190,7 @@
         .profile-card {
             background: var(--lt-surface); border-radius: 14px;
             padding: 1rem; margin-bottom: 0.75rem;
+            animation: fadeInUp 0.3s ease-out;
         }
         .lift-row {
             display: flex;
@@ -347,6 +351,67 @@
             cursor: pointer;
         }
 
+        /* ── Calisthenics cards, Record tab ── */
+        .cali-card {
+            background: var(--lt-surface, #20201f);
+            border: 1px solid var(--lt-line, #36362f);
+            border-radius: 16px;
+            padding: 1rem 1.1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            margin-bottom: 0.6rem;
+            animation: fadeInUp 0.25s ease-out;
+        }
+        .cali-top { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
+        .cali-name { font-size: 1rem; font-weight: 700; color: var(--lt-ink); }
+        .cali-remove {
+            background: none; border: none; color: var(--lt-ink-muted, #666);
+            padding: 0.2rem; border-radius: 6px; display: flex; cursor: pointer;
+        }
+        .cali-remove:hover { color: #e05252; }
+        .cali-remove svg { width: 16px; height: 16px; }
+        .cali-stat { display: flex; align-items: center; justify-content: center; gap: 1.1rem; padding: 0.2rem 0; }
+        .cali-total-wrap { display: flex; flex-direction: column; align-items: center; min-width: 64px; }
+        .cali-total { font-size: 2.1rem; font-weight: 800; letter-spacing: -1px; color: var(--lt-accent); line-height: 1; }
+        .cali-total-label { font-size: 0.72rem; color: var(--lt-ink-muted, #888); font-weight: 600; margin-top: 0.15rem; }
+        .cali-step {
+            width: 40px; height: 40px; flex-shrink: 0; background: #111; border: 1px solid #2a2a2a;
+            border-radius: 50%; color: var(--lt-ink); font-size: 1.3rem; font-weight: 700; line-height: 1;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .cali-step:hover { border-color: var(--lt-accent); color: var(--lt-accent); }
+        .cali-step:disabled { opacity: 0.4; cursor: not-allowed; }
+        .cali-edit-toggle {
+            background: none; border: none; color: var(--lt-ink-muted, #666);
+            font-size: 0.75rem; font-weight: 600; text-decoration: underline;
+            padding: 0; align-self: center; cursor: pointer;
+        }
+        .cali-edit-toggle:hover { color: var(--lt-accent); }
+        .cali-quick-adds { display: flex; gap: 0.5rem; }
+        .cali-quick-adds form { flex: 1; margin: 0; }
+        .cali-quick-adds button {
+            width: 100%; background: #111; border: 1px solid #2a2a2a; border-radius: 10px;
+            color: var(--lt-ink); font-size: 0.95rem; font-weight: 700; padding: 0.7rem 0.5rem;
+            cursor: pointer;
+        }
+        .cali-quick-adds button:hover { border-color: var(--lt-accent); color: var(--lt-accent); }
+        .cali-edit-row {
+            display: flex; gap: 0.5rem; align-items: center; background: #111;
+            border-radius: 10px; padding: 0.6rem 0.75rem;
+        }
+        .cali-edit-row label { font-size: 0.75rem; color: var(--lt-ink-muted, #888); flex-shrink: 0; }
+        .cali-edit-row input {
+            flex: 1; min-width: 0; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px;
+            color: #fff; font-size: 0.9rem; padding: 0.4rem 0.6rem; outline: none;
+        }
+        .cali-edit-row input:focus { border-color: var(--lt-accent); }
+        .cali-edit-row button {
+            background: var(--lt-accent); border: none; border-radius: 8px; color: #fff;
+            font-size: 0.8rem; font-weight: 700; padding: 0.45rem 0.85rem; cursor: pointer; flex-shrink: 0;
+        }
+        .cali-edit-row .text-action { color: var(--lt-ink-muted, #888); font-size: 0.8rem; padding: 0.45rem 0.2rem; }
+        .lift-card { animation: fadeInUp 0.25s ease-out; }
 
         #tab-social.active {
             overflow-y: hidden;
@@ -825,9 +890,12 @@
         .stat-card.clickable { cursor: pointer; }
         .stat-card.clickable:active { opacity: 0.7; }
 
-        /* ── Centered modal (body weight) ── */
+        /* ── Centered modal (body weight) ──
+           Always in the flex layout (it's fixed-position, so this costs
+           nothing) and driven by opacity/transform so open AND close both
+           animate — display:none can't be transitioned. */
         .modal-overlay {
-            display: none;
+            display: flex;
             position: fixed;
             inset: 0;
             z-index: 9998;
@@ -835,9 +903,18 @@
             align-items: center;
             justify-content: center;
             padding: 1.25rem;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.25s ease, visibility 0s linear 0.25s;
         }
 
-        .modal-overlay.show { display: flex; }
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transition: opacity 0.25s ease, visibility 0s linear 0s;
+        }
 
         .modal-card {
             background: #171717;
@@ -851,7 +928,11 @@
             flex-direction: column;
             gap: 1rem;
             border: 1px solid #2a2a2a;
+            transform: translateY(28px) scale(0.96);
+            transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
+
+        .modal-overlay.show .modal-card { transform: translateY(0) scale(1); }
 
         .modal-header {
             display: flex;
@@ -873,7 +954,7 @@
 
         /* ── Full-screen settings page ── */
         .settings-page {
-            display: none;
+            display: flex;
             position: fixed;
             inset: 0;
             background: #0f0f0f;
@@ -881,9 +962,16 @@
             flex-direction: column;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
+            transform: translateX(100%);
+            visibility: hidden;
+            transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1), visibility 0s linear 0.32s;
         }
 
-        .settings-page.show { display: flex; }
+        .settings-page.show {
+            transform: translateX(0);
+            visibility: visible;
+            transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1), visibility 0s linear 0s;
+        }
 
         .settings-page-header {
             position: sticky;
@@ -1025,6 +1113,20 @@
         <% if (coreWorkouts.length === 0) { %>
             <p style="text-align:center;margin-top:2rem;color:#555;font-size:0.9rem;">Add your first lift in Profile → Settings.</p>
         <% } %>
+
+        <div class="section-line" style="margin-top:1.75rem;"><h2>Calisthenics</h2><span class="eyebrow">Bodyweight</span></div>
+        <p class="muted" style="font-size:13px;line-height:1.6;margin:0.35rem 0 0.9rem;">Log sets throughout the day — they add up to a running total. Made a mistake? Edit the total directly.</p>
+        <div id="cali-list">
+        <% calisthenicsExercises.forEach(c => { %>
+            <%- include('partials/calisthenics-card', c) %>
+        <% }) %>
+        </div>
+        <form class="add-form"
+              hx-post="/calisthenics/exercises" hx-target="#cali-list" hx-swap="beforeend"
+              hx-on::after-request="this.reset()">
+            <input type="text" name="name" placeholder="Add an exercise" required maxlength="60"/>
+            <button type="submit">Add</button>
+        </form>
 
         <!-- Join a friend's room -->
         <% if (groupsEnabled) { %>
@@ -1205,47 +1307,52 @@
             </div>
             </dialog>
 
+            <%- include('partials/goal-card', { goal }) %>
+
             <div class="chart-card">
                 <div class="chart-title">Training Max Progression</div>
-                <% if (chartDatasets.length > 0) { %>
-                    <div class="chart-wrap">
-                        <canvas id="progressChart"></canvas>
-                    </div>
-                    <div class="chart-legend" id="chartLegend"></div>
-                <% } else { %>
-                    <div class="empty-chart">
-                        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                        <p>Complete a workout to see your progress</p>
-                    </div>
-                <% } %>
+                <div class="chart-wrap" id="progressChartWrap" <%= chartDatasets.length > 0 ? '' : 'hidden' %>>
+                    <canvas id="progressChart"></canvas>
+                </div>
+                <div class="chart-legend" id="chartLegend" <%= chartDatasets.length > 0 ? '' : 'hidden' %>></div>
+                <div class="empty-chart" id="progressChartEmpty" <%= chartDatasets.length > 0 ? 'hidden' : '' %>>
+                    <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    <p>Complete a workout to see your progress</p>
+                </div>
             </div>
 
             <div class="chart-card">
                 <div class="chart-title">Daily Calories (30 days)</div>
-                <% if (calChartData.length > 0) { %>
-                    <div class="chart-wrap">
-                        <canvas id="calChart"></canvas>
-                    </div>
-                <% } else { %>
-                    <div class="empty-chart">
-                        <svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/></svg>
-                        <p>Log some food to see your calorie history</p>
-                    </div>
-                <% } %>
+                <div class="chart-wrap" id="calChartWrap" <%= calChartData.length > 0 ? '' : 'hidden' %>>
+                    <canvas id="calChart"></canvas>
+                </div>
+                <div class="empty-chart" id="calChartEmpty" <%= calChartData.length > 0 ? 'hidden' : '' %>>
+                    <svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/></svg>
+                    <p>Log some food to see your calorie history</p>
+                </div>
             </div>
 
             <div class="chart-card">
                 <div class="chart-title">Body Weight (90 days)</div>
-                <% if (weightChartData.length > 0) { %>
-                    <div class="chart-wrap">
-                        <canvas id="weightChart"></canvas>
-                    </div>
-                <% } else { %>
-                    <div class="empty-chart">
-                        <svg viewBox="0 0 24 24"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>
-                        <p>Log your weight to track it over time</p>
-                    </div>
-                <% } %>
+                <div class="chart-wrap" id="weightChartWrap" <%= weightChartData.length > 0 ? '' : 'hidden' %>>
+                    <canvas id="weightChart"></canvas>
+                </div>
+                <div class="empty-chart" id="weightChartEmpty" <%= weightChartData.length > 0 ? 'hidden' : '' %>>
+                    <svg viewBox="0 0 24 24"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>
+                    <p>Log your weight to track it over time</p>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-title">Calisthenics (30 days)</div>
+                <div class="chart-wrap" id="calisthenicsChartWrap" <%= calisthenicsChartData.length > 0 ? '' : 'hidden' %>>
+                    <canvas id="calisthenicsChart"></canvas>
+                </div>
+                <div class="chart-legend" id="calisthenicsChartLegend" <%= calisthenicsChartData.length > 0 ? '' : 'hidden' %>></div>
+                <div class="empty-chart" id="calisthenicsChartEmpty" <%= calisthenicsChartData.length > 0 ? 'hidden' : '' %>>
+                    <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    <p>Log some reps to see your progress</p>
+                </div>
             </div>
         </div>
         <div id="profile-subtab-activities" class="profile-panel" role="tabpanel" aria-labelledby="profile-subtab-btn-activities" style="display:none">
@@ -1677,6 +1784,8 @@
             });
             history.replaceState(null,'',location.pathname + location.search + '#tab-' + name);
             if(name === 'profile') switchProfileSubTab(currentProfileTab);
+            const icon = btn && btn.querySelector('svg, img');
+            if (icon) { icon.classList.remove('pop'); void icon.offsetWidth; icon.classList.add('pop'); }
         }
 
         const ACTIVE_SESSION_ID = <%- JSON.stringify(activeSessionId) %>;
@@ -1708,32 +1817,57 @@
             history.replaceState(null, '', location.pathname + location.hash);
         }
 
-        // Deferred until Dashboard is first opened — see switchProfileSubTab.
-        function initDashboardCharts() {
-            const LT_LINE = '#2A2A2A';
-            const LT_MUTED = '#8A8A8E';
-            const LT_TOOLTIP_BG = '#2A2A2A';
-            const rawDatasets = <%- JSON.stringify(chartDatasets) %>;
+        // Dashboard chart data + Chart.js instances live here so any of them
+        // can be rebuilt in place — see refreshDashboardCharts() below, which
+        // is what makes the charts update without a full page reload after
+        // logging weight/reps/training max elsewhere in the app.
+        const LT_LINE = '#2A2A2A';
+        const LT_MUTED = '#8A8A8E';
+        const LT_TOOLTIP_BG = '#2A2A2A';
+        let chartState = {
+            trainingMax: <%- JSON.stringify(chartDatasets) %>,
+            weight: <%- JSON.stringify(weightChartData) %>,
+            cals: <%- JSON.stringify(calChartData) %>,
+            calisthenics: <%- JSON.stringify(calisthenicsChartData) %>,
+        };
+        const chartInstances = {};
 
-            if (rawDatasets.length > 0) {
+        function toggleChartVisibility(key, hasData) {
+            document.getElementById(key + 'Wrap').hidden = !hasData;
+            document.getElementById(key + 'Empty').hidden = hasData;
+            const legend = document.getElementById(key + 'Legend');
+            if (legend) legend.hidden = !hasData;
+        }
+
+        function renderTrainingMaxChart() {
+            const rawDatasets = chartState.trainingMax;
+            toggleChartVisibility('progressChart', rawDatasets.length > 0);
+            if (rawDatasets.length === 0) {
+                if (chartInstances.trainingMax) { chartInstances.trainingMax.destroy(); chartInstances.trainingMax = null; }
+                return;
+            }
+
+            const datasets = rawDatasets.map(ds => ({
+                label: ds.label,
+                data: ds.points.map(p => ({ x: new Date(p.x).getTime(), y: p.y })),
+                borderColor: ds.color,
+                backgroundColor: ds.color + '22',
+                borderWidth: 2.5,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: ds.color,
+                tension: 0.35,
+                fill: false,
+            }));
+
+            if (chartInstances.trainingMax) {
+                chartInstances.trainingMax.data.datasets = datasets;
+                chartInstances.trainingMax.update();
+            } else {
                 const ctx = document.getElementById('progressChart').getContext('2d');
-
-                new Chart(ctx, {
+                chartInstances.trainingMax = new Chart(ctx, {
                     type: 'line',
-                    data: {
-                        datasets: rawDatasets.map(ds => ({
-                            label: ds.label,
-                            data: ds.points.map(p => ({ x: new Date(p.x).getTime(), y: p.y })),
-                            borderColor: ds.color,
-                            backgroundColor: ds.color + '22',
-                            borderWidth: 2.5,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            pointBackgroundColor: ds.color,
-                            tension: 0.35,
-                            fill: false,
-                        }))
-                    },
+                    data: { datasets },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
@@ -1775,31 +1909,129 @@
                         }
                     }
                 });
+            }
 
-                const legend = document.getElementById('chartLegend');
-                rawDatasets.forEach(ds => {
-                    const item = document.createElement('div');
-                    item.className = 'legend-item';
-                    item.innerHTML = `<span class="legend-dot" style="background:${ds.color}"></span>${ds.label}`;
-                    legend.appendChild(item);
+            const legend = document.getElementById('chartLegend');
+            legend.innerHTML = '';
+            rawDatasets.forEach(ds => {
+                const item = document.createElement('div');
+                item.className = 'legend-item';
+                item.innerHTML = `<span class="legend-dot" style="background:${ds.color}"></span>${ds.label}`;
+                legend.appendChild(item);
+            });
+        }
+
+        function renderCalisthenicsChart() {
+            const rawDatasets = chartState.calisthenics;
+            toggleChartVisibility('calisthenicsChart', rawDatasets.length > 0);
+            if (rawDatasets.length === 0) {
+                if (chartInstances.calisthenics) { chartInstances.calisthenics.destroy(); chartInstances.calisthenics = null; }
+                return;
+            }
+
+            const datasets = rawDatasets.map(ds => ({
+                label: ds.label,
+                data: ds.points.map(p => ({ x: new Date(p.x).getTime(), y: p.y })),
+                borderColor: ds.color,
+                backgroundColor: ds.color + '22',
+                borderWidth: 2.5,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: ds.color,
+                tension: 0.35,
+                fill: false,
+            }));
+
+            if (chartInstances.calisthenics) {
+                chartInstances.calisthenics.data.datasets = datasets;
+                chartInstances.calisthenics.update();
+            } else {
+                const ctx = document.getElementById('calisthenicsChart').getContext('2d');
+                chartInstances.calisthenics = new Chart(ctx, {
+                    type: 'line',
+                    data: { datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'nearest', intersect: false },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: LT_TOOLTIP_BG,
+                                titleColor: '#9CA3AF',
+                                bodyColor: '#fff',
+                                borderWidth: 0,
+                                padding: 10,
+                                callbacks: {
+                                    title: items => {
+                                        const d = new Date(items[0].parsed.x);
+                                        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                                    },
+                                    label: item => ` ${item.dataset.label}: ${item.parsed.y} reps`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                type: 'linear',
+                                grid: { color: LT_LINE },
+                                ticks: {
+                                    color: LT_MUTED,
+                                    maxTicksLimit: 5,
+                                    callback: val => new Date(val).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                                },
+                                border: { color: LT_LINE }
+                            },
+                            y: {
+                                grid: { color: LT_LINE },
+                                ticks: { color: LT_MUTED, stepSize: 1 },
+                                border: { color: LT_LINE },
+                                title: { display: true, text: 'Reps', color: LT_MUTED, font: { size: 11 } }
+                            }
+                        }
+                    }
                 });
             }
 
-            const calData = <%- JSON.stringify(calChartData) %>;
-            const weightData = <%- JSON.stringify(weightChartData) %>;
+            const legend = document.getElementById('calisthenicsChartLegend');
+            legend.innerHTML = '';
+            rawDatasets.forEach(ds => {
+                const item = document.createElement('div');
+                item.className = 'legend-item';
+                item.innerHTML = `<span class="legend-dot" style="background:${ds.color}"></span>${ds.label}`;
+                legend.appendChild(item);
+            });
+        }
 
-            if (weightData.length > 0) {
+        function renderWeightChart() {
+            const weightData = chartState.weight;
+            toggleChartVisibility('weightChart', weightData.length > 0);
+            if (weightData.length === 0) {
+                if (chartInstances.weight) { chartInstances.weight.destroy(); chartInstances.weight = null; }
+                return;
+            }
+
+            const labels = weightData.map(d => d.date);
+            const data = weightData.map(d => d.weight);
+            const pointRadius = weightData.length < 15 ? 4 : 2;
+
+            if (chartInstances.weight) {
+                chartInstances.weight.data.labels = labels;
+                chartInstances.weight.data.datasets[0].data = data;
+                chartInstances.weight.data.datasets[0].pointRadius = pointRadius;
+                chartInstances.weight.update();
+            } else {
                 const wCtx = document.getElementById('weightChart').getContext('2d');
-                new Chart(wCtx, {
+                chartInstances.weight = new Chart(wCtx, {
                     type: 'line',
                     data: {
-                        labels: weightData.map(d => d.date),
+                        labels,
                         datasets: [{
-                            data: weightData.map(d => d.weight),
+                            data,
                             borderColor: '#a78bfa',
                             backgroundColor: '#a78bfa18',
                             borderWidth: 2,
-                            pointRadius: weightData.length < 15 ? 4 : 2,
+                            pointRadius,
                             pointBackgroundColor: '#a78bfa',
                             tension: 0.3,
                             fill: true,
@@ -1832,7 +2064,7 @@
                                     color: LT_MUTED,
                                     maxTicksLimit: 6,
                                     callback: (_, i) => {
-                                        const d = new Date(weightData[i].date + 'T12:00:00');
+                                        const d = new Date(chartState.weight[i].date + 'T12:00:00');
                                         return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                                     }
                                 },
@@ -1848,15 +2080,31 @@
                     }
                 });
             }
+        }
 
-            if (calData.length > 0) {
+        function renderCalChart() {
+            const calData = chartState.cals;
+            toggleChartVisibility('calChart', calData.length > 0);
+            if (calData.length === 0) {
+                if (chartInstances.cals) { chartInstances.cals.destroy(); chartInstances.cals = null; }
+                return;
+            }
+
+            const labels = calData.map(d => d.date);
+            const data = calData.map(d => d.total);
+
+            if (chartInstances.cals) {
+                chartInstances.cals.data.labels = labels;
+                chartInstances.cals.data.datasets[0].data = data;
+                chartInstances.cals.update();
+            } else {
                 const calCtx = document.getElementById('calChart').getContext('2d');
-                new Chart(calCtx, {
+                chartInstances.cals = new Chart(calCtx, {
                     type: 'bar',
                     data: {
-                        labels: calData.map(d => d.date),
+                        labels,
                         datasets: [{
-                            data: calData.map(d => d.total),
+                            data,
                             backgroundColor: '#4ade8044',
                             borderColor: '#4ade80',
                             borderWidth: 2,
@@ -1890,7 +2138,7 @@
                                     color: LT_MUTED,
                                     maxTicksLimit: 6,
                                     callback: (_, i) => {
-                                        const d = new Date(calData[i].date + 'T12:00:00');
+                                        const d = new Date(chartState.cals[i].date + 'T12:00:00');
                                         return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                                     }
                                 },
@@ -1907,6 +2155,37 @@
                 });
             }
         }
+
+        // Deferred until Dashboard is first opened (Chart.js sizes canvases
+        // off their container, which is wrong while the tab is hidden).
+        function initDashboardCharts() {
+            renderTrainingMaxChart();
+            renderCalisthenicsChart();
+            renderWeightChart();
+            renderCalChart();
+        }
+
+        // Fired (via the `charts-updated` HX-Trigger response header, or
+        // called directly after non-HTMX updates like the calorie entry
+        // editor) whenever something changes chart-relevant data, so the
+        // Dashboard charts stay current without needing a full page reload.
+        async function refreshDashboardCharts() {
+            try {
+                const res = await fetch('/dashboard/charts');
+                if (!res.ok) return;
+                const data = await res.json();
+                chartState = {
+                    trainingMax: data.chartDatasets,
+                    weight: data.weightChartData,
+                    cals: data.calChartData,
+                    calisthenics: data.calisthenicsChartData,
+                };
+                if (dashboardChartsInitialized) initDashboardCharts();
+            } catch (e) {
+                // Best-effort — the charts just keep showing the last known data.
+            }
+        }
+        document.body.addEventListener('charts-updated', refreshDashboardCharts);
 
         function previewImage(input) {
             if (!input.files || !input.files[0]) return;
@@ -1990,6 +2269,7 @@
                     btn.textContent = 'Saved!';
                     btn.style.color = '#4ade80';
                     setTimeout(() => { btn.textContent = 'Save'; btn.style.color = ''; }, 1500);
+                    refreshDashboardCharts();
                 }
             } catch(e) {
                 btn.textContent = 'Error';
@@ -2026,17 +2306,35 @@
                 nameEl.after(badge);
                 setTimeout(() => badge.remove(), 1500);
             }
+            if (id && id.startsWith('cali-card-')) {
+                const num = document.getElementById(id)?.querySelector('.cali-total');
+                if (num) {
+                    num.classList.add('pop');
+                    // A little celebration for round milestones (50, 100, 150...).
+                    const total = parseInt(num.textContent, 10);
+                    if (total > 0 && total % 50 === 0) {
+                        const rect = num.getBoundingClientRect();
+                        fireConfetti(rect.left + rect.width / 2, rect.top, 36);
+                    }
+                }
+            }
+            if (id === 'weight-display-wrap') {
+                const num = document.querySelector('#weight-display-wrap span');
+                if (num) num.classList.add('pop');
+            }
+            if (id === 'privacy-status') {
+                document.getElementById('privacy-status')?.classList.add('pop');
+            }
         });
 
         function openLightbox(src) {
-            const lb = document.getElementById('lightbox');
             document.getElementById('lightboxImg').src = src;
-            lb.style.display = 'flex';
+            document.getElementById('lightbox').classList.add('show');
             document.body.style.overflow = 'hidden';
         }
 
         function closeLightbox() {
-            document.getElementById('lightbox').style.display = 'none';
+            document.getElementById('lightbox').classList.remove('show');
             document.body.style.overflow = '';
         }
 
@@ -2079,9 +2377,36 @@
             form.style.display = isHidden ? 'block' : 'none';
             if (isHidden) form.querySelector('input[type="number"]').focus();
         }
+
+        function caliToggleEdit(id) {
+            const form = document.getElementById('cali-edit-' + id);
+            if (form) form.hidden = !form.hidden;
+        }
+
+        function toggleGoalEdit() {
+            const form = document.getElementById('goal-edit-form');
+            if (form) form.hidden = !form.hidden;
+        }
     </script>
 
-    <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+    <style>
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #lightbox {
+            display: flex;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.2s ease, visibility 0s linear 0.2s;
+        }
+        #lightbox.show {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transition: opacity 0.2s ease, visibility 0s linear 0s;
+        }
+        #lightbox img { transform: scale(0.92); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        #lightbox.show img { transform: scale(1); }
+    </style>
 
     <div id="cals-loader"
          style="display:none;position:fixed;inset:0;background:#0f0f0f;z-index:9998;
@@ -2092,7 +2417,7 @@
     </div>
 
     <div id="lightbox" onclick="closeLightbox()"
-         style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;
+         style="position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;
                 align-items:center;justify-content:center;cursor:zoom-out;">
         <img id="lightboxImg" src="" alt=""
              style="max-width:95vw;max-height:95vh;object-fit:contain;border-radius:6px;"/>
@@ -2200,7 +2525,7 @@
             <% if (currentWeight) { %>
                 <div class="card" style="display:flex;align-items:baseline;gap:0.4rem;">
                     <span style="font-size:1.75rem;font-weight:800;letter-spacing:-1px;"><%= currentWeight %></span>
-                    <span style="font-size:0.85rem;color:#555;">lbs &nbsp;·&nbsp; last logged</span>
+                    <span style="font-size:0.85rem;color:#555;">lbs &nbsp;·&nbsp; logged <%= currentWeightDate %></span>
                 </div>
             <% } %>
             </div>
@@ -2208,9 +2533,9 @@
             <form class="add-form"
                   hx-post="/profile/weight" hx-target="#weight-display-wrap" hx-swap="innerHTML"
                   hx-vals="js:{loggedOn: new Date().toLocaleDateString('en-CA')}"
-                  hx-on::after-request="this.reset()">
+                  hx-on::after-request="this.reset(); updateWeightPlaceholder();">
                 <input type="number" name="weightLbs" step="0.1" min="50" max="999" id="weight-input"
-                       placeholder="<%= currentWeight ? 'Overwrites entry (lbs)' : 'Log your weight (lbs)' %>"
+                       placeholder="<%= currentWeightDate === 'today' ? "Overwrites today's entry (lbs)" : 'Log your weight (lbs)' %>"
                        required/>
                 <button type="submit">Log</button>
             </form>
@@ -2241,11 +2566,17 @@
         function openWeightModal() {
             document.getElementById('weight-modal').classList.add('show');
             document.body.style.overflow = 'hidden';
-            if (document.getElementById('weight-display-wrap').children.length > 0) {
-                const today = new Date();
-                document.getElementById('weight-input').placeholder =
-                    `Overwrites ${today.getMonth() + 1}-${today.getDate()} entry (lbs)`;
-            }
+            updateWeightPlaceholder();
+        }
+        // Only today's entry gets overwritten (the backend upserts by
+        // today's date) — an older last-logged date means the next submit
+        // creates a new entry instead, so the placeholder must say so. Also
+        // re-run right after a log so a same-day first entry immediately
+        // flips the placeholder to "Overwrites", without needing to reopen.
+        function updateWeightPlaceholder() {
+            const loggedToday = document.getElementById('weight-display-wrap').textContent.includes('logged today');
+            document.getElementById('weight-input').placeholder =
+                loggedToday ? "Overwrites today's entry (lbs)" : 'Log your weight (lbs)';
         }
         function closeWeightModal() {
             document.getElementById('weight-modal').classList.remove('show');
