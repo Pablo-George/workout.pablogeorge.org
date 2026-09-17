@@ -1,5 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import type { UserProfile } from "@prisma/client";
+import jwt from "jsonwebtoken";
+import { prisma } from "../db.js";
 import { sendError } from "../lib/respond.js";
 
 /** passport puts the full UserProfile row on req.user via deserializeUser. */
@@ -26,5 +28,38 @@ export function ensureAuth(req: Request, res: Response, next: NextFunction): voi
  */
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   if (req.isAuthenticated()) return next();
+  sendError(res, 401, "Not authenticated");
+}
+
+const NATIVE_JWT_SECRET = process.env.SESSION_SECRET || "dev-secret";
+const NATIVE_JWT_EXPIRY = "180d";
+
+export function signNativeToken(userId: string): string {
+  return jwt.sign({ userId }, NATIVE_JWT_SECRET, { expiresIn: NATIVE_JWT_EXPIRY });
+}
+
+/**
+ * For the native iOS app's /api/* calls, which carry no session cookie (it
+ * isn't sharing cookie storage with the WKWebView ASWebAuthenticationSession
+ * used to sign in). Accepts either an existing cookie session (so the same
+ * routes also work from the web PWA) or an `Authorization: Bearer <jwt>`
+ * minted by signNativeToken() after OAuth completes.
+ */
+export async function apiAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+  if (req.isAuthenticated()) return next();
+
+  const header = req.headers.authorization;
+  if (header?.startsWith("Bearer ")) {
+    try {
+      const payload = jwt.verify(header.slice(7), NATIVE_JWT_SECRET) as { userId: string };
+      const user = await prisma.userProfile.findUnique({ where: { userId: payload.userId } });
+      if (user) {
+        (req as unknown as { user: UserProfile }).user = user;
+        return next();
+      }
+    } catch {
+      // falls through to 401 below
+    }
+  }
   sendError(res, 401, "Not authenticated");
 }

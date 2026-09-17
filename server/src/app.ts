@@ -18,6 +18,7 @@ import adminRoutes from "./routes/admin.js";
 import groupRoutes from "./routes/group.js";
 import musicRoutes from "./routes/music.js";
 import musicApiRoutes from "./api/music.js";
+import apiRoutes from "./api/index.js";
 import { apiErrorMiddleware } from "./lib/respond.js";
 import { GROUP_WORKOUTS_ENABLED, MUSIC_ENABLED } from "./config/features.js";
 
@@ -68,6 +69,10 @@ app.use(calisthenicsRoutes);
 app.use(runningRoutes);
 app.use(adminRoutes);
 app.use(groupRoutes);
+// JSON API for the native iOS app (auth bridges via a bearer JWT — see
+// middleware/auth.ts's apiAuth — since it doesn't share cookie storage with
+// the ASWebAuthenticationSession used to sign in).
+app.use("/api", apiRoutes, apiErrorMiddleware);
 if (MUSIC_ENABLED) {
   app.use(musicRoutes);
   // The music widgets on the home and group-workout pages talk to this over

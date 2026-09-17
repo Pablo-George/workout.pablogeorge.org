@@ -61,6 +61,6 @@ export function apiErrorMiddleware(
     return;
   }
 
-  console.error("[api/music]", err);
+  console.error("[api]", err);
   sendError(res, 500, "Something went wrong");
 }
