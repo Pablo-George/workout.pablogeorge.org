@@ -3,9 +3,10 @@ import { serverToday } from "../lib/dates.js";
 
 // ── Calorie burn estimation ─────────────────────────────────────────────
 // No wearable data yet (Apple Fitness/HealthKit integration is planned —
-// real duration and heart rate will replace these assumptions once it
-// lands), so burn is estimated from standard MET values, the user's logged
-// bodyweight, and an assumed duration per logged unit of work.
+// real heart rate will replace these MET assumptions once it lands), so
+// burn is estimated from standard MET values and the user's logged
+// bodyweight. Lifts and calisthenics assume a duration per logged unit of
+// work; running already logs real duration, so that estimate uses it directly.
 // kcal/min = MET * 3.5 * weightKg / 200 (standard MET formula).
 
 const KG_PER_LB = 0.453592;
@@ -17,6 +18,7 @@ const AUX_LIFT_MET = 4.0; // lighter accessory work
 const AUX_LIFT_MINUTES = 5;
 const CALISTHENICS_MET = 8.0; // vigorous bodyweight circuit effort
 const CALISTHENICS_SECONDS_PER_REP = 3;
+const RUNNING_MET = 9.8; // ~6 mph / 10-min mile pace — runs log real duration, so no assumed-minutes constant is needed
 
 function metCaloriesPerMinute(met: number, weightLbs: number): number {
   const weightKg = weightLbs * KG_PER_LB;
@@ -34,6 +36,10 @@ function estimateAuxLiftCalories(weightLbs: number): number {
 function estimateCalisthenicsCalories(reps: number, weightLbs: number): number {
   const minutes = (reps * CALISTHENICS_SECONDS_PER_REP) / 60;
   return metCaloriesPerMinute(CALISTHENICS_MET, weightLbs) * minutes;
+}
+
+function estimateRunningCalories(durationSec: number, weightLbs: number): number {
+  return metCaloriesPerMinute(RUNNING_MET, weightLbs) * (durationSec / 60);
 }
 
 // ── Date helpers (self-contained: these strings are always UTC "YYYY-MM-DD",
@@ -85,11 +91,12 @@ export async function getCaloriesBurnedByDay(
   fromISO: string,
   toISO: string
 ): Promise<Record<string, number>> {
-  const [weightHistory, mainLogs, auxLogs, calLogs] = await Promise.all([
+  const [weightHistory, mainLogs, auxLogs, calLogs, runLogs] = await Promise.all([
     prisma.bodyWeightLog.findMany({ where: { userId }, orderBy: { loggedOn: "asc" } }),
     prisma.workoutLog.findMany({ where: { userId, completedOn: { gte: fromISO, lte: toISO } } }),
     prisma.auxLiftLog.findMany({ where: { userId, completedOn: { gte: fromISO, lte: toISO } } }),
     prisma.calisthenicsLog.findMany({ where: { userId, completedOn: { gte: fromISO, lte: toISO } } }),
+    prisma.runLog.findMany({ where: { userId, completedOn: { gte: fromISO, lte: toISO } } }),
   ]);
 
   const weightAt = buildWeightLookup(weightHistory);
@@ -105,6 +112,10 @@ export async function getCaloriesBurnedByDay(
   for (const log of calLogs) {
     byDay[log.completedOn] =
       (byDay[log.completedOn] ?? 0) + estimateCalisthenicsCalories(log.reps, weightAt(log.completedOn));
+  }
+  for (const log of runLogs) {
+    byDay[log.completedOn] =
+      (byDay[log.completedOn] ?? 0) + estimateRunningCalories(log.durationSec, weightAt(log.completedOn));
   }
 
   return byDay;

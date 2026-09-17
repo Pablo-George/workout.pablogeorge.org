@@ -1,0 +1,40 @@
+<%
+/* Variables:
+   runs – array of RunLog & { paceSecPerMi: number | null }
+*/
+function fmtPace(secPerMi) {
+  if (secPerMi == null) return "—";
+  const m = Math.floor(secPerMi / 60);
+  const s = Math.round(secPerMi % 60);
+  return m + ":" + String(s).padStart(2, "0") + "/mi";
+}
+function fmtDuration(sec) {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  return h > 0 ? h + ":" + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0")
+               : m + ":" + String(s).padStart(2, "0");
+}
+%>
+<div id="run-list" class="run-list">
+    <% if (runs.length === 0) { %>
+        <p class="muted" style="font-size:0.85rem;padding:0.5rem 0;">No runs logged yet.</p>
+    <% } %>
+    <% runs.forEach(r => { %>
+    <div id="run-row-<%= r.id %>" class="run-row">
+        <div class="run-row-main">
+            <span class="run-row-distance"><%= r.distanceMi.toFixed(2) %> mi</span>
+            <span class="run-row-meta"><%= fmtDuration(r.durationSec) %> · <%= fmtPace(r.paceSecPerMi) %></span>
+        </div>
+        <span class="run-row-date"><%= r.completedOn %></span>
+        <form hx-post="/running/log/delete" hx-target="#run-row-<%= r.id %>" hx-swap="delete" style="margin:0;">
+            <input type="hidden" name="id" value="<%= r.id %>"/>
+            <button type="submit" class="run-row-remove" aria-label="Delete run">
+                <svg viewBox="0 0 24 24" style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;">
+                    <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/>
+                </svg>
+            </button>
+        </form>
+    </div>
+    <% }) %>
+</div>

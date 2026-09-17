@@ -40,6 +40,9 @@ router.get("/", ensureAuth, async (req, res) => {
   const calisthenicsExercises = await getCalisthenicsExercises(userId);
   const calisthenicsChartData = await getCalisthenicsChartData(calisthenicsExercises.map((c) => c.exercise));
 
+  const runLogs = await getRunLogs(userId);
+  const runChartData = await getRunChartData(userId);
+
   const weekLabels = await getWeekLabels(userId);
   const chartDatasets = await buildChartDatasets(userId);
   const totalSessions = await countLogs(userId);
@@ -167,6 +170,8 @@ router.get("/", ensureAuth, async (req, res) => {
     myPosts,
     calisthenicsExercises,
     calisthenicsChartData,
+    runLogs,
+    runChartData,
     calsError: req.query.cals_error === "1",
     isAdmin: process.env.ADMIN_EMAIL && user.userId === process.env.ADMIN_EMAIL,
   });
@@ -179,15 +184,16 @@ router.get("/", ensureAuth, async (req, res) => {
 router.get("/dashboard/charts", ensureAuth, async (req, res) => {
   const userId = (req.user as any).userId;
 
-  const [chartDatasets, calChartData, weightChartData, exercises] = await Promise.all([
+  const [chartDatasets, calChartData, weightChartData, exercises, runChartData] = await Promise.all([
     buildChartDatasets(userId),
     getCalChartData(userId),
     getWeightChartData(userId),
     prisma.calisthenicsExercise.findMany({ where: { userId }, orderBy: { displayOrder: "asc" } }),
+    getRunChartData(userId),
   ]);
   const calisthenicsChartData = await getCalisthenicsChartData(exercises);
 
-  res.json({ chartDatasets, calChartData, weightChartData, calisthenicsChartData });
+  res.json({ chartDatasets, calChartData, weightChartData, calisthenicsChartData, runChartData });
 });
 
 router.post("/profile/name", ensureAuth, async (req, res) => {
@@ -353,6 +359,29 @@ async function getCalisthenicsExercises(userId: string) {
   const totalByExercise = new Map(todayLogs.map((l) => [l.exerciseId, l.reps]));
 
   return exercises.map((exercise) => ({ exercise, todayTotal: totalByExercise.get(exercise.id) ?? 0 }));
+}
+
+async function getRunLogs(userId: string) {
+  const runs = await prisma.runLog.findMany({
+    where: { userId },
+    orderBy: [{ completedOn: "desc" }, { id: "desc" }],
+    take: 30,
+  });
+  return runs.map((r) => ({ ...r, paceSecPerMi: r.distanceMi > 0 ? r.durationSec / r.distanceMi : null }));
+}
+
+async function getRunChartData(userId: string) {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
+  const runHistory = await prisma.runLog.findMany({
+    where: { userId, completedOn: { gte: thirtyDaysAgo.toISOString().split("T")[0] } },
+    orderBy: { completedOn: "asc" },
+  });
+  const milesByDay: Record<string, number> = {};
+  for (const run of runHistory) {
+    milesByDay[run.completedOn] = (milesByDay[run.completedOn] ?? 0) + run.distanceMi;
+  }
+  return Object.entries(milesByDay).map(([date, miles]) => ({ date, miles }));
 }
 
 async function getWeightChartData(userId: string) {

@@ -59,9 +59,11 @@
   .app-home #tab-cals.active { padding-bottom:116px; }
   .app-home .section-heading { color:var(--lt-ink-muted); font-size:12px; letter-spacing:.5px; }
   .app-home .thread-feed { flex:none; overflow:visible; }
-  .app-home nav.app-nav,nav.app-nav { position:fixed; z-index:100; bottom:calc(14px + env(safe-area-inset-bottom)); left:50%; right:auto; transform:translateX(-50%); display:flex; width:calc(100% - 32px); max-width:560px; padding:5px; gap:2px; background:rgba(35,35,33,.91); border:1px solid #494946; border-radius:999px; box-shadow:0 8px 35px #0009; backdrop-filter:blur(20px); }
-  nav.app-nav button,nav.app-nav a { flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:8px 2px; min-height:57px; border:0; border-radius:999px; color:#e3e3df; background:none; font-size:11px; font-weight:700; text-decoration:none; }
-  nav.app-nav .active { background:#444441; color:var(--lt-accent); }
+  .app-home nav.app-nav,nav.app-nav { position:fixed; z-index:100; bottom:calc(14px + env(safe-area-inset-bottom)); left:50%; right:auto; transform:translateX(-50%); display:flex; width:calc(100% - 32px); max-width:560px; padding:5px; gap:2px; background:rgba(35,35,33,.1); border:1px solid #494946; border-radius:999px; box-shadow:0 8px 35px #0009; backdrop-filter:blur(3px); }
+  nav.app-nav button,nav.app-nav a { position:relative; z-index:1; flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:8px 2px; min-height:57px; border:0; border-radius:999px; color:#e3e3df; background:none; font-size:11px; font-weight:700; text-decoration:none; }
+  nav.app-nav .active { color:var(--lt-accent); }
+  nav.app-nav .nav-indicator { position:absolute; z-index:0; background:#444441; border-radius:999px; transition:left .35s cubic-bezier(.34,1.56,.64,1), width .35s cubic-bezier(.34,1.56,.64,1), top .35s cubic-bezier(.34,1.56,.64,1), height .35s cubic-bezier(.34,1.56,.64,1); }
+  nav.app-nav .nav-indicator.no-transition { transition:none; }
   nav.app-nav button,nav.app-nav a { transition:none; }
   nav.app-nav svg { width:25px; height:25px; stroke:currentColor; stroke-width:1.8; fill:none; stroke-linecap:round; stroke-linejoin:round; }
   nav.app-nav .nav-avatar { width:25px; height:25px; border-radius:50%; object-fit:cover; }

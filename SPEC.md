@@ -83,6 +83,16 @@ Constraint: `(userId, name)` unique. Defaults (Push-ups, Squats, Sit-ups) are au
 | `reps` | Int | Reps completed in one set |
 | `completedOn` | String | YYYY-MM-DD |
 
+### RunLog
+| Field | Type | Notes |
+|---|---|---|
+| `id` | Int (PK) | |
+| `userId` | String | |
+| `distanceMi` | Float | |
+| `durationSec` | Int | |
+| `completedOn` | String | YYYY-MM-DD |
+| `source` | String | `MANUAL` for now; reserved for a future Apple Health/HealthKit sync source |
+
 ### Post
 | Field | Type | Notes |
 |---|---|---|
@@ -139,6 +149,12 @@ Constraint: `(requesterId, addresseeId)` unique.
 | POST | `/calisthenics/exercises/delete` | Delete an exercise and its logs |
 | POST | `/calisthenics/log` | Log a set (reps) for an exercise, today |
 | POST | `/calisthenics/log/delete/:id` | Delete a single logged set |
+
+### Running (all protected)
+| Method | Path | Description |
+|---|---|---|
+| POST | `/running/log` | Log a run (distance in miles, duration) for a given day |
+| POST | `/running/log/delete` | Delete a single logged run |
 
 ### Social (all protected)
 | Method | Path | Description |
@@ -204,31 +220,39 @@ When a user first visits `/`, the app auto-creates four lifts: **Bench Press**, 
 3. User can remove an individual logged set, or remove an exercise entirely (deleting its logs too).
 4. User can add custom exercises via the "Add an exercise" field.
 
-### 7. Log Body Weight
+### 7. Track a Run
+1. User taps "Start Run" in the Record tab's Running sub-tab. The client starts watching device location (`@capacitor-community/background-geolocation` on the native iOS app, which keeps reporting positions while the phone is locked/backgrounded; `navigator.geolocation.watchPosition` on plain web, which only tracks while the tab stays open and in the foreground) and starts a live timer.
+2. Distance accrues client-side via the haversine distance between consecutive GPS fixes (fixes with reported accuracy worse than 50m are discarded). Distance, elapsed time, and pace update live on screen.
+3. User can pause (stops the location watch, freezes the timer) and resume, or stop to finish.
+4. On stop, the client posts the accumulated distance and duration to `POST /running/log`, creating a `RunLog` entry; the run appears at the top of the recent-runs list with its computed pace.
+5. User can delete an individual run from the list.
+6. Estimated calories burned for the day (see Workflow 9) use the run's real logged duration rather than an assumed one.
+
+### 8. Log Body Weight
 1. User submits weight on the home dashboard profile tab.
 2. App creates a `BodyWeightLog` with today's date.
 3. Latest weight is shown on the dashboard.
 
-### 8. Set a Weight & Calorie Goal
+### 9. Set a Weight & Calorie Goal
 1. User sets a goal weight (lbs) from the "Weight Goal" card in the dashboard's Progress tab (`UserProfile.goalWeightLbs`).
 2. The card shows the user's weigh-in trend (linear regression over the trailing 90 days of `BodyWeightLog` entries) and, when trending toward the goal, a projected time-to-goal in months/weeks.
 3. It also shows today's estimated calories burned, the trailing-14-day average net calories (eaten via `CalorieEntry` minus estimated burned), a secondary calorie-based projection as a cross-check, and a suggested daily calorie intake.
 4. The suggested intake is auto-calculated (not user-entered) from current weight, goal direction, and the trailing-14-day average of estimated exercise burn — a bodyweight-based maintenance estimate, then a standard deficit (goal below current) or surplus (goal above current), floored at a safe minimum.
-5. Calories burned have no wearable data source yet, so they're estimated from standard MET values, the user's logged bodyweight, and an assumed duration per logged set of work (see `goalService.buildGoalSummary` / `getCaloriesBurnedByDay`). Apple Fitness/HealthKit integration is planned to replace this with real duration and heart-rate data.
+5. Calories burned have no wearable data source yet, so they're estimated from standard MET values and the user's logged bodyweight (see `goalService.buildGoalSummary` / `getCaloriesBurnedByDay`). Lifts and calisthenics assume a duration per logged set of work; runs already log real duration, so that estimate uses it directly. Apple Fitness/HealthKit integration is planned to replace the remaining assumptions with real duration and heart-rate data.
 
-### 9. Create a Post
+### 10. Create a Post
 1. User submits text and/or an image (JPEG, PNG, GIF, WebP; max 10 MB).
 2. If an image is attached, it is uploaded to S3 and the public URL is stored.
 3. A `Post` record is created.
 4. Post appears on the user's own feed and their friends' feeds.
 
-### 10. Friend Requests
+### 11. Friend Requests
 1. **Send:** User enters a friend's email. App creates a `Friendship` with `PENDING` status.
    - Blocked if: self-request, or a relationship already exists.
 2. **Accept:** Addressee clicks accept → status updated to `ACCEPTED`.
 3. **Reject/Cancel:** Either party can delete the record.
 
-### 11. Social Feed
+### 12. Social Feed
 - Displays up to 50 most recent posts from the user and their accepted friends.
 - Each post shows: author avatar, name, "time ago" timestamp, text, and image (if any).
 

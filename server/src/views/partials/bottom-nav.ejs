@@ -35,6 +35,7 @@ const order = ['home', 'cals', 'workouts', 'social', 'profile'];
 NAV_ITEMS.sort((a,b) => order.indexOf(a.id) - order.indexOf(b.id));
 %>
 <nav class="app-nav" aria-label="Main navigation">
+    <span class="nav-indicator" aria-hidden="true"></span>
     <% if (mode === 'links') { %>
         <% NAV_ITEMS.forEach(t => { %>
         <a href="<%= t.id === 'workouts' && workoutsHref ? workoutsHref : '/#tab-' + t.id %>"
@@ -54,3 +55,29 @@ NAV_ITEMS.sort((a,b) => order.indexOf(a.id) - order.indexOf(b.id));
         <% }) %>
     <% } %>
 </nav>
+<script>
+(function() {
+    function positionNavIndicator(forceInstant) {
+        var nav = document.querySelector('nav.app-nav');
+        if (!nav) return;
+        var indicator = nav.querySelector('.nav-indicator');
+        var active = nav.querySelector('[data-tab].active');
+        if (!indicator || !active) return;
+        var instant = forceInstant || !indicator.dataset.positioned;
+        if (instant) indicator.classList.add('no-transition');
+        indicator.style.width = active.offsetWidth + 'px';
+        indicator.style.height = active.offsetHeight + 'px';
+        indicator.style.left = active.offsetLeft + 'px';
+        indicator.style.top = active.offsetTop + 'px';
+        indicator.dataset.positioned = 'true';
+        if (instant) {
+            void indicator.offsetWidth;
+            indicator.classList.remove('no-transition');
+        }
+    }
+    window.positionNavIndicator = positionNavIndicator;
+    window.addEventListener('resize', function() { positionNavIndicator(true); });
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function() { positionNavIndicator(true); });
+    else positionNavIndicator(true);
+})();
+</script>

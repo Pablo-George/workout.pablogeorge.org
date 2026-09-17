@@ -228,6 +228,21 @@ model CalisthenicsLog {
   @@index([userId, completedOn])
 }
 
+/// Manual entry for now; `source` distinguishes rows once Apple
+/// Health/HealthKit sync lands so imported runs can be told apart from
+/// hand-entered ones.
+model RunLog {
+  id          Int      @id @default(autoincrement())
+  userId      String
+  distanceMi  Float
+  durationSec Int
+  completedOn String
+  source      String   @default("MANUAL")
+  createdAt   DateTime @default(now())
+
+  @@index([userId, completedOn])
+}
+
 model Friendship {
   id            Int              @id @default(autoincrement())
   requesterId   String

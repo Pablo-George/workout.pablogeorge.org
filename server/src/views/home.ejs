@@ -413,6 +413,57 @@
         .cali-edit-row .text-action { color: var(--lt-ink-muted, #888); font-size: 0.8rem; padding: 0.45rem 0.2rem; }
         .lift-card { animation: fadeInUp 0.25s ease-out; }
 
+        /* ── Running log, Record tab ── */
+        .run-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.6rem; }
+        .run-row {
+            background: var(--lt-surface, #20201f);
+            border: 1px solid var(--lt-line, #36362f);
+            border-radius: 14px;
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: fadeInUp 0.25s ease-out;
+        }
+        .run-row-main { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+        .run-row-distance { font-size: 1rem; font-weight: 700; color: var(--lt-ink); }
+        .run-row-meta { font-size: 0.78rem; color: var(--lt-ink-muted, #888); }
+        .run-row-date { font-size: 0.78rem; color: var(--lt-ink-muted, #888); flex-shrink: 0; }
+        .run-row-remove {
+            background: none; border: none; color: var(--lt-ink-muted, #666);
+            padding: 0.2rem; border-radius: 6px; display: flex; cursor: pointer; flex-shrink: 0;
+        }
+        .run-row-remove:hover { color: #e05252; }
+        .run-row-remove svg { width: 16px; height: 16px; }
+        .run-tracker {
+            background: var(--lt-surface, #20201f);
+            border: 1px solid var(--lt-line, #36362f);
+            border-radius: 16px;
+            padding: 1.1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .run-start-btn {
+            background: var(--lt-accent); border: none; border-radius: 12px;
+            color: #fff; font-size: 1.05rem; font-weight: 700; padding: 1rem;
+            cursor: pointer;
+        }
+        .run-active { display: flex; flex-direction: column; gap: 1rem; }
+        .run-live-stats { display: flex; justify-content: space-around; text-align: center; }
+        .run-live-stat { display: flex; flex-direction: column; gap: 2px; }
+        .run-live-stat span { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.5px; color: var(--lt-ink); }
+        .run-live-stat small { font-size: 0.7rem; color: var(--lt-ink-muted, #888); font-weight: 600; }
+        .run-live-controls { display: flex; gap: 0.6rem; }
+        .run-control-btn {
+            flex: 1; background: #111; border: 1px solid #2a2a2a; border-radius: 10px;
+            color: var(--lt-ink); font-size: 0.95rem; font-weight: 700; padding: 0.75rem;
+            cursor: pointer;
+        }
+        .run-control-btn:hover { border-color: var(--lt-accent); color: var(--lt-accent); }
+        .run-stop-btn { background: #3a1414; border-color: #5a2020; color: #ff6b6b; }
+        .run-stop-btn:hover { border-color: #ff6b6b; color: #ff6b6b; }
+
         #tab-social.active {
             overflow-y: hidden;
             padding-bottom: 0;
@@ -1060,6 +1111,14 @@
 
     <section class="tab-content" id="tab-workouts">
         <div class="section-line"><h1 style="font-size:28px">Record</h1><button class="round-action" onclick="openSettings()" aria-label="Workout settings"><%- include('partials/icon',{name:'settings'}) %></button></div>
+
+        <div class="lt-subtabs" role="tablist" aria-label="Record">
+            <% [{id:'lifting',label:'Lifting',icon:'lift'},{id:'calisthenics',label:'Calisthenics',icon:'calisthenics'},{id:'running',label:'Running',icon:'activity'}].forEach(t => { %>
+            <button id="workouts-subtab-btn-<%= t.id %>" class="<%= t.id === 'lifting' ? 'active' : '' %>" role="tab" aria-selected="<%= t.id === 'lifting' %>" aria-controls="workouts-subtab-<%= t.id %>" onclick="switchWorkoutsSubTab('<%= t.id %>')"><%- include('partials/icon',{name:t.icon}) %><%= t.label %></button>
+            <% }) %>
+        </div>
+
+        <div id="workouts-subtab-lifting" role="tabpanel" aria-labelledby="workouts-subtab-btn-lifting" style="display:flex;flex-direction:column;gap:1rem;">
         <div class="workout-intro"><span class="eyebrow">Your 5/3/1 program</span><h2>Make today count.</h2><p>Pick your main lift. Your working sets, progression, and accessory exercises are ready when you are.</p></div>
         <div class="section-heading">Choose your lift</div>
 
@@ -1114,8 +1173,20 @@
             <p style="text-align:center;margin-top:2rem;color:#555;font-size:0.9rem;">Add your first lift in Profile → Settings.</p>
         <% } %>
 
-        <div class="section-line" style="margin-top:1.75rem;"><h2>Calisthenics</h2><span class="eyebrow">Bodyweight</span></div>
-        <p class="muted" style="font-size:13px;line-height:1.6;margin:0.35rem 0 0.9rem;">Log sets throughout the day — they add up to a running total. Made a mistake? Edit the total directly.</p>
+        <!-- Join a friend's room -->
+        <% if (groupsEnabled) { %>
+        <a href="/group/rooms" style="display:flex;align-items:center;gap:1rem;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:14px;padding:1.1rem 1rem;margin-top:1rem;text-decoration:none;color:inherit;">
+            <div style="width:42px;height:42px;border-radius:10px;background:#1a1e2e;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">👥</div>
+            <div>
+                <div style="font-size:0.95rem;font-weight:700;">Join a Friend's Room</div>
+                <div style="font-size:0.78rem;color:#555;margin-top:2px;">See who's hosting right now</div>
+            </div>
+        </a>
+        <% } %>
+        </div>
+
+        <div id="workouts-subtab-calisthenics" role="tabpanel" aria-labelledby="workouts-subtab-btn-calisthenics" style="display:none;flex-direction:column;gap:1rem;">
+        <p class="muted" style="font-size:13px;line-height:1.6;margin:0 0 0.9rem;">Log sets throughout the day — they add up to a running total. Made a mistake? Edit the total directly.</p>
         <div id="cali-list">
         <% calisthenicsExercises.forEach(c => { %>
             <%- include('partials/calisthenics-card', c) %>
@@ -1127,17 +1198,27 @@
             <input type="text" name="name" placeholder="Add an exercise" required maxlength="60"/>
             <button type="submit">Add</button>
         </form>
+        </div>
 
-        <!-- Join a friend's room -->
-        <% if (groupsEnabled) { %>
-        <a href="/group/rooms" style="display:flex;align-items:center;gap:1rem;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:14px;padding:1.1rem 1rem;margin-top:1rem;text-decoration:none;color:inherit;">
-            <div style="width:42px;height:42px;border-radius:10px;background:#1a1e2e;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">👥</div>
-            <div>
-                <div style="font-size:0.95rem;font-weight:700;">Join a Friend's Room</div>
-                <div style="font-size:0.78rem;color:#555;margin-top:2px;">See who's hosting right now</div>
+        <div id="workouts-subtab-running" role="tabpanel" aria-labelledby="workouts-subtab-btn-running" style="display:none;flex-direction:column;gap:1rem;">
+        <div id="run-tracker" class="run-tracker">
+            <button type="button" id="run-start-btn" class="run-start-btn" onclick="startRun()">Start Run</button>
+            <div id="run-active" class="run-active" hidden>
+                <div class="run-live-stats">
+                    <div class="run-live-stat"><span id="run-live-distance">0.00</span><small>mi</small></div>
+                    <div class="run-live-stat"><span id="run-live-time">0:00</span><small>time</small></div>
+                    <div class="run-live-stat"><span id="run-live-pace">—</span><small>/mi</small></div>
+                </div>
+                <div class="run-live-controls">
+                    <button type="button" id="run-pause-btn" class="run-control-btn" onclick="pauseResumeRun()">Pause</button>
+                    <button type="button" class="run-control-btn run-stop-btn" onclick="stopRun()">Stop</button>
+                </div>
             </div>
-        </a>
-        <% } %>
+        </div>
+
+        <p class="muted" style="font-size:13px;line-height:1.6;margin:0;">Your recent runs</p>
+        <%- include('partials/run-list', { runs: runLogs }) %>
+        </div>
     </section>
 
     <section class="tab-content" id="tab-profile">
@@ -1352,6 +1433,17 @@
                 <div class="empty-chart" id="calisthenicsChartEmpty" <%= calisthenicsChartData.length > 0 ? 'hidden' : '' %>>
                     <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                     <p>Log some reps to see your progress</p>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-title">Running (30 days)</div>
+                <div class="chart-wrap" id="runChartWrap" <%= runChartData.length > 0 ? '' : 'hidden' %>>
+                    <canvas id="runChart"></canvas>
+                </div>
+                <div class="empty-chart" id="runChartEmpty" <%= runChartData.length > 0 ? 'hidden' : '' %>>
+                    <svg viewBox="0 0 24 24"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>
+                    <p>Log a run to see your mileage over time</p>
                 </div>
             </div>
         </div>
@@ -1715,6 +1807,207 @@
     <script>
         let dashboardChartsInitialized = false;
 
+        function switchWorkoutsSubTab(name) {
+            if(!['lifting','calisthenics','running'].includes(name)) name = 'lifting';
+            ['lifting','calisthenics','running'].forEach(id => {
+                document.getElementById('workouts-subtab-' + id).style.display = id === name ? 'flex' : 'none';
+                const button = document.getElementById('workouts-subtab-btn-' + id);
+                button.classList.toggle('active',id === name);
+                button.setAttribute('aria-selected',String(id === name));
+            });
+            history.replaceState(null,'',location.pathname + location.search + '#tab-workouts-' + name);
+        }
+
+        // ── Run tracking (Start Run) ────────────────────────────────────────
+        // On the native iOS app, @capacitor-community/background-geolocation
+        // keeps delivering positions while the phone is locked/backgrounded
+        // (it sets allowsBackgroundLocationUpdates + requests Always
+        // authorization natively). Plain web/Safari has no such capability on
+        // iOS at all, so there we fall back to navigator.geolocation, which
+        // only tracks while this tab is open and on screen.
+        let runWatchId = null;
+        let runNative = false;
+        let runStartTime = null;
+        let runPaused = false;
+        let runPausedMs = 0;
+        let runPauseStartedAt = null;
+        let runDistanceMi = 0;
+        let runLastPoint = null;
+        let runTickInterval = null;
+
+        const RUN_MAX_ACCURACY_M = 50;
+
+        function runHaversineMi(lat1, lon1, lat2, lon2) {
+            const R = 3958.8; // miles
+            const toRad = d => d * Math.PI / 180;
+            const dLat = toRad(lat2 - lat1);
+            const dLon = toRad(lon2 - lon1);
+            const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        }
+
+        function runElapsedSec() {
+            if (!runStartTime) return 0;
+            const now = Date.now();
+            const pausedSoFar = runPausedMs + (runPaused && runPauseStartedAt ? now - runPauseStartedAt : 0);
+            return Math.max(0, (now - runStartTime - pausedSoFar) / 1000);
+        }
+
+        function fmtRunTime(sec) {
+            sec = Math.floor(sec);
+            const h = Math.floor(sec / 3600);
+            const m = Math.floor((sec % 3600) / 60);
+            const s = sec % 60;
+            return (h > 0 ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(s).padStart(2, '0');
+        }
+
+        function fmtRunPace(sec, mi) {
+            if (mi < 0.02) return '—';
+            const paceSec = sec / mi;
+            const m = Math.floor(paceSec / 60);
+            const s = Math.round(paceSec % 60);
+            return m + ':' + String(s).padStart(2, '0');
+        }
+
+        function updateRunDisplay() {
+            document.getElementById('run-live-distance').textContent = runDistanceMi.toFixed(2);
+            document.getElementById('run-live-time').textContent = fmtRunTime(runElapsedSec());
+            document.getElementById('run-live-pace').textContent = fmtRunPace(runElapsedSec(), runDistanceMi);
+        }
+
+        function handleRunPosition(lat, lng, accuracy) {
+            if (accuracy != null && accuracy > RUN_MAX_ACCURACY_M) return;
+            if (runLastPoint) runDistanceMi += runHaversineMi(runLastPoint.lat, runLastPoint.lng, lat, lng);
+            runLastPoint = { lat, lng };
+            updateRunDisplay();
+        }
+
+        function runPermissionDenied(error) {
+            const msg = (error && (error.code === 1 || /denied/i.test(error.message || ''))) ? true : false;
+            return msg;
+        }
+
+        async function startRunWatcher() {
+            const cap = window.Capacitor;
+            runNative = !!(cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.BackgroundGeolocation);
+            if (runNative) {
+                runWatchId = await cap.Plugins.BackgroundGeolocation.addWatcher(
+                    { backgroundMessage: 'Tracking your run', backgroundTitle: 'Run in progress', requestPermissions: true, distanceFilter: 5 },
+                    (position, error) => {
+                        if (error) {
+                            console.error('Run tracking error', error);
+                            if (!runLastPoint && runPermissionDenied(error)) abortRun('Could not access your location. Check that location access is allowed for this app in Settings.');
+                            return;
+                        }
+                        if (position) handleRunPosition(position.latitude, position.longitude, position.accuracy);
+                    }
+                );
+            } else if (navigator.geolocation) {
+                runWatchId = navigator.geolocation.watchPosition(
+                    pos => handleRunPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy),
+                    err => {
+                        console.error('Run tracking error', err);
+                        if (!runLastPoint && runPermissionDenied(err)) abortRun('Could not access your location. Check that location access is allowed for this site.');
+                    },
+                    { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+                );
+            } else {
+                throw new Error('Geolocation not supported');
+            }
+        }
+
+        function stopRunWatcher() {
+            const cap = window.Capacitor;
+            if (runWatchId == null) return;
+            if (runNative) cap.Plugins.BackgroundGeolocation.removeWatcher({ id: runWatchId });
+            else navigator.geolocation.clearWatch(runWatchId);
+            runWatchId = null;
+        }
+
+        async function startRun() {
+            if (runStartTime) return;
+            runStartTime = Date.now();
+            runPaused = false;
+            runPausedMs = 0;
+            runPauseStartedAt = null;
+            runDistanceMi = 0;
+            runLastPoint = null;
+
+            document.getElementById('run-start-btn').hidden = true;
+            document.getElementById('run-active').hidden = false;
+            document.getElementById('run-pause-btn').textContent = 'Pause';
+            updateRunDisplay();
+            runTickInterval = setInterval(updateRunDisplay, 1000);
+
+            try {
+                await startRunWatcher();
+            } catch (e) {
+                abortRun('Could not start location tracking. Check that location access is allowed for this app.');
+            }
+        }
+
+        function pauseResumeRun() {
+            if (!runStartTime) return;
+            runPaused = !runPaused;
+            const btn = document.getElementById('run-pause-btn');
+            if (runPaused) {
+                runPauseStartedAt = Date.now();
+                btn.textContent = 'Resume';
+                stopRunWatcher();
+            } else {
+                runPausedMs += Date.now() - runPauseStartedAt;
+                runPauseStartedAt = null;
+                btn.textContent = 'Pause';
+                runLastPoint = null; // don't count the paused gap as distance moved
+                startRunWatcher().catch(() => abortRun('Could not resume location tracking.'));
+            }
+        }
+
+        function resetRunUI() {
+            runStartTime = null;
+            runPaused = false;
+            runPauseStartedAt = null;
+            if (runTickInterval) { clearInterval(runTickInterval); runTickInterval = null; }
+            document.getElementById('run-start-btn').hidden = false;
+            document.getElementById('run-active').hidden = true;
+        }
+
+        function abortRun(message) {
+            stopRunWatcher();
+            resetRunUI();
+            if (message) alert(message);
+        }
+
+        async function stopRun() {
+            if (!runStartTime) return;
+            const finalSec = Math.round(runElapsedSec());
+            const finalMi = runDistanceMi;
+            stopRunWatcher();
+            resetRunUI();
+
+            if (finalMi < 0.02 || finalSec < 5) {
+                if (!confirm('This run is very short — save it anyway?')) return;
+            }
+
+            try {
+                const res = await fetch('/running/log', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'HX-Request': 'true' },
+                    body: new URLSearchParams({
+                        distanceMi: finalMi.toFixed(3),
+                        durationSec: String(finalSec),
+                        loggedOn: new Date().toLocaleDateString('en-CA'),
+                    }),
+                });
+                if (res.ok) {
+                    document.getElementById('run-list').outerHTML = await res.text();
+                    document.body.dispatchEvent(new CustomEvent('charts-updated'));
+                }
+            } catch (e) {
+                alert('Could not save your run — check your connection and try again.');
+            }
+        }
+
         let currentProfileTab = 'dashboard';
         function switchProfileSubTab(name) {
             if(!['overview','dashboard','activities','gallery'].includes(name)) name = 'dashboard';
@@ -1782,6 +2075,7 @@
                 el.classList.toggle('active',active);
                 if(active) el.setAttribute('aria-current','page'); else el.removeAttribute('aria-current');
             });
+            if (window.positionNavIndicator) positionNavIndicator();
             history.replaceState(null,'',location.pathname + location.search + '#tab-' + name);
             if(name === 'profile') switchProfileSubTab(currentProfileTab);
             const icon = btn && btn.querySelector('svg, img');
@@ -1799,6 +2093,10 @@
                 switchTab('profile');
                 switchProfileSubTab(tab.replace('profile-',''));
                 if(tab === 'profile-calendar') history.replaceState(null,'',location.pathname + location.search + hash);
+            }
+            else if(tab.startsWith('workouts-')) {
+                switchTab('workouts');
+                switchWorkoutsSubTab(tab.replace('workouts-',''));
             }
         }
         restoreTab(initialHash);
@@ -1829,6 +2127,7 @@
             weight: <%- JSON.stringify(weightChartData) %>,
             cals: <%- JSON.stringify(calChartData) %>,
             calisthenics: <%- JSON.stringify(calisthenicsChartData) %>,
+            running: <%- JSON.stringify(runChartData) %>,
         };
         const chartInstances = {};
 
@@ -2156,6 +2455,80 @@
             }
         }
 
+        function renderRunChart() {
+            const runData = chartState.running;
+            toggleChartVisibility('runChart', runData.length > 0);
+            if (runData.length === 0) {
+                if (chartInstances.running) { chartInstances.running.destroy(); chartInstances.running = null; }
+                return;
+            }
+
+            const labels = runData.map(d => d.date);
+            const data = runData.map(d => d.miles);
+
+            if (chartInstances.running) {
+                chartInstances.running.data.labels = labels;
+                chartInstances.running.data.datasets[0].data = data;
+                chartInstances.running.update();
+            } else {
+                const runCtx = document.getElementById('runChart').getContext('2d');
+                chartInstances.running = new Chart(runCtx, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            data,
+                            backgroundColor: '#4f9eff44',
+                            borderColor: '#4f9eff',
+                            borderWidth: 2,
+                            borderRadius: 4,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: LT_TOOLTIP_BG,
+                                titleColor: '#9CA3AF',
+                                bodyColor: '#fff',
+                                borderWidth: 0,
+                                padding: 10,
+                                callbacks: {
+                                    title: items => {
+                                        const d = new Date(items[0].label + 'T12:00:00');
+                                        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                    },
+                                    label: item => ` ${item.parsed.y.toFixed(2)} mi`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: LT_LINE },
+                                ticks: {
+                                    color: LT_MUTED,
+                                    maxTicksLimit: 6,
+                                    callback: (_, i) => {
+                                        const d = new Date(chartState.running[i].date + 'T12:00:00');
+                                        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                    }
+                                },
+                                border: { color: LT_LINE }
+                            },
+                            y: {
+                                grid: { color: LT_LINE },
+                                ticks: { color: LT_MUTED },
+                                border: { color: LT_LINE },
+                                title: { display: true, text: 'mi', color: LT_MUTED, font: { size: 11 } }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
         // Deferred until Dashboard is first opened (Chart.js sizes canvases
         // off their container, which is wrong while the tab is hidden).
         function initDashboardCharts() {
@@ -2163,6 +2536,7 @@
             renderCalisthenicsChart();
             renderWeightChart();
             renderCalChart();
+            renderRunChart();
         }
 
         // Fired (via the `charts-updated` HX-Trigger response header, or
@@ -2179,6 +2553,7 @@
                     weight: data.weightChartData,
                     cals: data.calChartData,
                     calisthenics: data.calisthenicsChartData,
+                    running: data.runChartData,
                 };
                 if (dashboardChartsInitialized) initDashboardCharts();
             } catch (e) {
