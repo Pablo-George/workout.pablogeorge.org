@@ -1,0 +1,16 @@
+<%
+/* Variables:
+   label    – chart name, e.g. "Body Weight"
+   chartKey – key used in chartRanges/localStorage/query params, e.g. "weight"
+   days     – currently selected day range (0 = all time)
+*/
+const rangeOptions = [30, 60, 90, 120, 180, 365, 0];
+%>
+<div class="chart-title">
+    <%= label %> (<select class="chart-range-select" aria-label="<%= label %> date range"
+            data-chart="<%= chartKey %>" onchange="updateChartRange('<%= chartKey %>', this.value)">
+        <% rangeOptions.forEach(opt => { %>
+        <option value="<%= opt %>" <%= opt === days ? "selected" : "" %>><%= opt === 0 ? "all time" : opt + " days" %></option>
+        <% }) %>
+    </select>)
+</div>

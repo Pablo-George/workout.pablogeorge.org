@@ -180,18 +180,25 @@ router.get("/", ensureAuth, async (req, res) => {
 // Backs the client-side chart refresh (see refreshDashboardCharts() in
 // home.ejs): fired after any HTMX action that changes chart-relevant data
 // (weight, calisthenics, training max) so the Dashboard charts can update
-// without a full page reload.
+// without a full page reload. Also fired when the user picks a different
+// day range from a chart's own title dropdown, via ?weightDays=/calDays=/
+// calisthenicsDays=/runDays= (0 means "all time").
 router.get("/dashboard/charts", ensureAuth, async (req, res) => {
   const userId = (req.user as any).userId;
 
+  const weightDays = parseDaysParam(req.query.weightDays, 90);
+  const calDays = parseDaysParam(req.query.calDays, 30);
+  const calisthenicsDays = parseDaysParam(req.query.calisthenicsDays, 30);
+  const runDays = parseDaysParam(req.query.runDays, 30);
+
   const [chartDatasets, calChartData, weightChartData, exercises, runChartData] = await Promise.all([
     buildChartDatasets(userId),
-    getCalChartData(userId),
-    getWeightChartData(userId),
+    getCalChartData(userId, calDays),
+    getWeightChartData(userId, weightDays),
     prisma.calisthenicsExercise.findMany({ where: { userId }, orderBy: { displayOrder: "asc" } }),
-    getRunChartData(userId),
+    getRunChartData(userId, runDays),
   ]);
-  const calisthenicsChartData = await getCalisthenicsChartData(exercises);
+  const calisthenicsChartData = await getCalisthenicsChartData(exercises, calisthenicsDays);
 
   res.json({ chartDatasets, calChartData, weightChartData, calisthenicsChartData, runChartData });
 });
@@ -370,11 +377,29 @@ async function getRunLogs(userId: string) {
   return runs.map((r) => ({ ...r, paceSecPerMi: r.distanceMi > 0 ? r.durationSec / r.distanceMi : null }));
 }
 
-async function getRunChartData(userId: string) {
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
+// Chart day-range pickers pass ?xDays= query params; 0 means "all time" (no
+// lower bound). Caps at 10 years to keep a mistyped/abusive value cheap.
+const MAX_CHART_DAYS = 3650;
+
+function parseDaysParam(value: unknown, fallback: number): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return fallback;
+  return Math.min(Math.floor(parsed), MAX_CHART_DAYS);
+}
+
+/** ISO "YYYY-MM-DD" for the start of an inclusive N-day trailing window
+ *  ending today, or null for `days === 0` ("all time" — no lower bound). */
+function daysAgoISO(days: number): string | null {
+  if (days === 0) return null;
+  const d = new Date();
+  d.setDate(d.getDate() - (days - 1));
+  return d.toISOString().split("T")[0];
+}
+
+async function getRunChartData(userId: string, days = 30) {
+  const since = daysAgoISO(days);
   const runHistory = await prisma.runLog.findMany({
-    where: { userId, completedOn: { gte: thirtyDaysAgo.toISOString().split("T")[0] } },
+    where: { userId, ...(since ? { completedOn: { gte: since } } : {}) },
     orderBy: { completedOn: "asc" },
   });
   const milesByDay: Record<string, number> = {};
@@ -384,21 +409,19 @@ async function getRunChartData(userId: string) {
   return Object.entries(milesByDay).map(([date, miles]) => ({ date, miles }));
 }
 
-async function getWeightChartData(userId: string) {
-  const ninetyDaysAgo = new Date();
-  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 89);
+async function getWeightChartData(userId: string, days = 90) {
+  const since = daysAgoISO(days);
   const weightHistory = await prisma.bodyWeightLog.findMany({
-    where: { userId, loggedOn: { gte: ninetyDaysAgo.toISOString().split("T")[0] } },
+    where: { userId, ...(since ? { loggedOn: { gte: since } } : {}) },
     orderBy: { loggedOn: "asc" },
   });
   return weightHistory.map((w) => ({ date: w.loggedOn, weight: w.weightLbs }));
 }
 
-async function getCalChartData(userId: string) {
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
+async function getCalChartData(userId: string, days = 30) {
+  const since = daysAgoISO(days);
   const calHistory = await prisma.calorieEntry.findMany({
-    where: { userId, loggedOn: { gte: thirtyDaysAgo.toISOString().split("T")[0] } },
+    where: { userId, ...(since ? { loggedOn: { gte: since } } : {}) },
     orderBy: { loggedOn: "asc" },
   });
   const calByDay: Record<string, number> = {};
@@ -408,15 +431,14 @@ async function getCalChartData(userId: string) {
   return Object.entries(calByDay).map(([date, total]) => ({ date, total }));
 }
 
-async function getCalisthenicsChartData(exercises: { id: number; name: string }[]) {
+async function getCalisthenicsChartData(exercises: { id: number; name: string }[], days = 30) {
   if (exercises.length === 0) return [];
 
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
+  const since = daysAgoISO(days);
   const logs = await prisma.calisthenicsLog.findMany({
     where: {
       exerciseId: { in: exercises.map((e) => e.id) },
-      completedOn: { gte: thirtyDaysAgo.toISOString().split("T")[0] },
+      ...(since ? { completedOn: { gte: since } } : {}),
     },
     orderBy: { completedOn: "asc" },
   });

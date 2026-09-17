@@ -239,6 +239,7 @@ When a user first visits `/`, the app auto-creates four lifts: **Bench Press**, 
 3. It also shows today's estimated calories burned, the trailing-14-day average net calories (eaten via `CalorieEntry` minus estimated burned), a secondary calorie-based projection as a cross-check, and a suggested daily calorie intake.
 4. The suggested intake is auto-calculated (not user-entered) from current weight, goal direction, and the trailing-14-day average of estimated exercise burn — a bodyweight-based maintenance estimate, then a standard deficit (goal below current) or surplus (goal above current), floored at a safe minimum.
 5. Calories burned have no wearable data source yet, so they're estimated from standard MET values and the user's logged bodyweight (see `goalService.buildGoalSummary` / `getCaloriesBurnedByDay`). Lifts and calisthenics assume a duration per logged set of work; runs already log real duration, so that estimate uses it directly. Apple Fitness/HealthKit integration is planned to replace the remaining assumptions with real duration and heart-rate data.
+6. Each Progress-tab chart with a day-windowed history (Body Weight, Daily Calories, Calisthenics, Running) has a day-range dropdown built into its title (30/60/90/120/180/365 days, or all time). The choice is saved in the browser's `localStorage` (not per-account) and re-fetched from `GET /dashboard/charts?weightDays=&calDays=&calisthenicsDays=&runDays=` on future visits.
 
 ### 10. Create a Post
 1. User submits text and/or an image (JPEG, PNG, GIF, WebP; max 10 MB).

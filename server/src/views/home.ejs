@@ -100,6 +100,27 @@
             color: #555;
         }
 
+        .chart-range-select {
+            appearance: none;
+            -webkit-appearance: none;
+            background: none;
+            border: none;
+            padding: 0 14px 0 0;
+            margin: 0;
+            font: inherit;
+            font-weight: 700;
+            letter-spacing: inherit;
+            text-transform: inherit;
+            color: var(--lt-accent, #4169E1);
+            cursor: pointer;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234169E1' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right center;
+            background-size: 10px;
+        }
+        .chart-range-select:focus-visible { outline: 2px solid var(--lt-accent, #4169E1); outline-offset: 2px; border-radius: 3px; }
+        #tab-profile .chart-range-select { color: var(--lt-accent); }
+
         .chart-wrap { position: relative; height: 190px; }
 
         .chart-legend {
@@ -1403,7 +1424,7 @@
             </div>
 
             <div class="chart-card">
-                <div class="chart-title">Daily Calories (30 days)</div>
+                <%- include('partials/chart-range-title', { label: 'Daily Calories', chartKey: 'cal', days: 30 }) %>
                 <div class="chart-wrap" id="calChartWrap" <%= calChartData.length > 0 ? '' : 'hidden' %>>
                     <canvas id="calChart"></canvas>
                 </div>
@@ -1414,7 +1435,7 @@
             </div>
 
             <div class="chart-card">
-                <div class="chart-title">Body Weight (90 days)</div>
+                <%- include('partials/chart-range-title', { label: 'Body Weight', chartKey: 'weight', days: 90 }) %>
                 <div class="chart-wrap" id="weightChartWrap" <%= weightChartData.length > 0 ? '' : 'hidden' %>>
                     <canvas id="weightChart"></canvas>
                 </div>
@@ -1425,7 +1446,7 @@
             </div>
 
             <div class="chart-card">
-                <div class="chart-title">Calisthenics (30 days)</div>
+                <%- include('partials/chart-range-title', { label: 'Calisthenics', chartKey: 'calisthenics', days: 30 }) %>
                 <div class="chart-wrap" id="calisthenicsChartWrap" <%= calisthenicsChartData.length > 0 ? '' : 'hidden' %>>
                     <canvas id="calisthenicsChart"></canvas>
                 </div>
@@ -1437,7 +1458,7 @@
             </div>
 
             <div class="chart-card">
-                <div class="chart-title">Running (30 days)</div>
+                <%- include('partials/chart-range-title', { label: 'Running', chartKey: 'run', days: 30 }) %>
                 <div class="chart-wrap" id="runChartWrap" <%= runChartData.length > 0 ? '' : 'hidden' %>>
                     <canvas id="runChart"></canvas>
                 </div>
@@ -2019,8 +2040,7 @@
                 button.setAttribute('aria-selected',String(id === name));
             });
             if (name === 'dashboard' && !dashboardChartsInitialized && typeof Chart !== 'undefined') {
-                dashboardChartsInitialized = true;
-                initDashboardCharts();
+                ensureDashboardCharts();
             }
             history.replaceState(null,'',location.pathname + location.search + '#tab-profile-' + name);
         }
@@ -2130,6 +2150,32 @@
             running: <%- JSON.stringify(runChartData) %>,
         };
         const chartInstances = {};
+
+        // Per-chart day range (0 = all time), picked from the dropdown built
+        // into each chart's title (see partials/chart-range-title.ejs).
+        // Persisted per-browser so it survives reloads; the server only ever
+        // renders the defaults, so a saved non-default range triggers one
+        // extra fetch (see ensureDashboardCharts()) the first time the
+        // Progress tab is opened.
+        const CHART_RANGE_DEFAULTS = { weight: 90, cal: 30, calisthenics: 30, run: 30 };
+        let chartRanges = { ...CHART_RANGE_DEFAULTS };
+        try {
+            const saved = JSON.parse(localStorage.getItem('chartRanges') || 'null');
+            if (saved) chartRanges = { ...CHART_RANGE_DEFAULTS, ...saved };
+        } catch (e) { /* corrupt/blocked storage — stick with defaults */ }
+
+        function syncChartRangeSelects() {
+            document.querySelectorAll('.chart-range-select').forEach(select => {
+                const key = select.dataset.chart;
+                if (chartRanges[key] != null) select.value = String(chartRanges[key]);
+            });
+        }
+
+        function updateChartRange(chartKey, days) {
+            chartRanges[chartKey] = parseInt(days, 10);
+            try { localStorage.setItem('chartRanges', JSON.stringify(chartRanges)); } catch (e) { /* ignore */ }
+            refreshDashboardCharts();
+        }
 
         function toggleChartVisibility(key, hasData) {
             document.getElementById(key + 'Wrap').hidden = !hasData;
@@ -2532,6 +2578,7 @@
         // Deferred until Dashboard is first opened (Chart.js sizes canvases
         // off their container, which is wrong while the tab is hidden).
         function initDashboardCharts() {
+            syncChartRangeSelects();
             renderTrainingMaxChart();
             renderCalisthenicsChart();
             renderWeightChart();
@@ -2539,13 +2586,32 @@
             renderRunChart();
         }
 
+        // First time the Dashboard is opened: the server always rendered the
+        // default ranges, so if a custom range was saved from a previous
+        // visit, fetch fresh data before the first render instead of
+        // flashing the default range and then jumping to the saved one.
+        async function ensureDashboardCharts() {
+            if (dashboardChartsInitialized) return;
+            dashboardChartsInitialized = true;
+            const isDefault = Object.keys(CHART_RANGE_DEFAULTS).every(k => chartRanges[k] === CHART_RANGE_DEFAULTS[k]);
+            if (!isDefault) await refreshDashboardCharts({ rerender: false });
+            initDashboardCharts();
+        }
+
         // Fired (via the `charts-updated` HX-Trigger response header, or
         // called directly after non-HTMX updates like the calorie entry
         // editor) whenever something changes chart-relevant data, so the
         // Dashboard charts stay current without needing a full page reload.
-        async function refreshDashboardCharts() {
+        // Also fired directly when a chart's own day-range dropdown changes.
+        async function refreshDashboardCharts({ rerender = true } = {}) {
             try {
-                const res = await fetch('/dashboard/charts');
+                const params = new URLSearchParams({
+                    weightDays: chartRanges.weight,
+                    calDays: chartRanges.cal,
+                    calisthenicsDays: chartRanges.calisthenics,
+                    runDays: chartRanges.run,
+                });
+                const res = await fetch('/dashboard/charts?' + params.toString());
                 if (!res.ok) return;
                 const data = await res.json();
                 chartState = {
@@ -2555,7 +2621,7 @@
                     calisthenics: data.calisthenicsChartData,
                     running: data.runChartData,
                 };
-                if (dashboardChartsInitialized) initDashboardCharts();
+                if (rerender && dashboardChartsInitialized) initDashboardCharts();
             } catch (e) {
                 // Best-effort — the charts just keep showing the last known data.
             }
